@@ -21,7 +21,7 @@ export default {
         body: {
           padding: "0",
           margin: "0",
-          fontFamily: "ID Grostesk",
+          fontFamily: "ID Grotesk",
           "background-color": "#fbfbfb",
         },
         '*': {

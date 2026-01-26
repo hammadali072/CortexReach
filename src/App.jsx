@@ -1,7 +1,28 @@
-function App() {
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import AppLayout from './components/layout/AppLayout'
+import Dashboard from './pages/Dashboard'
+import Leads from './pages/Leads'
+import Campaigns from './pages/Campaigns'
+import CampaignCreate from './pages/CampaignCreate'
+import Sequences from './pages/Sequences'
+import Analytics from './pages/Analytics'
+import Settings from './pages/Settings'
 
+function App() {
   return (
-    <h1>Heading H1</h1>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="leads" element={<Leads />} />
+          <Route path="campaigns" element={<Campaigns />} />
+          <Route path="campaigns/create" element={<CampaignCreate />} />
+          <Route path="sequences" element={<Sequences />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
