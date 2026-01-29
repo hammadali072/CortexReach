@@ -156,7 +156,7 @@ const Projects = () => {
                 </div>
                 <Link to="/projects/create">
                     <Button variant="primary">
-                        <i className="fas fa-plus mr-2"></i>
+                        <i className="fas fa-plus mr-2" />
                         Create Project
                     </Button>
                 </Link>

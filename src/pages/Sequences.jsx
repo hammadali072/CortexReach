@@ -47,7 +47,7 @@ const FollowUps = () => {
             {/* Logical Rule Indicator */}
             <div className="p-6 bg-slate-900 rounded-3xl text-white flex items-center gap-6 shadow-xl border border-slate-700">
                 <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center">
-                    <i className="fas fa-microchip text-2xl"></i>
+                    <i className="fas fa-microchip text-2xl" />
                 </div>
                 <div>
                     <h3 className="font-bold text-lg">Automated Logic Enabled</h3>
@@ -96,7 +96,7 @@ const FollowUps = () => {
 
             <div className="p-8 bg-indigo-50 rounded-3xl border border-indigo-100">
                 <div className="flex gap-6">
-                    <i className="fas fa-info-circle text-indigo-600 text-2xl mt-1"></i>
+                    <i className="fas fa-info-circle text-indigo-600 text-2xl mt-1" />
                     <div>
                         <h4 className="font-bold text-indigo-900 mb-1 leading-none">Why only one follow-up?</h4>
                         <p className="text-indigo-800 text-sm leading-relaxed max-w-2xl">

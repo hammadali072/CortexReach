@@ -104,8 +104,8 @@ const ProjectDetail = () => {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-8 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === tab
-                                ? 'bg-white text-indigo-600 shadow-sm'
-                                : 'text-slate-500 hover:text-slate-700'
+                            ? 'bg-white text-indigo-600 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
                             }`}
                     >
                         {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -166,7 +166,7 @@ const ProjectDetail = () => {
                                 <p className="text-sm text-slate-500 font-medium">Leads shown here are relevant to this project only.</p>
                             </div>
                             <Button variant="primary" className="bg-emerald-600 shadow-emerald-100">
-                                <i className="fas fa-bolt mr-2"></i>
+                                <i className="fas fa-bolt mr-2" />
                                 Generate Leads for this Project
                             </Button>
                         </div>

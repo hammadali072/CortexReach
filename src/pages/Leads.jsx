@@ -129,7 +129,7 @@ const Leads = () => {
             center: true,
             cell: row => row.isEligible ? (
                 <Badge variant="primary" className="bg-indigo-100 text-indigo-700 border-indigo-200">
-                    <i className="fas fa-check-circle mr-1"></i> Follow-up
+                    <i className="fas fa-check-circle mr-1" /> Follow-up
                 </Badge>
             ) : (
                 <span className="text-xs text-slate-400 italic">Stopped</span>
@@ -150,7 +150,7 @@ const Leads = () => {
             name: 'Action',
             cell: row => (
                 <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-                    <i className="fas fa-chevron-right"></i>
+                    <i className="fas fa-chevron-right" />
                 </button>
             ),
             button: true,
@@ -257,7 +257,7 @@ const Leads = () => {
                 {leadStats.map((stat, idx) => (
                     <div key={idx} className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex items-center space-x-5">
                         <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg shadow-indigo-100`}>
-                            <i className={`fas ${stat.icon} text-white text-2xl`}></i>
+                            <i className={`fas ${stat.icon} text-white text-2xl`} />
                         </div>
                         <div>
                             <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-1">{stat.label}</p>
@@ -271,7 +271,7 @@ const Leads = () => {
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
                 <div className="flex flex-col xl:flex-row gap-8 items-center">
                     <div className="flex-1 w-full relative group">
-                        <i className="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                        <i className="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                         <input
                             type="text"
                             placeholder="Filter by lead name, email or company..."
@@ -282,7 +282,7 @@ const Leads = () => {
                     </div>
 
                     <div className="relative min-w-[240px]">
-                        <i className="fas fa-filter absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <i className="fas fa-filter absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                         <select
                             className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-sm text-slate-600 appearance-none"
                             value={projectFilter}
@@ -298,13 +298,13 @@ const Leads = () => {
                     {selectedLeads.length > 0 && (
                         <div className="flex items-center gap-6 bg-indigo-50 px-6 py-3 rounded-2xl border border-indigo-100 animate-in fade-in slide-in-from-top-4">
                             <span className="text-sm font-black text-indigo-700 uppercase tracking-wider">{selectedLeads.length} Selected</span>
-                            <div className="h-6 w-px bg-indigo-100"></div>
+                            <div className="h-6 w-px bg-indigo-100" />
                             <div className="flex gap-4">
                                 <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-2 transition-colors">
-                                    <i className="fas fa-plus-circle"></i> Add to Campaign
+                                    <i className="fas fa-plus-circle" /> Add to Campaign
                                 </button>
                                 <button className="text-sm font-bold text-slate-500 hover:text-red-600 flex items-center gap-2 transition-colors">
-                                    <i className="fas fa-trash-alt"></i> Delete
+                                    <i className="fas fa-trash-alt" /> Delete
                                 </button>
                             </div>
                         </div>

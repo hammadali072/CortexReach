@@ -85,7 +85,7 @@ const Dashboard = () => {
         <div className="min-h-screen space-y-8">
             {/* Page Header with Gradient */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-8 shadow-xl">
-                <div className="absolute inset-0 bg-blue-500 opacity-5"></div>
+                <div className="absolute inset-0 bg-blue-500 opacity-5" />
 
                 <div className="relative z-10">
                     <TitleComponent type="h1" className="text-white text-4xl font-bold mb-2">
@@ -117,7 +117,7 @@ const Dashboard = () => {
                                     </TitleComponent>
                                 </div>
                                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-sm`}>
-                                    <i className={`fas ${stat.icon} text-white text-xl`}></i>
+                                    <i className={`fas ${stat.icon} text-white text-xl`} />
                                 </div>
                             </div>
                             <TitleComponent type="p" size="small" className="text-slate-500 mb-4">
@@ -190,7 +190,7 @@ const Dashboard = () => {
                     >
                         <div className="flex items-center space-x-6">
                             <div className={`w-16 h-16 rounded-2xl ${action.iconBg} flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform`}>
-                                <i className={`fas ${action.icon} text-white text-2xl`}></i>
+                                <i className={`fas ${action.icon} text-white text-2xl`} />
                             </div>
                             <div className="flex-1">
                                 <TitleComponent type="h3" className="text-slate-900 font-bold text-xl mb-1">
@@ -200,7 +200,7 @@ const Dashboard = () => {
                                     {action.description}
                                 </TitleComponent>
                             </div>
-                            <i className="fas fa-chevron-right text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all"></i>
+                            <i className="fas fa-chevron-right text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
                         </div>
                     </div>
                 ))}

@@ -39,11 +39,11 @@ const Settings = () => {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${activeTab === tab.id
-                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
-                                        : 'text-slate-500 hover:bg-slate-50'
+                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+                                    : 'text-slate-500 hover:bg-slate-50'
                                     }`}
                             >
-                                <i className={`fas ${tab.icon}`}></i>
+                                <i className={`fas ${tab.icon}`} />
                                 {tab.label}
                             </button>
                         ))}
@@ -90,7 +90,7 @@ const Settings = () => {
                                 <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-indigo-600">
-                                            <i className="fab fa-google text-xl"></i>
+                                            <i className="fab fa-google text-xl" />
                                         </div>
                                         <div>
                                             <p className="font-bold text-slate-900">john@example.com</p>
