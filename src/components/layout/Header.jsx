@@ -10,12 +10,12 @@ const Header = ({ onMenuClick }) => {
                         onClick={onMenuClick}
                         className="lg:hidden text-gray-600 hover:text-gray-800 focus:outline-none"
                     >
-                        <i className="fas fa-bars text-xl"></i>
+                        <i className="fas fa-bars text-xl" />
                     </button>
 
                     {/* Search Bar - Hidden on mobile */}
                     <div className="hidden md:flex items-center relative">
-                        <i className="fas fa-search absolute left-3 text-gray-400"></i>
+                        <i className="fas fa-search absolute left-3 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Search..."
@@ -28,7 +28,7 @@ const Header = ({ onMenuClick }) => {
                 <div className="flex items-center space-x-4">
                     {/* Notifications */}
                     <button className="relative text-gray-600 hover:text-gray-800 focus:outline-none">
-                        <i className="fas fa-bell text-xl"></i>
+                        <i className="fas fa-bell text-xl" />
                         <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
                             3
                         </span>
@@ -37,9 +37,9 @@ const Header = ({ onMenuClick }) => {
                     {/* Profile Dropdown - Placeholder */}
                     <div className="hidden sm:flex items-center space-x-2 cursor-pointer">
                         <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                            <i className="fas fa-user text-gray-600 text-sm"></i>
+                            <i className="fas fa-user text-gray-600 text-sm" />
                         </div>
-                        <i className="fas fa-chevron-down text-gray-600 text-xs"></i>
+                        <i className="fas fa-chevron-down text-gray-600 text-xs" />
                     </div>
                 </div>
             </div>

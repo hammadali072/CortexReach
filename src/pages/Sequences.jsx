@@ -3,151 +3,111 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 
-const Sequences = () => {
-    // Placeholder data
-    const sequences = [
+const FollowUps = () => {
+    /**
+     * Product Rule: 
+     * Follow-ups are ONLY sent to engaged (opened) leads.
+     * Limit to a single follow-up step to reduce spam and focus on yield.
+     */
+    const followUps = [
         {
             id: 1,
-            name: 'Welcome Series',
-            steps: 4,
+            campaign: 'Jan SME Outreach',
             status: 'Active',
-            enrolled: 245,
-            completed: 89,
-            description: 'Initial outreach and follow-up sequence for new leads'
+            eligibleLeads: 456,
+            followUpsSent: 210,
+            conversion: '12%',
+            description: 'Conditional message for recipients who opened the initial email.'
         },
         {
             id: 2,
-            name: 'Re-engagement Flow',
-            steps: 3,
-            status: 'Active',
-            enrolled: 156,
-            completed: 67,
-            description: 'Win back cold leads with targeted messages'
-        },
-        {
-            id: 3,
-            name: 'Product Demo Follow-up',
-            steps: 5,
+            campaign: 'Growth Series B',
             status: 'Draft',
-            enrolled: 0,
-            completed: 0,
-            description: 'Nurture leads after product demonstration'
+            eligibleLeads: 0,
+            followUpsSent: 0,
+            conversion: '0%',
+            description: 'Pending first email engagement signal.'
         }
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="min-h-screen space-y-8 pb-12 text-slate-900">
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <TitleComponent type="h2" className="text-gray-800">
-                        Sequences
+                    <TitleComponent type="h1" className="text-slate-900 text-3xl font-bold">
+                        Follow-Ups
                     </TitleComponent>
-                    <TitleComponent type="p" size="base" className="text-gray-600 mt-1">
-                        Automate your follow-up emails with engagement-based sequences
+                    <TitleComponent type="p" size="base" className="text-slate-500 mt-1">
+                        Manage single-step follow-ups for leads who opened your initial email.
                     </TitleComponent>
                 </div>
-                <Button variant="primary">
-                    <i className="fas fa-plus mr-2"></i>
-                    Create Sequence
-                </Button>
             </div>
 
-            {/* Sequences List */}
-            <div className="space-y-4">
-                {sequences.map((sequence) => (
-                    <Card key={sequence.id} className="hover:shadow-md transition-shadow">
-                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                            {/* Sequence Info */}
+            {/* Logical Rule Indicator */}
+            <div className="p-6 bg-slate-900 rounded-3xl text-white flex items-center gap-6 shadow-xl border border-slate-700">
+                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center">
+                    <i className="fas fa-microchip text-2xl"></i>
+                </div>
+                <div>
+                    <h3 className="font-bold text-lg">Automated Logic Enabled</h3>
+                    <p className="text-slate-400 text-sm">System only prepares follow-ups for leads who have provided an 'Open' signal. All other outreach is discarded.</p>
+                </div>
+            </div>
+
+            {/* Follow-Ups List */}
+            <div className="grid grid-cols-1 gap-4">
+                {followUps.map((item) => (
+                    <div key={item.id} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <TitleComponent type="h4" className="text-gray-900">
-                                        {sequence.name}
-                                    </TitleComponent>
-                                    <Badge variant={sequence.status === 'Active' ? 'success' : 'default'}>
-                                        {sequence.status}
+                                    <h4 className="font-bold text-xl">{item.campaign}</h4>
+                                    <Badge variant={item.status === 'Active' ? 'success' : 'default'}>
+                                        {item.status}
                                     </Badge>
-                                    <span className="text-sm text-gray-500">
-                                        {sequence.steps} steps
-                                    </span>
                                 </div>
-                                <TitleComponent type="p" size="base" className="text-gray-600">
-                                    {sequence.description}
-                                </TitleComponent>
+                                <p className="text-slate-500 text-sm">{item.description}</p>
                             </div>
 
-                            {/* Stats */}
-                            <div className="flex items-center gap-8">
+                            <div className="flex items-center gap-12">
                                 <div className="text-center">
-                                    <TitleComponent type="h5" className="text-gray-900">
-                                        {sequence.enrolled}
-                                    </TitleComponent>
-                                    <TitleComponent type="p" size="small" className="text-gray-600">
-                                        Enrolled
-                                    </TitleComponent>
+                                    <p className="text-xl font-bold">{item.eligibleLeads}</p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Eligible</p>
                                 </div>
                                 <div className="text-center">
-                                    <TitleComponent type="h5" className="text-green-600">
-                                        {sequence.completed}
-                                    </TitleComponent>
-                                    <TitleComponent type="p" size="small" className="text-gray-600">
-                                        Completed
-                                    </TitleComponent>
+                                    <p className="text-xl font-bold text-indigo-600">{item.followUpsSent}</p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sent</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-xl font-bold text-emerald-600">{item.conversion}</p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Yield</p>
                                 </div>
                             </div>
 
-                            {/* Actions */}
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" size="small">
-                                    <i className="fas fa-eye mr-2"></i>
-                                    View
-                                </Button>
-                                <Button variant="outline" size="small">
-                                    <i className="fas fa-edit mr-2"></i>
-                                    Edit
-                                </Button>
+                            <div className="flex items-center gap-3">
+                                <Button variant="outline">Edit Content</Button>
+                                <Button variant="primary">Manage Leads</Button>
                             </div>
                         </div>
-
-                        {/* Progress */}
-                        {sequence.enrolled > 0 && (
-                            <div className="mt-4 pt-4 border-t border-gray-200">
-                                <div className="flex justify-between text-xs text-gray-600 mb-1">
-                                    <span>Completion Rate</span>
-                                    <span>{((sequence.completed / sequence.enrolled) * 100).toFixed(1)}%</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div
-                                        className="bg-green-600 h-2 rounded-full"
-                                        style={{ width: `${(sequence.completed / sequence.enrolled) * 100}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        )}
-                    </Card>
+                    </div>
                 ))}
             </div>
 
-            {/* Info Card */}
-            <Card className="bg-blue-50 border-blue-200">
-                <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i className="fas fa-lightbulb text-blue-600 text-xl"></i>
-                        </div>
-                    </div>
+            <div className="p-8 bg-indigo-50 rounded-3xl border border-indigo-100">
+                <div className="flex gap-6">
+                    <i className="fas fa-info-circle text-indigo-600 text-2xl mt-1"></i>
                     <div>
-                        <TitleComponent type="h5" className="text-blue-900 mb-1">
-                            What are sequences?
-                        </TitleComponent>
-                        <TitleComponent type="p" size="base" className="text-blue-800">
-                            Sequences are automated email workflows triggered by lead engagement. Set up follow-up emails based on opens, clicks, and replies to nurture leads efficiently.
-                        </TitleComponent>
+                        <h4 className="font-bold text-indigo-900 mb-1 leading-none">Why only one follow-up?</h4>
+                        <p className="text-indigo-800 text-sm leading-relaxed max-w-2xl">
+                            CortexReach focuses on high-intent signals. Recurrent multi-step dripping often leads to domain blacklisting and lower response quality. By focusing on a single, strong follow-up for engaged leads, we maximize your conversion yield.
+                        </p>
                     </div>
                 </div>
-            </Card>
+            </div>
         </div>
     )
 }
 
-export default Sequences
+export default FollowUps
+

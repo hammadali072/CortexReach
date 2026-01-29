@@ -7,324 +7,112 @@ import Input from '../components/ui/Input'
 const Settings = () => {
     const [activeTab, setActiveTab] = useState('profile')
 
-    // Form states - will be managed by form library in actual implementation
     const [profileData, setProfileData] = useState({
         fullName: 'John Doe',
         email: 'john@example.com',
-        company: 'Example Corp',
-        phone: '+1 (555) 123-4567'
+        company: 'Example Corp'
     })
 
     const tabs = [
-        { id: 'profile', label: 'Profile', icon: 'fa-user' },
-        { id: 'email', label: 'Email Settings', icon: 'fa-envelope' },
-        { id: 'notifications', label: 'Notifications', icon: 'fa-bell' },
-        { id: 'api', label: 'API Keys', icon: 'fa-key' }
+        { id: 'profile', label: 'User Profile', icon: 'fa-user' },
+        { id: 'email', label: 'Inboxes', icon: 'fa-envelope-open-text' }
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="min-h-screen space-y-8 pb-12">
             {/* Page Header */}
             <div>
-                <TitleComponent type="h2" className="text-gray-800">
-                    Settings
+                <TitleComponent type="h1" className="text-slate-900 text-3xl font-bold">
+                    System Configuration
                 </TitleComponent>
-                <TitleComponent type="p" size="base" className="text-gray-600 mt-1">
-                    Manage your account and application preferences
+                <TitleComponent type="p" size="base" className="text-slate-500 mt-1">
+                    Manage your identity and email connectivity credentials.
                 </TitleComponent>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Sidebar Tabs */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                {/* Sidebar Navigation */}
                 <div className="lg:col-span-1">
-                    <Card padding="small">
-                        <nav className="space-y-1">
-                            {tabs.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === tab.id
-                                            ? 'bg-blue-50 text-blue-600'
-                                            : 'text-gray-700 hover:bg-gray-100'
-                                        }`}
-                                >
-                                    <i className={`fas ${tab.icon}`}></i>
-                                    <span className="text-sm font-medium">{tab.label}</span>
-                                </button>
-                            ))}
-                        </nav>
-                    </Card>
+                    <div className="bg-white rounded-3xl border border-slate-200 p-2 space-y-1">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${activeTab === tab.id
+                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+                                        : 'text-slate-500 hover:bg-slate-50'
+                                    }`}
+                            >
+                                <i className={`fas ${tab.icon}`}></i>
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Content Area */}
                 <div className="lg:col-span-3">
-                    {/* Profile Tab */}
                     {activeTab === 'profile' && (
-                        <Card>
-                            <TitleComponent type="h4" className="text-gray-900 mb-6">
-                                Profile Information
-                            </TitleComponent>
-
+                        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-right-4">
+                            <h3 className="text-xl font-bold mb-6">Identity Details</h3>
                             <div className="space-y-6">
-                                {/* Profile Picture */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Profile Picture
-                                    </label>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center">
-                                            <i className="fas fa-user text-gray-600 text-2xl"></i>
-                                        </div>
-                                        <div>
-                                            <Button variant="outline" size="small">
-                                                Change Photo
-                                            </Button>
-                                            <TitleComponent type="p" size="small" className="text-gray-500 mt-1">
-                                                JPG, PNG. Max 2MB
-                                            </TitleComponent>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Form Fields */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <Input
                                         label="Full Name"
                                         value={profileData.fullName}
                                         onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
                                     />
                                     <Input
-                                        label="Email Address"
+                                        label="Primary Work Email"
                                         type="email"
                                         value={profileData.email}
                                         onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                                     />
-                                    <Input
-                                        label="Company"
-                                        value={profileData.company}
-                                        onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
-                                    />
-                                    <Input
-                                        label="Phone Number"
-                                        value={profileData.phone}
-                                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                                    />
                                 </div>
-
-                                <div className="pt-4 border-t border-gray-200">
-                                    <Button variant="primary">Save Changes</Button>
+                                <Input
+                                    label="Organization Name"
+                                    value={profileData.company}
+                                    onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
+                                />
+                                <div className="pt-6 border-t border-slate-100 flex justify-end">
+                                    <Button variant="primary" className="px-8">Update Identity</Button>
                                 </div>
                             </div>
-                        </Card>
+                        </div>
                     )}
 
-                    {/* Email Settings Tab */}
                     {activeTab === 'email' && (
-                        <Card>
-                            <TitleComponent type="h4" className="text-gray-900 mb-6">
-                                Email Sending Preferences
-                            </TitleComponent>
-
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Sending Email Address
-                                    </label>
-                                    <Input
-                                        type="email"
-                                        placeholder="outreach@yourcompany.com"
-                                    />
-                                    <TitleComponent type="p" size="small" className="text-gray-500 mt-1">
-                                        The email address that will appear in the "From" field
-                                    </TitleComponent>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Sender Name
-                                    </label>
-                                    <Input placeholder="Your Name" />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Daily Send Limit
-                                    </label>
-                                    <Input type="number" placeholder="500" />
-                                    <TitleComponent type="p" size="small" className="text-gray-500 mt-1">
-                                        Maximum number of emails to send per day
-                                    </TitleComponent>
-                                </div>
-
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                                    <input type="checkbox" id="trackOpens" className="rounded" />
-                                    <label htmlFor="trackOpens" className="text-sm text-gray-700 cursor-pointer">
-                                        Track email opens
-                                    </label>
-                                </div>
-
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                                    <input type="checkbox" id="trackClicks" className="rounded" defaultChecked />
-                                    <label htmlFor="trackClicks" className="text-sm text-gray-700 cursor-pointer">
-                                        Track link clicks
-                                    </label>
-                                </div>
-
-                                <div className="pt-4 border-t border-gray-200">
-                                    <Button variant="primary">Save Settings</Button>
-                                </div>
-                            </div>
-                        </Card>
-                    )}
-
-                    {/* Notifications Tab */}
-                    {activeTab === 'notifications' && (
-                        <Card>
-                            <TitleComponent type="h4" className="text-gray-900 mb-6">
-                                Notification Preferences
-                            </TitleComponent>
+                        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-right-4">
+                            <h3 className="text-xl font-bold mb-2">Connected Inboxes</h3>
+                            <p className="text-slate-500 text-sm mb-8">Authorizing an inbox allows CortexReach to detect engagement signals (opens/replies).</p>
 
                             <div className="space-y-4">
-                                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                    <div>
-                                        <TitleComponent type="p" size="base-medium" className="text-gray-900">
-                                            Email Notifications
-                                        </TitleComponent>
-                                        <TitleComponent type="p" size="small" className="text-gray-600">
-                                            Receive notifications about campaign activity
-                                        </TitleComponent>
-                                    </div>
-                                    <input type="checkbox" className="rounded" defaultChecked />
-                                </div>
-
-                                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                    <div>
-                                        <TitleComponent type="p" size="base-medium" className="text-gray-900">
-                                            New Replies
-                                        </TitleComponent>
-                                        <TitleComponent type="p" size="small" className="text-gray-600">
-                                            Get notified when a lead replies to your email
-                                        </TitleComponent>
-                                    </div>
-                                    <input type="checkbox" className="rounded" defaultChecked />
-                                </div>
-
-                                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                    <div>
-                                        <TitleComponent type="p" size="base-medium" className="text-gray-900">
-                                            Campaign Completed
-                                        </TitleComponent>
-                                        <TitleComponent type="p" size="small" className="text-gray-600">
-                                            Alert when a campaign finishes sending
-                                        </TitleComponent>
-                                    </div>
-                                    <input type="checkbox" className="rounded" />
-                                </div>
-
-                                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                    <div>
-                                        <TitleComponent type="p" size="base-medium" className="text-gray-900">
-                                            Weekly Reports
-                                        </TitleComponent>
-                                        <TitleComponent type="p" size="small" className="text-gray-600">
-                                            Receive weekly performance summaries
-                                        </TitleComponent>
-                                    </div>
-                                    <input type="checkbox" className="rounded" defaultChecked />
-                                </div>
-
-                                <div className="pt-4 border-t border-gray-200">
-                                    <Button variant="primary">Save Preferences</Button>
-                                </div>
-                            </div>
-                        </Card>
-                    )}
-
-                    {/* API Keys Tab */}
-                    {activeTab === 'api' && (
-                        <Card>
-                            <TitleComponent type="h4" className="text-gray-900 mb-6">
-                                API Keys
-                            </TitleComponent>
-
-                            <div className="space-y-6">
-                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <div className="flex gap-3">
-                                        <i className="fas fa-info-circle text-blue-600 mt-1"></i>
+                                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-indigo-600">
+                                            <i className="fab fa-google text-xl"></i>
+                                        </div>
                                         <div>
-                                            <TitleComponent type="p" size="base-medium" className="text-blue-900">
-                                                API Documentation
-                                            </TitleComponent>
-                                            <TitleComponent type="p" size="small" className="text-blue-800 mt-1">
-                                                Use API keys to integrate CortexReach with your applications. Keep your keys secure and never share them publicly.
-                                            </TitleComponent>
+                                            <p className="font-bold text-slate-900">john@example.com</p>
+                                            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Connected via Google OAuth</p>
                                         </div>
                                     </div>
+                                    <Badge variant="success">Active</Badge>
                                 </div>
 
-                                <div>
-                                    <div className="flex items-center justify-between mb-3">
-                                        <TitleComponent type="p" size="base-medium" className="text-gray-900">
-                                            Your API Keys
-                                        </TitleComponent>
-                                        <Button variant="primary" size="small">
-                                            <i className="fas fa-plus mr-2"></i>
-                                            Generate New Key
-                                        </Button>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <div className="p-4 border border-gray-200 rounded-lg">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex-1">
-                                                    <TitleComponent type="p" size="small" className="text-gray-600 mb-1">
-                                                        Production Key
-                                                    </TitleComponent>
-                                                    <code className="text-sm text-gray-900 bg-gray-100 px-2 py-1 rounded">
-                                                        cr_prod_••••••••••••••••3a2b
-                                                    </code>
-                                                    <TitleComponent type="p" size="small" className="text-gray-500 mt-2">
-                                                        Created on Jan 15, 2026 • Last used 2 hours ago
-                                                    </TitleComponent>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <button className="text-gray-600 hover:text-blue-600">
-                                                        <i className="fas fa-copy"></i>
-                                                    </button>
-                                                    <button className="text-gray-600 hover:text-red-600">
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="p-4 border border-gray-200 rounded-lg">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex-1">
-                                                    <TitleComponent type="p" size="small" className="text-gray-600 mb-1">
-                                                        Development Key
-                                                    </TitleComponent>
-                                                    <code className="text-sm text-gray-900 bg-gray-100 px-2 py-1 rounded">
-                                                        cr_dev_••••••••••••••••7f9e
-                                                    </code>
-                                                    <TitleComponent type="p" size="small" className="text-gray-500 mt-2">
-                                                        Created on Jan 10, 2026 • Last used 1 day ago
-                                                    </TitleComponent>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <button className="text-gray-600 hover:text-blue-600">
-                                                        <i className="fas fa-copy"></i>
-                                                    </button>
-                                                    <button className="text-gray-600 hover:text-red-600">
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <button className="w-full p-6 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all font-bold flex items-center justify-center gap-3">
+                                    <i className="fas fa-plus"></i>
+                                    Connect New Inbox
+                                </button>
                             </div>
-                        </Card>
+
+                            <div className="mt-12 p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
+                                <h4 className="font-bold text-indigo-900 mb-2">Domain Health Tip</h4>
+                                <p className="text-indigo-800 text-sm leading-relaxed">
+                                    By strictly following CortexReach's "One-Signal" rule, your connected inboxes maintain significantly higher reputation scores than traditional drip-sequence tools.
+                                </p>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
@@ -333,3 +121,4 @@ const Settings = () => {
 }
 
 export default Settings
+

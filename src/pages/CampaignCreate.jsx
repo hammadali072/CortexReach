@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
-import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 
@@ -9,22 +9,33 @@ const CampaignCreate = () => {
     const navigate = useNavigate()
     const [currentStep, setCurrentStep] = useState(1)
 
-    // Form state - will be managed by form library in actual implementation
+    // Form state
     const [formData, setFormData] = useState({
+        project: '',
         name: '',
         subject: '',
         emailContent: '',
-        selectedLeads: []
+        selectedRows: []
     })
 
-    const steps = [
-        { number: 1, title: 'Campaign Details', icon: 'fa-info-circle' },
-        { number: 2, title: 'Email Content', icon: 'fa-edit' },
-        { number: 3, title: 'Select Audience', icon: 'fa-users' },
-        { number: 4, title: 'Review & Send', icon: 'fa-check-circle' }
+    const projects = [
+        'SaaS Platform Outreach',
+        'Cloud Consulting Service',
+        'Internal Talent Acquisition'
     ]
 
-    // Sample leads for audience selection
+    /**
+     * Product Rule: Simplified 3-step outreach setup.
+     * 1. Content: What are you sending? Tied specifically to a Project.
+     * 2. Audience: Who is getting it?
+     * 3. Review: Final check before engagement starts.
+     */
+    const steps = [
+        { number: 1, title: 'Project & Content', icon: 'fa-edit' },
+        { number: 2, title: 'Select Audience', icon: 'fa-users' },
+        { number: 3, title: 'Review & Send', icon: 'fa-check-circle' }
+    ]
+
     const availableLeads = [
         { id: 1, name: 'John Smith', email: 'john@techcorp.com', company: 'TechCorp' },
         { id: 2, name: 'Sarah Johnson', email: 'sarah@innovate.io', company: 'Innovate' },
@@ -33,359 +44,247 @@ const CampaignCreate = () => {
         { id: 5, name: 'David Brown', email: 'dbrown@enterprise.com', company: 'Enterprise' }
     ]
 
-    const handleNext = () => {
-        if (currentStep < 4) {
-            setCurrentStep(currentStep + 1)
+    const columns = useMemo(() => [
+        {
+            name: 'Contact',
+            selector: row => row.name,
+            sortable: true,
+            cell: row => (
+                <div className="py-2">
+                    <div className="text-sm font-bold text-slate-900">{row.name}</div>
+                    <div className="text-xs text-slate-500">{row.email}</div>
+                </div>
+            )
+        },
+        {
+            name: 'Company',
+            selector: row => row.company,
+            sortable: true,
+            cell: row => <span className="text-sm text-slate-600 font-medium">{row.company}</span>
         }
+    ], [])
+
+    const customStyles = {
+        table: {
+            style: {
+                backgroundColor: 'transparent',
+            },
+        },
+        headRow: {
+            style: {
+                backgroundColor: '#f8fafc',
+                borderBottomWidth: '1px',
+                borderBottomColor: '#f1f5f9',
+                minHeight: '52px',
+            },
+        },
+        headCells: {
+            style: {
+                color: '#64748b',
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+            },
+        },
+        rows: {
+            style: {
+                minHeight: '64px',
+                '&:not(:last-child)': {
+                    borderBottomWidth: '1px',
+                    borderBottomColor: '#f8fafc',
+                },
+            },
+        },
+    }
+
+    const handleNext = () => {
+        if (currentStep === 1 && !formData.project) {
+            alert('Please select a project before proceeding.')
+            return
+        }
+        if (currentStep < 3) setCurrentStep(currentStep + 1)
     }
 
     const handlePrevious = () => {
-        if (currentStep > 1) {
-            setCurrentStep(currentStep - 1)
-        }
+        if (currentStep > 1) setCurrentStep(currentStep - 1)
     }
 
     const handleSubmit = () => {
-        // TODO: Connect to backend API
         console.log('Campaign data:', formData)
-        alert('Campaign created! (This will be replaced with actual API call)')
         navigate('/campaigns')
     }
 
-    const toggleLeadSelection = (leadId) => {
-        setFormData(prev => ({
-            ...prev,
-            selectedLeads: prev.selectedLeads.includes(leadId)
-                ? prev.selectedLeads.filter(id => id !== leadId)
-                : [...prev.selectedLeads, leadId]
-        }))
+    const handleSelectedRowsChange = ({ selectedRows }) => {
+        setFormData(prev => ({ ...prev, selectedRows }))
     }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6">
-            {/* Page Header */}
-            <div>
-                <TitleComponent type="h2" className="text-gray-800">
-                    Create New Campaign
-                </TitleComponent>
-                <TitleComponent type="p" size="base" className="text-gray-600 mt-1">
-                    Set up your email outreach campaign in 4 simple steps
-                </TitleComponent>
+        <div className="max-w-4xl mx-auto space-y-8 pb-12">
+            {/* Header */}
+            <div className="flex justify-between items-start">
+                <div>
+                    <TitleComponent type="h1" className="text-slate-900 text-3xl font-bold font-idGrotesk">
+                        Create Outreach
+                    </TitleComponent>
+                    <TitleComponent type="p" size="base" className="text-slate-500 mt-1">
+                        Outreach is strictly project-based to ensure maximum relevance.
+                    </TitleComponent>
+                </div>
+                {formData.project && (
+                    <div className="bg-indigo-600 text-white px-6 py-3 rounded-2xl shadow-lg shadow-indigo-100 flex items-center gap-3 animate-in fade-in slide-in-from-right-4">
+                        <i className="fas fa-folder-open" />
+                        <div className="text-left">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Active Project</p>
+                            <p className="text-xs font-bold">{formData.project}</p>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* Progress Steps */}
-            <Card>
-                <div className="flex items-center justify-between">
-                    {steps.map((step, index) => (
-                        <div key={step.number} className="flex items-center flex-1">
-                            <div className="flex flex-col items-center flex-1">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${currentStep >= step.number
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-200 text-gray-600'
-                                    }`}>
-                                    <i className={`fas ${step.icon}`}></i>
-                                </div>
-                                <TitleComponent
-                                    type="p"
-                                    size="small-medium"
-                                    className={`mt-2 text-center ${currentStep >= step.number ? 'text-blue-600' : 'text-gray-600'
-                                        }`}
-                                >
-                                    {step.title}
-                                </TitleComponent>
+            {/* Step Indicator */}
+            <div className="flex items-center justify-between px-8 py-6 bg-white rounded-3xl shadow-sm border border-slate-100">
+                {steps.map((step, index) => (
+                    <div key={step.number} className="flex items-center flex-1 last:flex-none">
+                        <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black font-idGrotesk text-lg transition-all ${currentStep === step.number ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 scale-110' :
+                                currentStep > step.number ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'
+                                }`}>
+                                {currentStep > step.number ? <i className="fas fa-check"></i> : step.number}
                             </div>
-                            {index < steps.length - 1 && (
-                                <div className={`hidden sm:block h-0.5 flex-1 mx-2 ${currentStep > step.number ? 'bg-blue-600' : 'bg-gray-200'
-                                    }`}></div>
-                            )}
+                            <span className={`text-sm font-black uppercase tracking-wider ${currentStep === step.number ? 'text-slate-900' : 'text-slate-400'}`}>
+                                {step.title}
+                            </span>
                         </div>
-                    ))}
-                </div>
-            </Card>
+                        {index < steps.length - 1 && (
+                            <div className="flex-1 h-px bg-slate-100 mx-8" />
+                        )}
+                    </div>
+                ))}
+            </div>
 
-            {/* Step Content */}
-            <Card padding="large">
-                {/* Step 1: Campaign Details */}
+            {/* Content Area */}
+            <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 p-10 min-h-[450px]">
+                {/* Step 1: Content */}
                 {currentStep === 1 && (
-                    <div className="space-y-6">
-                        <TitleComponent type="h4" className="text-gray-900">
-                            Campaign Details
-                        </TitleComponent>
-
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-2">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest px-1">Target Project</label>
+                                <select
+                                    className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-700"
+                                    value={formData.project}
+                                    onChange={(e) => setFormData({ ...formData, project: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Select a Project...</option>
+                                    {projects.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                                <p className="text-[10px] text-slate-400 mt-1 px-1">Campaigns must be tied to a project for relevance enforcement.</p>
+                            </div>
+                            <Input
+                                label="Campaign Identifier"
+                                placeholder="e.g., Q1 Expansion Outreach"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            />
+                        </div>
                         <Input
-                            label="Campaign Name"
-                            placeholder="e.g., Q1 Outreach Campaign"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            required
-                        />
-
-                        <Input
-                            label="Email Subject Line"
-                            placeholder="e.g., Quick question about your team"
+                            label="Email Subject"
+                            placeholder="Actionable subject line..."
                             value={formData.subject}
                             onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                            required
                         />
-
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Campaign Description
-                            </label>
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Message Body</label>
                             <textarea
-                                rows={4}
-                                placeholder="Describe the purpose of this campaign..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                rows={8}
+                                className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[32px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700"
+                                placeholder="Your high-intent initial message..."
+                                value={formData.emailContent}
+                                onChange={(e) => setFormData({ ...formData, emailContent: e.target.value })}
                             />
                         </div>
                     </div>
                 )}
 
-                {/* Step 2: Email Content */}
+                {/* Step 2: Audience */}
                 {currentStep === 2 && (
-                    <div className="space-y-6">
-                        <TitleComponent type="h4" className="text-gray-900">
-                            Email Content
-                        </TitleComponent>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Email Body
-                                <span className="text-red-500 ml-1">*</span>
-                            </label>
-                            <div className="border border-gray-300 rounded-lg p-4 bg-white">
-                                {/* Placeholder for rich text editor */}
-                                <div className="mb-4 border-b border-gray-200 pb-2">
-                                    <div className="flex gap-2">
-                                        <button className="px-2 py-1 text-gray-600 hover:bg-gray-100 rounded">
-                                            <i className="fas fa-bold"></i>
-                                        </button>
-                                        <button className="px-2 py-1 text-gray-600 hover:bg-gray-100 rounded">
-                                            <i className="fas fa-italic"></i>
-                                        </button>
-                                        <button className="px-2 py-1 text-gray-600 hover:bg-gray-100 rounded">
-                                            <i className="fas fa-underline"></i>
-                                        </button>
-                                        <span className="border-r border-gray-300 mx-2"></span>
-                                        <button className="px-2 py-1 text-gray-600 hover:bg-gray-100 rounded">
-                                            <i className="fas fa-list-ul"></i>
-                                        </button>
-                                        <button className="px-2 py-1 text-gray-600 hover:bg-gray-100 rounded">
-                                            <i className="fas fa-link"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <textarea
-                                    rows={12}
-                                    placeholder="Hi {{FirstName}},
-
-I noticed that {{Company}} has been...
-
-Best regards,
-Your Name"
-                                    value={formData.emailContent}
-                                    onChange={(e) => setFormData({ ...formData, emailContent: e.target.value })}
-                                    className="w-full text-sm focus:outline-none resize-none"
-                                />
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <TitleComponent type="h3" className="text-slate-900 font-black text-xl">Target Leads</TitleComponent>
+                            <div className="flex items-center gap-4">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Only leads for "{formData.project}" shown</span>
+                                <span className="text-sm font-bold text-indigo-600 px-4 py-1 bg-indigo-50 rounded-full">{formData.selectedRows.length} Selected</span>
                             </div>
-                            <TitleComponent type="p" size="small" className="text-gray-500 mt-2">
-                                You can use variables like {'{'}{'{'} FirstName {'}'}{'}'},  {'{'}{'{'} Company {'}'}{'}'},  {'{'}{'{'} Position {'}'}{'}'} for personalization
-                            </TitleComponent>
                         </div>
-                    </div>
-                )}
-
-                {/* Step 3: Select Audience */}
-                {currentStep === 3 && (
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <TitleComponent type="h4" className="text-gray-900">
-                                Select Recipients
-                            </TitleComponent>
-                            <TitleComponent type="p" size="small" className="text-gray-600">
-                                Selected: {formData.selectedLeads.length} leads
-                            </TitleComponent>
-                        </div>
-
-                        {/* Select All Checkbox */}
-                        <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                            <input
-                                type="checkbox"
-                                id="selectAll"
-                                checked={formData.selectedLeads.length === availableLeads.length}
-                                onChange={(e) => {
-                                    setFormData({
-                                        ...formData,
-                                        selectedLeads: e.target.checked ? availableLeads.map(l => l.id) : []
-                                    })
-                                }}
-                                className="rounded"
+                        <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+                            <DataTable
+                                columns={columns}
+                                data={availableLeads}
+                                selectableRows
+                                onSelectedRowsChange={handleSelectedRowsChange}
+                                customStyles={customStyles}
+                                highlightOnHover
+                                responsive
+                                noHeader
                             />
-                            <label htmlFor="selectAll" className="text-sm font-medium text-gray-700 cursor-pointer">
-                                Select All Leads
-                            </label>
-                        </div>
-
-                        {/* Leads Table */}
-                        <div className="border border-gray-200 rounded-lg overflow-hidden">
-                            <table className="w-full">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="text-left py-3 px-4 w-12"></th>
-                                        <th className="text-left py-3 px-4">
-                                            <TitleComponent type="p" size="small-semibold" className="text-gray-600">
-                                                Name
-                                            </TitleComponent>
-                                        </th>
-                                        <th className="text-left py-3 px-4">
-                                            <TitleComponent type="p" size="small-semibold" className="text-gray-600">
-                                                Email
-                                            </TitleComponent>
-                                        </th>
-                                        <th className="text-left py-3 px-4">
-                                            <TitleComponent type="p" size="small-semibold" className="text-gray-600">
-                                                Company
-                                            </TitleComponent>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {availableLeads.map((lead) => (
-                                        <tr key={lead.id} className="border-t border-gray-100 hover:bg-gray-50">
-                                            <td className="py-3 px-4">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.selectedLeads.includes(lead.id)}
-                                                    onChange={() => toggleLeadSelection(lead.id)}
-                                                    className="rounded"
-                                                />
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <TitleComponent type="p" size="base" className="text-gray-900">
-                                                    {lead.name}
-                                                </TitleComponent>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <TitleComponent type="p" size="base" className="text-gray-600">
-                                                    {lead.email}
-                                                </TitleComponent>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <TitleComponent type="p" size="base" className="text-gray-700">
-                                                    {lead.company}
-                                                </TitleComponent>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 )}
 
-                {/* Step 4: Review & Send */}
-                {currentStep === 4 && (
-                    <div className="space-y-6">
-                        <TitleComponent type="h4" className="text-gray-900">
-                            Review Your Campaign
-                        </TitleComponent>
-
-                        <div className="space-y-4">
-                            {/* Campaign Details Review */}
-                            <div className="p-4 bg-gray-50 rounded-lg">
-                                <TitleComponent type="p" size="small-semibold" className="text-gray-600 mb-2">
-                                    Campaign Details
-                                </TitleComponent>
-                                <div className="space-y-2">
-                                    <div className="flex">
-                                        <span className="text-sm text-gray-600 w-32">Name:</span>
-                                        <span className="text-sm text-gray-900 font-medium">{formData.name || 'Not set'}</span>
-                                    </div>
-                                    <div className="flex">
-                                        <span className="text-sm text-gray-600 w-32">Subject:</span>
-                                        <span className="text-sm text-gray-900 font-medium">{formData.subject || 'Not set'}</span>
-                                    </div>
+                {/* Step 3: Review */}
+                {currentStep === 3 && (
+                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            <div className="space-y-6">
+                                <div>
+                                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Campaign Details</h4>
+                                    <p className="text-xl font-bold text-slate-900">{formData.name || 'Unnamed Campaign'}</p>
+                                    <p className="text-slate-500 font-medium">Context: <span className="text-indigo-600 font-bold">{formData.project}</span></p>
+                                    <p className="text-slate-500 font-medium mt-1">Subject: <span className="text-slate-900">{formData.subject || 'Not specified'}</span></p>
                                 </div>
-                            </div>
-
-                            {/* Email Content Preview */}
-                            <div className="p-4 bg-gray-50 rounded-lg">
-                                <TitleComponent type="p" size="small-semibold" className="text-gray-600 mb-2">
-                                    Email Content Preview
-                                </TitleComponent>
-                                <div className="p-4 bg-white rounded border border-gray-200">
-                                    <pre className="text-sm text-gray-900 whitespace-pre-wrap font-sans">
-                                        {formData.emailContent || 'No content added'}
-                                    </pre>
-                                </div>
-                            </div>
-
-                            {/* Recipients Summary */}
-                            <div className="p-4 bg-gray-50 rounded-lg">
-                                <TitleComponent type="p" size="small-semibold" className="text-gray-600 mb-2">
-                                    Recipients
-                                </TitleComponent>
-                                <div className="flex items-center gap-2">
-                                    <i className="fas fa-users text-blue-600"></i>
-                                    <span className="text-sm text-gray-900 font-medium">
-                                        {formData.selectedLeads.length} leads selected
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Warning Box */}
-                            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                <div className="flex gap-3">
-                                    <i className="fas fa-exclamation-triangle text-yellow-600 mt-1"></i>
+                                <div className="flex items-center gap-4 p-4 bg-emerald-50 rounded-2xl">
+                                    <i className="fas fa-users text-emerald-600 text-xl" />
                                     <div>
-                                        <TitleComponent type="p" size="small-semibold" className="text-yellow-800">
-                                            Ready to send?
-                                        </TitleComponent>
-                                        <TitleComponent type="p" size="small" className="text-yellow-700 mt-1">
-                                            Once you click "Send Campaign", emails will be queued for delivery. Review all details carefully.
-                                        </TitleComponent>
+                                        <p className="text-sm font-black text-emerald-900">{formData.selectedRows.length} Leads Targeted</p>
+                                        <p className="text-xs text-emerald-700">Initial engagement signals will be tracked</p>
                                     </div>
                                 </div>
+                            </div>
+                            <div className="p-8 bg-slate-900 text-white rounded-[32px] shadow-xl relative overflow-hidden group">
+                                <h4 className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-4">Project Relevance</h4>
+                                <p className="text-sm leading-relaxed text-slate-300 font-medium">
+                                    You are initiating outreach for <span className="text-white underline decoration-indigo-500 decoration-2 underline-offset-4">{formData.project}</span>. The system will ensure all content and leads are synchronized with this project scope.
+                                </p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Final Message Preview</h4>
+                            <div className="p-8 bg-slate-50 text-slate-700 rounded-[32px] border border-slate-100 leading-relaxed font-medium">
+                                {formData.emailContent || 'No content provided.'}
                             </div>
                         </div>
                     </div>
                 )}
-            </Card>
+            </div>
 
-            {/* Navigation Buttons */}
-            <Card>
-                <div className="flex items-center justify-between">
-                    <div>
-                        {currentStep > 1 && (
-                            <Button variant="outline" onClick={handlePrevious}>
-                                <i className="fas fa-arrow-left mr-2"></i>
-                                Previous
-                            </Button>
-                        )}
-                    </div>
-
-                    <div className="flex gap-3">
-                        <Button
-                            variant="secondary"
-                            onClick={() => navigate('/campaigns')}
-                        >
-                            Save as Draft
+            {/* Navigation */}
+            <div className="flex justify-between items-center px-2">
+                <Button variant="outline" className="px-10 py-4 border-slate-200" onClick={handlePrevious} disabled={currentStep === 1}>
+                    Go Back
+                </Button>
+                <div className="flex gap-4">
+                    <Button variant="outline" className="px-10 border-slate-200" onClick={() => navigate('/campaigns')}>Exit</Button>
+                    {currentStep < 3 ? (
+                        <Button variant="primary" className="px-12 py-4 h-auto text-lg shadow-xl shadow-indigo-100" onClick={handleNext}>Next Step</Button>
+                    ) : (
+                        <Button variant="primary" onClick={handleSubmit} className="px-16 py-4 h-auto text-lg bg-indigo-600 shadow-xl shadow-indigo-200">
+                            Launch Campaign
                         </Button>
-
-                        {currentStep < 4 ? (
-                            <Button variant="primary" onClick={handleNext}>
-                                Next Step
-                                <i className="fas fa-arrow-right ml-2"></i>
-                            </Button>
-                        ) : (
-                            <Button variant="success" onClick={handleSubmit}>
-                                <i className="fas fa-paper-plane mr-2"></i>
-                                Send Campaign
-                            </Button>
-                        )}
-                    </div>
+                    )}
                 </div>
-            </Card>
+            </div>
         </div>
     )
 }

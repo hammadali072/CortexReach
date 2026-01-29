@@ -5,9 +5,10 @@ import clsx from 'clsx'
 const Sidebar = ({ isOpen, onClose }) => {
     const menuItems = [
         { path: '/', icon: 'fa-chart-line', label: 'Dashboard' },
+        { path: '/projects', icon: 'fa-folder-open', label: 'Projects' },
         { path: '/leads', icon: 'fa-users', label: 'Leads' },
         { path: '/campaigns', icon: 'fa-envelope', label: 'Campaigns' },
-        { path: '/sequences', icon: 'fa-list-ol', label: 'Sequences' },
+        { path: '/sequences', icon: 'fa-reply-all', label: 'Follow-Ups' },
         { path: '/analytics', icon: 'fa-chart-bar', label: 'Analytics' },
         { path: '/settings', icon: 'fa-cog', label: 'Settings' }
     ]
@@ -41,7 +42,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className="lg:hidden text-gray-500 hover:text-gray-700"
                     >
-                        <i className="fas fa-times"></i>
+                        <i className="fas fa-times" />
                     </button>
                 </div>
 
@@ -61,7 +62,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                                             : 'text-gray-700 hover:bg-gray-100'
                                     )}
                                 >
-                                    <i className={`fas ${item.icon} w-5 text-center`}></i>
+                                    <i className={`fas ${item.icon} w-5 text-center`} />
                                     <span className="font-medium">{item.label}</span>
                                 </NavLink>
                             </li>
@@ -73,7 +74,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <div className="border-t border-gray-200 p-4">
                     <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                            <i className="fas fa-user text-gray-600"></i>
+                            <i className="fas fa-user text-gray-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
