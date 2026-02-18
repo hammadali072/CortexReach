@@ -7,6 +7,7 @@ import ProjectCreate from './pages/ProjectCreate'
 import Leads from './pages/Leads'
 import Campaigns from './pages/Campaigns'
 import CampaignCreate from './pages/CampaignCreate'
+import CampaignDetail from './pages/CampaignDetail'
 import FollowUps from './pages/Sequences'
 import Analytics from './pages/Analytics'
 import Settings from './pages/Settings'
@@ -27,6 +28,7 @@ function App() {
           <Route path="projects/create" element={<ProjectCreate />} />
           <Route path="leads" element={<Leads />} />
           <Route path="campaigns" element={<Campaigns />} />
+          <Route path="campaigns/:id" element={<CampaignDetail />} />
           <Route path="campaigns/create" element={<CampaignCreate />} />
           <Route path="sequences" element={<FollowUps />} />
           <Route path="analytics" element={<Analytics />} />

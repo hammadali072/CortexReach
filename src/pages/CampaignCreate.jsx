@@ -4,6 +4,7 @@ import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import TemplateCard from '../components/ui/TemplateCard'
 
 const CampaignCreate = () => {
     const navigate = useNavigate()
@@ -15,8 +16,46 @@ const CampaignCreate = () => {
         name: '',
         subject: '',
         emailContent: '',
+        templateId: null,
         selectedRows: []
     })
+
+    const [genStatus, setGenStatus] = useState('idle'); // idle, generating, completed
+
+    const mockTemplates = [
+        {
+            id: 1,
+            title: "Executive Priority",
+            subject: "Streamlining your Q2 roadmap for {{company}}",
+            body: "Hi {{name}}, I noticed your recent push towards automation. Our AI model suggests this is a high-yield priority for Nexus Systems...",
+            tone: "Formal",
+            cta: "Meeting Link",
+            prediction: 94
+        },
+        {
+            id: 2,
+            title: "Growth Catalyst",
+            subject: "Quick question about growth at {{company}}",
+            body: "Hey {{name}}, really impressed with what you're doing. We've helped similar teams scale their outreach yield by 40%. Interested in a quick sync?",
+            tone: "Friendly",
+            cta: "Direct Reply",
+            prediction: 88
+        },
+        {
+            id: 3,
+            title: "Problem Solver",
+            subject: "Solving the developer churn at {{company}}",
+            body: "Hi {{name}}, most CTOs we talk to are struggling with engineering retention. We have a specific framework that might help. Open to a chat?",
+            tone: "Direct",
+            cta: "Calendar",
+            prediction: 91
+        }
+    ];
+
+    const handleGenerateTemplates = () => {
+        setGenStatus('generating');
+        setTimeout(() => setGenStatus('completed'), 2000);
+    }
 
     const projects = [
         'SaaS Platform Outreach',
@@ -189,21 +228,59 @@ const CampaignCreate = () => {
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             />
                         </div>
-                        <Input
-                            label="Email Subject"
-                            placeholder="Actionable subject line..."
-                            value={formData.subject}
-                            onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                        />
-                        <div>
-                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Message Body</label>
-                            <textarea
-                                rows={8}
-                                className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[32px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700"
-                                placeholder="Your high-intent initial message..."
-                                value={formData.emailContent}
-                                onChange={(e) => setFormData({ ...formData, emailContent: e.target.value })}
-                            />
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest px-1">AI Template Generation</label>
+                                    <p className="text-[10px] text-slate-400 mt-1 px-1">Generate multi-template assets optimized for your project.</p>
+                                </div>
+                                {genStatus === 'idle' && (
+                                    <Button
+                                        variant="primary"
+                                        onClick={handleGenerateTemplates}
+                                        className="bg-indigo-600 shadow-lg shadow-indigo-100 animate-in fade-in"
+                                    >
+                                        <i className="fas fa-sparkles mr-2"></i>
+                                        Generate AI Templates
+                                    </Button>
+                                )}
+                            </div>
+
+                            {genStatus === 'generating' && (
+                                <div className="py-12 flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500">
+                                    <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                                    <p className="text-sm font-bold text-slate-500 animate-pulse">Our AI is drafting high-intent templates...</p>
+                                </div>
+                            )}
+
+                            {genStatus === 'completed' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                                    {mockTemplates.map((template) => (
+                                        <TemplateCard
+                                            key={template.id}
+                                            template={template}
+                                            isSelected={formData.templateId === template.id}
+                                            onSelect={() => {
+                                                setFormData({
+                                                    ...formData,
+                                                    templateId: template.id,
+                                                    subject: template.subject,
+                                                    emailContent: template.body
+                                                });
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {(genStatus === 'idle' || genStatus === 'generating') && (
+                                <div className="p-12 border-2 border-dashed border-slate-100 rounded-[40px] flex flex-col items-center justify-center text-center opacity-50">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mb-4">
+                                        <i className="fas fa-magic text-2xl text-slate-200"></i>
+                                    </div>
+                                    <p className="text-sm font-bold text-slate-300">Run the generator to see AI insights</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

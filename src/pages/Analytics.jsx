@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Badge from '../components/ui/Badge'
+import OptimizationInsights from '../components/ui/OptimizationInsights'
 
 const Analytics = () => {
     /**
@@ -164,6 +165,9 @@ const Analytics = () => {
                     responsive
                 />
             </div>
+
+            {/* AI Optimization Insights */}
+            <OptimizationInsights />
 
             {/* System Decisions Insight */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

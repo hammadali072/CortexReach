@@ -1,88 +1,87 @@
-# CortexReach System Architecture Documentation
+# CortexReach System Architecture Documentation (AI-Driven Upgrade)
 
-This document provides a comprehensive overview of the technical architecture and design patterns used in the **CortexReach** Cold Email Outreach platform.
+This document details the modular, AI-first architecture of **CortexReach**, following the implementation of the advanced outreach workflow (Phases 1-6).
 
 ---
 
 ## 1. High-Level Architecture
-CortexReach is built as a **Single Page Application (SPA)** using a modular, component-based architecture. It prioritizes a premium user experience through modern UI/UX patterns.
+CortexReach is a **Single Page Application (SPA)** utilizing a "Component-as-a-Service" UI philosophy. The architecture is designed to simulate complex AI operations through high-fidelity, interactive UI modules.
 
-### Core Technologies
-- **UI Framework**: React 19 (Functional Components & Hooks)
+### Core Stack
+- **Framework**: React 19 (Hooks-driven state)
+- **Styling**: Tailwind CSS 3 (Utility-first)
 - **Routing**: React Router DOM 7
-- **Styling**: Tailwind CSS 3 (Utility-first) & Vanilla CSS for animations
-- **Iconography**: Font Awesome 7
-- **State Management**: React `useState`/`useContext` & Browser `localStorage`
+- **Design System**: Custom B2B SaaS system featuring Glassmorphism, Micro-animations, and AI-specific Indigo tokens.
 
 ---
 
-## 2. Routing & Navigation Structure
-The application uses a **Nested Routing** strategy to separate public authentication from protected dashboard content.
+## 2. Updated Routing & Page Map
+The application uses a hybrid routing system that separates core dashboard functions from detailed intelligence views.
 
-### Route Mapping
-- **`/` (Root)**: `SignIn.jsx` - The entry point for the application.
-- **`/dashboard`**: `AppLayout.jsx` - Main dashboard wrapper containing:
-  - **`/dashboard/`**: `Dashboard.jsx` (Overview)
-  - **`/dashboard/projects`**: `Projects.jsx` (List & Management)
-  - **`/dashboard/leads`**: `Leads.jsx`
-  - **`/dashboard/campaigns`**: `Campaigns.jsx`
-  - **`/dashboard/settings`**: `Settings.jsx`
-- **`*` (Fallback)**: Redirects all unknown paths to the Sign-In page.
-
----
-
-## 3. Persistent Layout System
-The system utilizes a central `AppLayout` component to maintain a consistent UI across all dashboard pages.
-
-### Components
-1. **Sidebar (`Sidebar.jsx`)**:
-   - Persistent left navigation.
-   - Nested menu items with active state detection using `NavLink`.
-   - **Account Dropdown**: An upward-opening menu at the bottom containing user settings and Sign Out functionality.
-2. **Header (`Header.jsx`)**:
-   - Dynamic **Notification System**: A relative-positioned dropdown that displays real-time outreach signals.
-   - **Profile Workspace**: Displays logged-in user details (Avatar, Name, Designation).
-   - Global search bar and notification badge.
+- **`/`**: Authentication Entry (`SignIn.jsx`).
+- **`/dashboard`**: Core Workspace (`AppLayout.jsx`).
+  - **`/dashboard/`**: Engagement Overview (`Dashboard.jsx`).
+  - **`/dashboard/projects/:id`**: **Project Intelligence Command** (Houses AI Analysis).
+  - **`/dashboard/campaigns`**: Outreach Portfolio.
+  - **`/dashboard/campaigns/:id`**: **Campaign Performance Center** (Houses A/B Tests & Scaling).
+  - **`/dashboard/campaigns/create`**: **AI Content Factory** (Houses Template Generator).
+  - **`/dashboard/analytics`**: **Optimization Hub** (Houses AI Insights).
 
 ---
 
-## 4. Authentication & Session Management
-CortexReach implements a simulated authentication layer to demonstrate secure workflows.
+## 3. The AI Intelligence Workflow (Modular Architecture)
+The system is divided into functional AI modules that can be reused across different project contexts.
 
-### Flow
-1. **Validation**: User enters credentials (`admin`/`123`).
-2. **Persistence**: Upon successful login, user metadata is stored in `localStorage` (`cortex_user`).
-3. **Session Recovery**: The application reads from `localStorage` to populate the UI with the user's name and avatar.
-4. **Teardown**: The "Sign Out" action clears `localStorage` and redirects the user to the root `/`.
+### Phase 1: Product Intelligence
+- **Module**: `AIAnalysisCard.jsx`
+- **Logic**: Simulates product-market fit analysis using the project's scope.
+- **Sub-Components**: `PersonaCard.jsx` for targeted individual profiles.
 
----
+### Phase 2: Signal Sourcing
+- **Module**: `LeadSourcingModal.jsx`
+- **Logic**: Parameter-driven lead hunting simulation.
+- **UI Element**: `aiColumns` in `DataTable` featuring the **Relevance Score Gradient**.
 
-## 5. UI/UX Design System
-The architecture follows a "Premium Modern SaaS" design language.
+### Phase 3: Content Factory
+- **Module**: `TemplateCard.jsx`
+- **Logic**: Multi-model drafting (Executive, Growth, Direct) with built-in performance prediction.
+- **Integration**: Injected into `CampaignCreate.jsx` to replace manual entry.
 
-### Design Patterns
-- **Glassmorphism**: Use of `backdrop-blur`, semi-transparent backgrounds, and subtle borders to create depth.
-- **Micro-Animations**: 
-  - `animate-float`: Floating icons for a dynamic feel.
-  - `animate-pulse`: Soft background glow effects.
-  - `animate-shimmer`: Loading states and hover effects.
-- **Responsiveness**: Fluid layout using Tailwind's grid and flexbox, with a dedicated mobile hamburger menu.
+### Phase 4 & 6: Strategic Scaling
+- **Modules**: `ABTestResults.jsx`, `ScalingVisualization.jsx`
+- **Logic**: Compares engagement signals from initial batches and visualizes the automated scaling of winning models.
+- **Context**: Located in `CampaignDetail.jsx`.
 
----
-
-## 6. Component Communication
-Data flows through the system using standard React patterns:
-- **Props**: Passing configuration and state down to UI components (`Button`, `Badge`, `Card`).
-- **State Lifting**: Managing common UI states (like Sidebar open/close) in the layout parent.
-- **Event Handlers**: Centralizing logic for modals and dropdowns to ensure consistent behavior.
+### Phase 5: Feedback Loop
+- **Module**: `OptimizationInsights.jsx`
+- **Logic**: Generates prioritized "Confidence-based" recommendations to improve campaign yield.
+- **Context**: Located in `Analytics.jsx`.
 
 ---
 
-## 7. Future Scalability
-The architecture is designed to easily integrate with a backend API:
-- **API Nodes**: Ready to replace `localStorage` with JWT/Session cookies.
-- **Context API**: Pre-structured for migrating to a global `AuthContext` or `NotificationContext`.
-- **Dynamic Imports**: Routes can be lazy-loaded to optimize performance as the project grows.
+## 4. UI/UX & Interaction Layer
+The architecture employs specific visual strategies to communicate AI activity to the user:
+
+- **Stateful Intelligence**: Components use local `status` hooks (`idle` | `analyzing` | `completed`) to manage complex UI transitions.
+- **Visual Cues**: 
+  - **Indigo/Sparkles**: Universal identifier for AI-driven elements.
+  - **Shimmer Effects**: Custom `@keyframes` that signify real-time data processing without backend latency.
+  - **Tactile Scaling**: Progress bars with staggered `duration` and `delay` to simulate authentic data ingestion.
+
+---
+
+## 5. Data & Persistence Model
+- **Mock Service Layer**: Comprehensive arrays (`mockPersonas`, `mockTemplates`, `mockGeneratedLeads`) serve as the source of truth.
+- **Simulated Filtering**: Heavy use of `useMemo` for client-side filtering (e.g., `relevanceFilter`, `personaFilter`) to ensure interface speed.
+- **Session Persistence**: Critical project data persists in `localStorage`, allowing for seamless transitions between analysis and creation.
+
+---
+
+## 6. Future Integration Strategy
+The architecture is "Backend-Ready" through explicit integration points:
+1. **API Swap**: Replace mock arrays with `Async/Await` fetch calls to REST/GraphQL endpoints.
+2. **WebSocket Support**: Ready to move from `setTimeout` simulations to real-time events for lead sourcing.
+3. **Global AI Store**: Transition from local state to `Zustand` or `Redux` to synchronize AI insights across the entire workspace.
 
 ---
 *Last Updated: February 2026*

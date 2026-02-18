@@ -4,10 +4,25 @@ import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
+import AIAnalysisCard from '../components/ui/AIAnalysisCard'
+import LeadSourcingModal from '../components/ui/LeadSourcingModal'
 
 const ProjectDetail = () => {
     const { id } = useParams()
     const [activeTab, setActiveTab] = useState('overview')
+    const [isSourcingModalOpen, setIsSourcingModalOpen] = useState(false);
+    const [aiLeads, setAiLeads] = useState([]);
+    const [relevanceFilter, setRelevanceFilter] = useState(0);
+    const [personaFilter, setPersonaFilter] = useState('');
+
+    const mockGeneratedLeads = [
+        { id: 'ai-1', name: 'James Wilson', company: 'Nexus Systems', role: 'CTO', industry: 'Enterprise SaaS', relevance: 98, status: 'New', persona: 'The Visionary CTO' },
+        { id: 'ai-2', name: 'Sarah Chen', company: 'Global Stream', role: 'VP Growth', industry: 'E-commerce', relevance: 92, status: 'New', persona: 'The Growth VP' },
+        { id: 'ai-3', name: 'Marcus Thorne', company: 'Scale Logic', role: 'VP Engineering', industry: 'FinTech', relevance: 89, status: 'New', persona: 'The Visionary CTO' },
+        { id: 'ai-4', name: 'Elena Rodriguez', company: 'Product Mint', role: 'Head of Product', industry: 'Product-Led Growth', relevance: 85, status: 'New', persona: 'The Product Lead' },
+        { id: 'ai-5', name: 'David Kim', company: 'Innova Cloud', role: 'Chief Architect', industry: 'Enterprise SaaS', relevance: 82, status: 'New', persona: 'The Visionary CTO' },
+        { id: 'ai-6', name: 'Sophie Laurent', company: 'Market Flow', role: 'Growth Lead', industry: 'FinTech', relevance: 78, status: 'New', persona: 'The Growth VP' },
+    ];
 
     // Load project data from localStorage or fallback to mock
     const project = useMemo(() => {
@@ -74,6 +89,51 @@ const ProjectDetail = () => {
         { name: 'Yield', selector: row => row.yield, sortable: true, cell: row => <span className="font-black text-slate-900 tracking-wider">{row.yield}</span> },
         { name: 'Sent Date', selector: row => row.sent, sortable: true, cell: row => <span className="text-slate-500">{row.sent}</span> }
     ], [])
+
+    const aiColumns = useMemo(() => [
+        { name: 'Lead Name', selector: row => row.name, sortable: true, cell: row => <span className="font-bold text-slate-900">{row.name}</span> },
+        { name: 'Company', selector: row => row.company, sortable: true, cell: row => <span className="text-slate-600 font-medium">{row.company}</span> },
+        { name: 'Role', selector: row => row.role, sortable: true, cell: row => <span className="text-slate-500">{row.role}</span> },
+        { name: 'Industry', selector: row => row.industry, sortable: true, cell: row => <span className="text-slate-500">{row.industry}</span> },
+        {
+            name: 'Relevance Score',
+            selector: row => row.relevance,
+            sortable: true,
+            cell: row => (
+                <div className="w-full max-w-[100px]">
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-bold text-indigo-600">{row.relevance}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full"
+                            style={{ width: `${row.relevance}%` }}
+                        ></div>
+                    </div>
+                </div>
+            )
+        },
+        {
+            name: 'Status',
+            selector: row => row.status,
+            sortable: true,
+            cell: row => <Badge variant="info">{row.status}</Badge>
+        }
+    ], []);
+
+    const handleGenerateLeads = (config) => {
+        // Filter mock data based on persona if needed to simulate real behavior
+        const filtered = mockGeneratedLeads.filter(l => l.persona === config.persona);
+        setAiLeads(filtered.length > 0 ? filtered : mockGeneratedLeads);
+    };
+
+    const filteredAiLeads = useMemo(() => {
+        return aiLeads.filter(lead => {
+            const matchesRelevance = lead.relevance >= relevanceFilter;
+            const matchesPersona = personaFilter === '' || lead.persona === personaFilter;
+            return matchesRelevance && matchesPersona;
+        });
+    }, [aiLeads, relevanceFilter, personaFilter]);
 
     const customStyles = {
         table: { style: { backgroundColor: 'transparent' } },
@@ -161,6 +221,9 @@ const ProjectDetail = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* AI Intelligence Section */}
+                        <AIAnalysisCard />
                     </div>
                 )}
 
@@ -171,21 +234,100 @@ const ProjectDetail = () => {
                                 <h3 className="text-xl font-bold text-slate-900">Project-Specific Leads</h3>
                                 <p className="text-sm text-slate-500 font-medium">Leads shown here are relevant to this project only.</p>
                             </div>
-                            <Button variant="primary" className="bg-emerald-600 shadow-emerald-100">
-                                <i className="fas fa-bolt mr-2" />
-                                Generate Leads for this Project
-                            </Button>
+                            <div className="flex gap-3">
+                                <Button
+                                    onClick={() => setIsSourcingModalOpen(true)}
+                                    variant="primary"
+                                    className="bg-indigo-600 shadow-xl shadow-indigo-100"
+                                >
+                                    <i className="fas fa-magic mr-2" />
+                                    Source Leads via AI
+                                </Button>
+                                <Button variant="primary" className="bg-emerald-600 shadow-emerald-100">
+                                    <i className="fas fa-bolt mr-2" />
+                                    Manual Import
+                                </Button>
+                            </div>
                         </div>
-                        <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
-                            <DataTable
-                                columns={leadColumns}
-                                data={projectLeads}
-                                customStyles={customStyles}
-                                highlightOnHover
-                                responsive
-                                noHeader
-                            />
+
+                        {/* Existing Leads Table */}
+                        <div className="space-y-4">
+                            <TitleComponent type="p" size="small" className="text-slate-400 font-black uppercase tracking-widest px-1">
+                                Existing Project Leads
+                            </TitleComponent>
+                            <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+                                <DataTable
+                                    columns={leadColumns}
+                                    data={projectLeads}
+                                    customStyles={customStyles}
+                                    highlightOnHover
+                                    responsive
+                                    noHeader
+                                />
+                            </div>
                         </div>
+
+                        {/* AI Sourced Leads Section */}
+                        {aiLeads.length > 0 && (
+                            <div className="pt-10 space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-t border-slate-100 pt-10">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className="w-5 h-5 bg-indigo-600 rounded flex items-center justify-center">
+                                                <i className="fas fa-radar text-[10px] text-white"></i>
+                                            </div>
+                                            <h3 className="text-xl font-bold text-slate-900">AI Intelligence Sourcing</h3>
+                                        </div>
+                                        <p className="text-sm text-slate-500 font-medium ml-7">Qualified leads surfaced through cross-platform signal analysis.</p>
+                                    </div>
+
+                                    {/* AI Filters */}
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Relevance {relevanceFilter}%+</label>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="90"
+                                                value={relevanceFilter}
+                                                onChange={(e) => setRelevanceFilter(parseInt(e.target.value))}
+                                                className="w-32 accent-indigo-600"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Persona Filter</label>
+                                            <select
+                                                value={personaFilter}
+                                                onChange={(e) => setPersonaFilter(e.target.value)}
+                                                className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-600 outline-none"
+                                            >
+                                                <option value="">All Personas</option>
+                                                <option value="The Visionary CTO">The Visionary CTO</option>
+                                                <option value="The Growth VP">The Growth VP</option>
+                                                <option value="The Product Lead">The Product Lead</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="border border-indigo-100 rounded-[32px] overflow-hidden shadow-2xl shadow-indigo-50/50 bg-white">
+                                    <DataTable
+                                        columns={aiColumns}
+                                        data={filteredAiLeads}
+                                        customStyles={{
+                                            ...customStyles,
+                                            headRow: { style: { ...customStyles.headRow.style, backgroundColor: '#f5f7ff' } },
+                                        }}
+                                        highlightOnHover
+                                        responsive
+                                        noHeader
+                                        noDataComponent={
+                                            <div className="py-10 text-center text-slate-400 font-medium">No leads match your active filters.</div>
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -210,6 +352,12 @@ const ProjectDetail = () => {
                     </div>
                 )}
             </div>
+
+            <LeadSourcingModal
+                isOpen={isSourcingModalOpen}
+                onClose={() => setIsSourcingModalOpen(false)}
+                onGenerate={handleGenerateLeads}
+            />
         </div>
     )
 }
