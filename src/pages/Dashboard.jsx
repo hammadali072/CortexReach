@@ -68,7 +68,7 @@ const Dashboard = () => {
             icon: 'fa-users',
             gradient: 'from-indigo-500 to-purple-600',
             iconBg: 'bg-gradient-to-br from-indigo-500 to-purple-600',
-            path: '/leads?filter=eligible'
+            path: '/dashboard/leads?filter=eligible'
         },
         {
             id: 2,
@@ -77,7 +77,7 @@ const Dashboard = () => {
             icon: 'fa-paper-plane',
             gradient: 'from-emerald-500 to-teal-600',
             iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-600',
-            path: '/campaigns/create'
+            path: '/dashboard/campaigns/create'
         }
     ]
 

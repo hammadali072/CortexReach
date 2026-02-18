@@ -56,7 +56,7 @@ const Campaigns = () => {
             selector: row => row.name,
             sortable: true,
             cell: row => (
-                <Link to={`/campaigns/${row.id}`} className="font-bold text-slate-900 hover:text-indigo-600 transition-colors">
+                <Link to={`/dashboard/campaigns/${row.id}`} className="font-bold text-slate-900 hover:text-indigo-600 transition-colors">
                     {row.name}
                 </Link>
             ),
@@ -171,7 +171,7 @@ const Campaigns = () => {
                         Comparative overview of outreach performance and yield.
                     </TitleComponent>
                 </div>
-                <Link to="/campaigns/create">
+                <Link to="/dashboard/campaigns/create">
                     <Button variant="primary">
                         <i className="fas fa-plus mr-2"></i>
                         New Outreach
@@ -196,7 +196,7 @@ const Campaigns = () => {
                     <i className="fas fa-paper-plane text-slate-200 text-6xl mb-4"></i>
                     <h3 className="text-xl font-bold text-slate-900">No campaigns started</h3>
                     <p className="text-slate-500 mb-6">Launch your first engagement-only outreach.</p>
-                    <Link to="/campaigns/create">
+                    <Link to="/dashboard/campaigns/create">
                         <Button variant="primary">Create Campaign</Button>
                     </Link>
                 </div>

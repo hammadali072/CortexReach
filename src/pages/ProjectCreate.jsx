@@ -16,8 +16,27 @@ const ProjectCreate = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        // No backend logic
-        console.log('Project created:', formData)
+
+        // Get existing projects
+        const saved = localStorage.getItem('cortex_projects')
+        const projects = saved ? JSON.parse(saved) : []
+
+        // Create new project object matching the structure in Projects.jsx
+        const newProject = {
+            id: Date.now(), // Simple unique ID
+            name: formData.name,
+            type: formData.type,
+            targetAudience: formData.audience,
+            description: formData.description,
+            industry: formData.industry,
+            totalLeads: 0,
+            status: 'Active'
+        }
+
+        // Save back to localStorage
+        localStorage.setItem('cortex_projects', JSON.stringify([...projects, newProject]))
+
+        console.log('Project created:', newProject)
         navigate('/projects')
     }
 

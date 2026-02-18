@@ -9,16 +9,22 @@ const ProjectDetail = () => {
     const { id } = useParams()
     const [activeTab, setActiveTab] = useState('overview')
 
-    // Mock project data
-    const project = {
-        id: id,
-        name: 'SaaS Platform Outreach',
-        type: 'Product',
-        description: 'Accelerating digital transformation for enterprise clients with our core SaaS infrastructure.',
-        industry: 'B2B Software',
-        audience: 'CTOs / Product Managers',
-        status: 'Active'
-    }
+    // Load project data from localStorage or fallback to mock
+    const project = useMemo(() => {
+        const saved = localStorage.getItem('cortex_projects')
+        const projects = saved ? JSON.parse(saved) : []
+        const found = projects.find(p => p.id.toString() === id.toString())
+
+        return found || {
+            id: id,
+            name: 'SaaS Platform Outreach',
+            type: 'Product',
+            description: 'Accelerating digital transformation for enterprise clients with our core SaaS infrastructure.',
+            industry: 'B2B Software',
+            audience: 'CTOs / Product Managers',
+            status: 'Active'
+        }
+    }, [id])
 
     const projectLeads = [
         { id: 1, name: 'Alice Thompson', email: 'alice@enterprise.com', company: 'Enterprise Inc', relevance: 'High', status: 'Opened' },
@@ -90,7 +96,7 @@ const ProjectDetail = () => {
                         {project.name}
                     </TitleComponent>
                 </div>
-                <Link to="/campaigns/create">
+                <Link to="/dashboard/campaigns/create">
                     <Button variant="primary" className="bg-indigo-600 shadow-xl shadow-indigo-100 h-auto py-4 px-8">
                         Launch Campaign for this Project
                     </Button>
