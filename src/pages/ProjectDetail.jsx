@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
@@ -6,11 +6,15 @@ import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import AIAnalysisCard from '../components/ui/AIAnalysisCard'
 import LeadSourcingModal from '../components/ui/LeadSourcingModal'
+import GoogleMapsImportModal from '../components/ui/GoogleMapsImportModal'
+import ImportSuccessToast from '../components/ui/ImportSuccessToast'
 
 const ProjectDetail = () => {
     const { id } = useParams()
     const [activeTab, setActiveTab] = useState('overview')
     const [isSourcingModalOpen, setIsSourcingModalOpen] = useState(false);
+    const [isGoogleMapsModalOpen, setIsGoogleMapsModalOpen] = useState(false);
+    const [importToast, setImportToast] = useState(null); // null | { count: number }
     const [aiLeads, setAiLeads] = useState([]);
     const [relevanceFilter, setRelevanceFilter] = useState(0);
     const [personaFilter, setPersonaFilter] = useState('');
@@ -41,11 +45,11 @@ const ProjectDetail = () => {
         }
     }, [id])
 
-    const projectLeads = [
-        { id: 1, name: 'Alice Thompson', email: 'alice@enterprise.com', company: 'Enterprise Inc', relevance: 'High', status: 'Opened' },
-        { id: 2, name: 'Bob Roberts', email: 'bob@techflow.io', company: 'TechFlow', relevance: 'Medium', status: 'Not Opened' },
-        { id: 3, name: 'Charlie Dean', email: 'cdean@cloudify.net', company: 'Cloudify', relevance: 'High', status: 'Opened' }
-    ]
+    const [projectLeads, setProjectLeads] = useState([
+        { id: 1, name: 'Alice Thompson', email: 'alice@enterprise.com', company: 'Enterprise Inc', phone: null, website: null, source: 'Manual', relevance: 'High', status: 'Opened' },
+        { id: 2, name: 'Bob Roberts', email: 'bob@techflow.io', company: 'TechFlow', phone: null, website: null, source: 'Manual', relevance: 'Medium', status: 'Not Opened' },
+        { id: 3, name: 'Charlie Dean', email: 'cdean@cloudify.net', company: 'Cloudify', phone: null, website: null, source: 'Manual', relevance: 'High', status: 'Opened' }
+    ])
 
     const projectCampaigns = [
         { id: 101, name: 'Q1 SaaS Expansion', status: 'Active', yield: '24.5%', sent: '2026-01-15' },
@@ -53,11 +57,69 @@ const ProjectDetail = () => {
     ]
 
     const leadColumns = useMemo(() => [
-        { name: 'Lead Name', selector: row => row.name, sortable: true, cell: row => <span className="font-bold text-slate-900">{row.name}</span> },
-        { name: 'Email', selector: row => row.email, sortable: true, cell: row => <span className="text-slate-500">{row.email}</span> },
-        { name: 'Company', selector: row => row.company, sortable: true, cell: row => <span className="text-slate-600 font-medium">{row.company}</span> },
         {
-            name: 'Relevance Status',
+            name: 'Lead Name',
+            selector: row => row.name,
+            sortable: true,
+            minWidth: '160px',
+            cell: row => (
+                <div>
+                    <div className="font-bold text-slate-900 text-sm">{row.name}</div>
+                    {row.phone && <div className="text-[11px] text-slate-400 font-medium">{row.phone}</div>}
+                </div>
+            )
+        },
+        {
+            name: 'Email',
+            selector: row => row.email,
+            sortable: true,
+            minWidth: '180px',
+            cell: row => row.email
+                ? <span className="text-slate-500 text-xs">{row.email}</span>
+                : <span className="text-slate-300 italic text-xs">—</span>
+        },
+        {
+            name: 'Company',
+            selector: row => row.company,
+            sortable: true,
+            cell: row => <span className="text-slate-600 font-medium text-sm">{row.company}</span>
+        },
+        {
+            name: 'Source',
+            selector: row => row.source,
+            sortable: true,
+            minWidth: '130px',
+            cell: row => row.source === 'Google Maps' ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-100">
+                    <i className="fab fa-google text-[9px]" />
+                    Google Maps
+                </span>
+            ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-500 text-[11px] font-black">
+                    <i className="fas fa-user text-[9px]" />
+                    {row.source || 'Manual'}
+                </span>
+            )
+        },
+        {
+            name: 'Website',
+            selector: row => row.website,
+            minWidth: '160px',
+            cell: row => row.website ? (
+                <a
+                    href={row.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-[12px] font-bold hover:underline"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <i className="fas fa-external-link-alt text-[9px]" />
+                    {row.website.replace(/^https?:\/\//, '').replace(/\/$/, '').slice(0, 22)}
+                </a>
+            ) : <span className="text-slate-300 italic text-xs">—</span>
+        },
+        {
+            name: 'Relevance',
             selector: row => row.relevance,
             sortable: true,
             cell: row => (
@@ -67,11 +129,11 @@ const ProjectDetail = () => {
             )
         },
         {
-            name: 'Engagement',
+            name: 'Status',
             selector: row => row.status,
             sortable: true,
             cell: row => (
-                <Badge variant={row.status === 'Opened' ? 'success' : 'danger'}>
+                <Badge variant={row.status === 'Opened' ? 'success' : row.status === 'New' ? 'info' : 'danger'}>
                     {row.status}
                 </Badge>
             )
@@ -120,6 +182,19 @@ const ProjectDetail = () => {
             cell: row => <Badge variant="info">{row.status}</Badge>
         }
     ], []);
+
+    // ── Google Maps import handler ─────────────────────────────────────────
+    const handleAddGoogleLeads = (newLeads) => {
+        setProjectLeads((prev) => [...prev, ...newLeads]);
+        setImportToast({ count: newLeads.length });
+    };
+
+    // Auto-dismiss toast after 4 seconds
+    useEffect(() => {
+        if (!importToast) return;
+        const timer = setTimeout(() => setImportToast(null), 4000);
+        return () => clearTimeout(timer);
+    }, [importToast]);
 
     const handleGenerateLeads = (config) => {
         // Filter mock data based on persona if needed to simulate real behavior
@@ -243,18 +318,27 @@ const ProjectDetail = () => {
                                     <i className="fas fa-magic mr-2" />
                                     Source Leads via AI
                                 </Button>
-                                <Button variant="primary" className="bg-emerald-600 shadow-emerald-100">
-                                    <i className="fas fa-bolt mr-2" />
-                                    Manual Import
+                                <Button
+                                    onClick={() => setIsGoogleMapsModalOpen(true)}
+                                    variant="primary"
+                                    className="bg-emerald-600 shadow-xl shadow-emerald-100"
+                                >
+                                    <i className="fab fa-google mr-2" />
+                                    Import from Google Maps
                                 </Button>
                             </div>
                         </div>
 
-                        {/* Existing Leads Table */}
+                        {/* All Project Leads Table (manual + gmaps) */}
                         <div className="space-y-4">
-                            <TitleComponent type="p" size="small" className="text-slate-400 font-black uppercase tracking-widest px-1">
-                                Existing Project Leads
-                            </TitleComponent>
+                            <div className="flex items-center justify-between px-1">
+                                <TitleComponent type="p" size="small" className="text-slate-400 font-black uppercase tracking-widest">
+                                    All Project Leads
+                                </TitleComponent>
+                                <span className="text-[11px] font-bold text-slate-400">
+                                    {projectLeads.length} total
+                                </span>
+                            </div>
                             <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
                                 <DataTable
                                     columns={leadColumns}
@@ -263,9 +347,31 @@ const ProjectDetail = () => {
                                     highlightOnHover
                                     responsive
                                     noHeader
+                                    noDataComponent={
+                                        <div className="py-12 text-center">
+                                            <i className="fas fa-user-slash text-slate-200 text-3xl mb-3 block" />
+                                            <p className="text-slate-400 font-medium text-sm">No leads added yet.</p>
+                                            <p className="text-slate-300 text-xs mt-1">Use the buttons above to import from Google Maps or source via AI.</p>
+                                        </div>
+                                    }
                                 />
                             </div>
                         </div>
+
+                        {/* Google Maps Import flash notice */}
+                        {projectLeads.some(l => l.source === 'Google Maps') && (
+                            <div className="flex items-center gap-3 px-5 py-3.5 bg-emerald-50 border border-emerald-100 rounded-2xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <i className="fab fa-google text-white text-sm" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-bold text-emerald-900">
+                                        {projectLeads.filter(l => l.source === 'Google Maps').length} lead{projectLeads.filter(l => l.source === 'Google Maps').length !== 1 ? 's' : ''} imported from Google Maps
+                                    </p>
+                                    <p className="text-xs text-emerald-700 font-medium">Showing in the table above with a Google Maps source badge.</p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* AI Sourced Leads Section */}
                         {aiLeads.length > 0 && (
@@ -358,6 +464,17 @@ const ProjectDetail = () => {
                 onClose={() => setIsSourcingModalOpen(false)}
                 onGenerate={handleGenerateLeads}
             />
+            <GoogleMapsImportModal
+                isOpen={isGoogleMapsModalOpen}
+                onClose={() => setIsGoogleMapsModalOpen(false)}
+                onAddLeads={handleAddGoogleLeads}
+            />
+            {importToast && (
+                <ImportSuccessToast
+                    count={importToast.count}
+                    onClose={() => setImportToast(null)}
+                />
+            )}
         </div>
     )
 }
