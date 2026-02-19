@@ -1,84 +1,43 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Badge from '../components/ui/Badge'
+import { useAuth } from '../context/AuthContext'
+import { getUserLeads } from '../services/db'
 
 const Leads = () => {
+    const { currentUser } = useAuth()
     const [searchTerm, setSearchTerm] = useState('')
     const [projectFilter, setProjectFilter] = useState('all')
     const [selectedLeads, setSelectedLeads] = useState([])
 
-    /**
-     * Product Rule: 
-     * Leads are always associated with a project to ensure relevance.
-     */
-    const leads = [
-        {
-            id: 1,
-            name: 'John Smith',
-            email: 'john.smith@techcorp.com',
-            company: 'TechCorp Inc.',
-            project: 'SaaS Platform Outreach',
-            firstEmailSent: '2026-01-20',
-            lastActivity: '2026-01-21',
-            status: 'Opened',
-            isEligible: true,
-            avatarGradient: 'from-blue-500 to-indigo-600'
-        },
-        {
-            id: 2,
-            name: 'Sarah Johnson',
-            email: 'sarah.j@innovate.io',
-            company: 'Innovate.io',
-            project: 'Cloud Consulting Service',
-            firstEmailSent: '2026-01-19',
-            lastActivity: '2026-01-19',
-            status: 'Not Opened',
-            isEligible: false,
-            avatarGradient: 'from-emerald-500 to-teal-500'
-        },
-        {
-            id: 3,
-            name: 'Michael Chen',
-            email: 'mchen@growth.com',
-            company: 'Growth Co.',
-            project: 'SaaS Platform Outreach',
-            firstEmailSent: '2026-01-18',
-            lastActivity: '2026-01-18',
-            status: 'Opened',
-            isEligible: true,
-            avatarGradient: 'from-orange-500 to-amber-500'
-        },
-        {
-            id: 4,
-            name: 'Emma Williams',
-            email: 'emma.w@startup.tech',
-            company: 'Startup Tech',
-            project: 'Internal Talent Acquisition',
-            firstEmailSent: '2026-01-17',
-            lastActivity: '2026-01-17',
-            status: 'Not Opened',
-            isEligible: false,
-            avatarGradient: 'from-purple-500 to-pink-500'
-        },
-        {
-            id: 5,
-            name: 'David Brown',
-            email: 'dbrown@enterprise.com',
-            company: 'Enterprise Solutions',
-            project: 'SaaS Platform Outreach',
-            firstEmailSent: 'Pending',
-            lastActivity: '-',
-            status: 'Pending',
-            isEligible: false,
-            avatarGradient: 'from-cyan-500 to-blue-500'
-        }
-    ]
+    // ── DB state 
+    const [leads, setLeads] = useState([])
+    const [dbLoading, setDbLoading] = useState(true)
+    const [dbError, setDbError] = useState('')
 
+    const load = useCallback(async () => {
+        if (!currentUser) return
+        try {
+            setDbLoading(true)
+            setDbError('')
+            const data = await getUserLeads(currentUser.uid)
+            setLeads(data.sort((a, b) => b.createdAt - a.createdAt))
+        } catch (err) {
+            console.error('[Leads] load error:', err)
+            setDbError('Failed to load leads.')
+        } finally {
+            setDbLoading(false)
+        }
+    }, [currentUser])
+
+    useEffect(() => { load() }, [load])
+
+    // Dynamically computed stats from live DB leads
     const leadStats = [
-        { label: 'Eligible for Follow-up', value: '456', icon: 'fa-user-check', color: 'from-indigo-600 to-blue-500' },
-        { label: 'Outreach Stopped', value: '1,889', icon: 'fa-hand-paper', color: 'from-orange-500 to-red-500' },
-        { label: 'Engagement Rate', value: '19.4%', icon: 'fa-chart-pie', color: 'from-emerald-500 to-teal-500' },
+        { label: 'Eligible for Follow-up', value: leads.filter(l => l.status === 'opened').length, icon: 'fa-user-check', color: 'from-indigo-600 to-blue-500' },
+        { label: 'Google Maps Imports', value: leads.filter(l => l.source === 'google_maps').length, icon: 'fa-map-marker-alt', color: 'from-emerald-500 to-teal-500' },
+        { label: 'Total Leads', value: leads.length, icon: 'fa-users', color: 'from-purple-500 to-pink-500' },
     ]
 
     const columns = useMemo(() => [
@@ -86,48 +45,63 @@ const Leads = () => {
             name: 'Contact Details',
             selector: row => row.name,
             sortable: true,
-            cell: row => (
-                <div className="flex items-center space-x-3 py-2">
-                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${row.avatarGradient} flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
-                        {row.name.split(' ').map(n => n[0]).join('')}
+            cell: row => {
+                const initials = row.name.split(' ').map(n => n[0]).join('').slice(0, 2)
+                const gradients = ['from-blue-500 to-indigo-600', 'from-emerald-500 to-teal-500', 'from-orange-500 to-amber-500', 'from-purple-500 to-pink-500', 'from-cyan-500 to-blue-500']
+                const grad = gradients[row.name.charCodeAt(0) % gradients.length]
+                return (
+                    <div className="flex items-center space-x-3 py-2">
+                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
+                            {initials}
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-slate-900">{row.name}</h4>
+                            <p className="text-xs text-slate-500">{row.email}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 className="font-bold text-slate-900">{row.name}</h4>
-                        <p className="text-xs text-slate-500">{row.email}</p>
-                    </div>
-                </div>
-            ),
+                )
+            },
             grow: 2,
         },
         {
-            name: 'Project',
-            selector: row => row.project,
+            name: 'Project ID',
+            selector: row => row.projectId,
             sortable: true,
             cell: row => (
                 <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full uppercase tracking-tighter">
-                    {row.project}
+                    {row.projectId?.slice(0, 8) ?? '—'}
                 </span>
             )
+        },
+        {
+            name: 'Source',
+            selector: row => row.source,
+            sortable: true,
+            cell: row => row.source === 'google_maps'
+                ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-100"><i className="fab fa-google text-[9px]" />Maps</span>
+                : <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-500 text-[11px] font-black"><i className="fas fa-user text-[9px]" /></span>
         },
         {
             name: 'Engagement',
             selector: row => row.status,
             sortable: true,
             center: true,
-            cell: row => (
-                <Badge variant={row.status === 'Opened' ? 'success' : row.status === 'Not Opened' ? 'danger' : 'default'}>
-                    {row.status === 'Opened' ? <i className="fas fa-eye mr-1"></i> :
-                        row.status === 'Not Opened' ? <i className="fas fa-eye-slash mr-1"></i> : null}
-                    {row.status}
-                </Badge>
-            )
+            cell: row => {
+                const map = { opened: ['success', 'fa-eye', 'Opened'], email_sent: ['primary', 'fa-paper-plane', 'Sent'], new: ['default', 'fa-clock', 'New'], replied: ['success', 'fa-reply', 'Replied'] }
+                const [variant, icon, label] = map[row.status] || ['default', 'fa-circle', row.status]
+                return (
+                    <Badge variant={variant}>
+                        <i className={`fas ${icon} mr-1`} />{label}
+                    </Badge>
+                )
+            }
         },
         {
             name: 'Eligibility',
-            selector: row => row.isEligible,
+            selector: row => row.status,
             sortable: true,
             center: true,
-            cell: row => row.isEligible ? (
+            cell: row => row.status === 'opened' ? (
                 <Badge variant="primary" className="bg-indigo-100 text-indigo-700 border-indigo-200">
                     <i className="fas fa-check-circle mr-1" /> Follow-up
                 </Badge>
@@ -136,19 +110,22 @@ const Leads = () => {
             )
         },
         {
-            name: 'Sent / Active',
-            selector: row => row.firstEmailSent,
+            name: 'Last Email',
+            selector: row => row.lastEmailSentAt,
             sortable: true,
             cell: row => (
                 <div className="text-xs py-2">
-                    <p className="text-slate-600 font-bold">Sent: {row.firstEmailSent}</p>
-                    <p className="text-slate-400">Last: {row.lastActivity}</p>
+                    {row.lastEmailSentAt
+                        ? <p className="text-slate-600 font-bold">{new Date(row.lastEmailSentAt).toLocaleDateString()}</p>
+                        : <p className="text-slate-400 italic">Not sent</p>
+                    }
+                    <p className="text-slate-400">{row.source}</p>
                 </div>
             )
         },
         {
             name: 'Action',
-            cell: row => (
+            cell: () => (
                 <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
                     <i className="fas fa-chevron-right" />
                 </button>
@@ -160,15 +137,14 @@ const Leads = () => {
 
     const filteredLeads = useMemo(() => {
         return leads.filter(lead => {
-            const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                lead.company.toLowerCase().includes(searchTerm.toLowerCase())
-
-            const matchesProject = projectFilter === 'all' || lead.project === projectFilter
-
+            const name = lead.name || ''
+            const email = lead.email || ''
+            const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                email.toLowerCase().includes(searchTerm.toLowerCase())
+            const matchesProject = projectFilter === 'all' || lead.projectId === projectFilter
             return matchesSearch && matchesProject
         })
-    }, [searchTerm, projectFilter])
+    }, [searchTerm, projectFilter, leads])
 
     const customStyles = {
         table: {
@@ -289,9 +265,9 @@ const Leads = () => {
                             onChange={(e) => setProjectFilter(e.target.value)}
                         >
                             <option value="all">All Projects</option>
-                            <option value="SaaS Platform Outreach">SaaS Platform Outreach</option>
-                            <option value="Cloud Consulting Service">Cloud Consulting Service</option>
-                            <option value="Internal Talent Acquisition">Internal Talent Acquisition</option>
+                            {[...new Set(leads.map(l => l.projectId).filter(Boolean))].map(pid => (
+                                <option key={pid} value={pid}>{pid.slice(0, 12)}...</option>
+                            ))}
                         </select>
                     </div>
 
@@ -313,18 +289,37 @@ const Leads = () => {
             </div>
 
             {/* Data Table */}
+            {dbError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-medium flex items-center gap-3">
+                    <i className="fas fa-exclamation-circle" />{dbError}
+                    <button onClick={load} className="ml-auto text-xs font-bold underline">Retry</button>
+                </div>
+            )}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden px-2">
-                <DataTable
-                    columns={columns}
-                    data={filteredLeads}
-                    pagination
-                    selectableRows
-                    onSelectedRowsChange={handleSelectedRowsChange}
-                    customStyles={customStyles}
-                    highlightOnHover
-                    pointerOnHover
-                    responsive
-                />
+                {dbLoading ? (
+                    <div className="py-20 flex flex-col items-center gap-4">
+                        <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+                        <p className="text-slate-400 text-sm font-medium">Loading leads from database...</p>
+                    </div>
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={filteredLeads}
+                        pagination
+                        selectableRows
+                        onSelectedRowsChange={handleSelectedRowsChange}
+                        customStyles={customStyles}
+                        highlightOnHover
+                        pointerOnHover
+                        responsive
+                        noDataComponent={
+                            <div className="py-16 text-center">
+                                <i className="fas fa-user-slash text-slate-200 text-5xl mb-4 block" />
+                                <p className="text-slate-400 font-medium">No leads found. Import leads via a project page.</p>
+                            </div>
+                        }
+                    />
+                )}
             </div>
         </div>
     )

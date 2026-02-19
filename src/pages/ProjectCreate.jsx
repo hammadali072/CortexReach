@@ -1,11 +1,16 @@
+// src/pages/ProjectCreate.jsx — Phase 2: Creates project in Firebase Realtime DB
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
+import { useAuth } from '../context/AuthContext'
+import { createProject } from '../services/db'
 
 const ProjectCreate = () => {
     const navigate = useNavigate()
+    const { currentUser } = useAuth()
+
     const [formData, setFormData] = useState({
         name: '',
         type: 'Product',
@@ -14,30 +19,33 @@ const ProjectCreate = () => {
         audience: ''
     })
 
-    const handleSubmit = (e) => {
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState('')
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
-
-        // Get existing projects
-        const saved = localStorage.getItem('cortex_projects')
-        const projects = saved ? JSON.parse(saved) : []
-
-        // Create new project object matching the structure in Projects.jsx
-        const newProject = {
-            id: Date.now(), // Simple unique ID
-            name: formData.name,
-            type: formData.type,
-            targetAudience: formData.audience,
-            description: formData.description,
-            industry: formData.industry,
-            totalLeads: 0,
-            status: 'Active'
+        if (!formData.name.trim()) {
+            setError('Project name is required.')
+            return
         }
+        setError('')
+        setIsLoading(true)
 
-        // Save back to localStorage
-        localStorage.setItem('cortex_projects', JSON.stringify([...projects, newProject]))
-
-        console.log('Project created:', newProject)
-        navigate('/projects')
+        try {
+            await createProject(currentUser.uid, {
+                name: formData.name,
+                type: formData.type,
+                description: formData.description,
+                industry: formData.industry,
+                targetAudience: formData.audience,
+                status: 'active',
+            })
+            navigate('/dashboard/projects')
+        } catch (err) {
+            setError(err.message || 'Failed to create project.')
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
@@ -50,6 +58,13 @@ const ProjectCreate = () => {
                     Establish the context for your leads and outreach campaigns.
                 </TitleComponent>
             </div>
+
+            {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-medium flex items-center gap-3">
+                    <i className="fas fa-exclamation-circle" />
+                    {error}
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="bg-white rounded-[40px] shadow-sm border border-slate-100 p-10 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -100,11 +115,14 @@ const ProjectCreate = () => {
                 </div>
 
                 <div className="pt-6 flex justify-end gap-4">
-                    <Button variant="outline" onClick={() => navigate('/projects')}>
+                    <Button variant="outline" type="button" onClick={() => navigate('/dashboard/projects')} disabled={isLoading}>
                         Cancel
                     </Button>
-                    <Button variant="primary" type="submit" className="px-12 bg-indigo-600 shadow-xl shadow-indigo-100">
-                        Create Project
+                    <Button variant="primary" type="submit" className="px-12 bg-indigo-600 shadow-xl shadow-indigo-100" disabled={isLoading}>
+                        {isLoading
+                            ? <><i className="fas fa-spinner fa-spin mr-2" />Creating...</>
+                            : 'Create Project'
+                        }
                     </Button>
                 </div>
             </form>

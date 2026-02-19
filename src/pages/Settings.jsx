@@ -1,17 +1,26 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import { useAuth } from '../context/AuthContext'
 
 const Settings = () => {
+    const { userProfile, logout } = useAuth()
+    const navigate = useNavigate()
     const [activeTab, setActiveTab] = useState('profile')
 
     const [profileData, setProfileData] = useState({
-        fullName: 'John Doe',
-        email: 'john@example.com',
-        company: 'Example Corp'
+        fullName: userProfile?.name || '',
+        email: userProfile?.email || '',
+        company: ''
     })
+
+    const handleLogout = async () => {
+        await logout()
+        navigate('/')
+    }
 
     const tabs = [
         { id: 'profile', label: 'User Profile', icon: 'fa-user' },
@@ -116,9 +125,22 @@ const Settings = () => {
                     )}
                 </div>
             </div>
+
+            {/* Danger Zone */}
+            <div className="p-6 bg-red-50 border border-red-100 rounded-3xl flex items-center justify-between">
+                <div>
+                    <h4 className="font-bold text-red-900">Sign Out</h4>
+                    <p className="text-sm text-red-700 font-medium">You will be returned to the login screen.</p>
+                </div>
+                <button
+                    onClick={handleLogout}
+                    className="px-6 py-3 bg-red-600 text-white rounded-2xl font-bold text-sm hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+                >
+                    <i className="fas fa-sign-out-alt mr-2" />Sign Out
+                </button>
+            </div>
         </div>
     )
 }
 
 export default Settings
-

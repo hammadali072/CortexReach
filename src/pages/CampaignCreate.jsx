@@ -1,14 +1,32 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import TemplateCard from '../components/ui/TemplateCard'
+import { useAuth } from '../context/AuthContext'
+import { getUserProjects, getProjectLeads, createCampaign } from '../services/db'
 
 const CampaignCreate = () => {
     const navigate = useNavigate()
+    const { currentUser } = useAuth()
     const [currentStep, setCurrentStep] = useState(1)
+
+    // DB state
+    const [dbProjects, setDbProjects] = useState([])
+    const [dbLeads, setDbLeads] = useState([])
+    const [leadsLoading, setLeadsLoading] = useState(false)
+    const [submitError, setSubmitError] = useState('')
+    const [submitting, setSubmitting] = useState(false)
+
+    // Load projects on mount
+    useEffect(() => {
+        if (!currentUser) return
+        getUserProjects(currentUser.uid)
+            .then(data => setDbProjects(data.sort((a, b) => b.createdAt - a.createdAt)))
+            .catch(err => console.error('[CampaignCreate] load projects:', err))
+    }, [currentUser])
 
     // Form state
     const [formData, setFormData] = useState({
@@ -57,11 +75,20 @@ const CampaignCreate = () => {
         setTimeout(() => setGenStatus('completed'), 2000);
     }
 
-    const projects = [
-        'SaaS Platform Outreach',
-        'Cloud Consulting Service',
-        'Internal Talent Acquisition'
-    ]
+    // When project selection changes, load its leads from DB
+    const handleProjectChange = async (projectId) => {
+        setFormData(prev => ({ ...prev, project: projectId, selectedRows: [] }))
+        if (!projectId) { setDbLeads([]); return }
+        try {
+            setLeadsLoading(true)
+            const leads = await getProjectLeads(projectId)
+            setDbLeads(leads)
+        } catch (err) {
+            console.error('[CampaignCreate] load leads:', err)
+        } finally {
+            setLeadsLoading(false)
+        }
+    }
 
     /**
      * Product Rule: Simplified 3-step outreach setup.
@@ -75,13 +102,8 @@ const CampaignCreate = () => {
         { number: 3, title: 'Review & Send', icon: 'fa-check-circle' }
     ]
 
-    const availableLeads = [
-        { id: 1, name: 'John Smith', email: 'john@techcorp.com', company: 'TechCorp' },
-        { id: 2, name: 'Sarah Johnson', email: 'sarah@innovate.io', company: 'Innovate' },
-        { id: 3, name: 'Michael Chen', email: 'mchen@growth.com', company: 'Growth Co.' },
-        { id: 4, name: 'Emma Williams', email: 'emma@startup.tech', company: 'Startup Tech' },
-        { id: 5, name: 'David Brown', email: 'dbrown@enterprise.com', company: 'Enterprise' }
-    ]
+    // Use DB leads (fallback to empty array)
+    const availableLeads = dbLeads
 
     const columns = useMemo(() => [
         {
@@ -139,9 +161,14 @@ const CampaignCreate = () => {
 
     const handleNext = () => {
         if (currentStep === 1 && !formData.project) {
-            alert('Please select a project before proceeding.')
+            setSubmitError('Please select a project before proceeding.')
             return
         }
+        if (currentStep === 1 && !formData.name.trim()) {
+            setSubmitError('Campaign name is required.')
+            return
+        }
+        setSubmitError('')
         if (currentStep < 3) setCurrentStep(currentStep + 1)
     }
 
@@ -149,9 +176,22 @@ const CampaignCreate = () => {
         if (currentStep > 1) setCurrentStep(currentStep - 1)
     }
 
-    const handleSubmit = () => {
-        console.log('Campaign data:', formData)
-        navigate('/campaigns')
+    const handleSubmit = async () => {
+        if (!currentUser) return
+        setSubmitError('')
+        setSubmitting(true)
+        try {
+            await createCampaign(currentUser.uid, formData.project, {
+                name: formData.name,
+                templateId: formData.templateId,
+                type: 'initial',
+            })
+            navigate('/dashboard/campaigns')
+        } catch (err) {
+            setSubmitError(err.message || 'Failed to create campaign.')
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     const handleSelectedRowsChange = ({ selectedRows }) => {
@@ -175,7 +215,7 @@ const CampaignCreate = () => {
                         <i className="fas fa-folder-open" />
                         <div className="text-left">
                             <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Active Project</p>
-                            <p className="text-xs font-bold">{formData.project}</p>
+                            <p className="text-xs font-bold">{dbProjects.find(p => p.id === formData.project)?.name || formData.project}</p>
                         </div>
                     </div>
                 )}
@@ -213,11 +253,11 @@ const CampaignCreate = () => {
                                 <select
                                     className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-700"
                                     value={formData.project}
-                                    onChange={(e) => setFormData({ ...formData, project: e.target.value })}
+                                    onChange={(e) => handleProjectChange(e.target.value)}
                                     required
                                 >
                                     <option value="">Select a Project...</option>
-                                    {projects.map(p => <option key={p} value={p}>{p}</option>)}
+                                    {dbProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
                                 <p className="text-[10px] text-slate-400 mt-1 px-1">Campaigns must be tied to a project for relevance enforcement.</p>
                             </div>
@@ -346,18 +386,26 @@ const CampaignCreate = () => {
                 )}
             </div>
 
+            {/* Error display */}
+            {submitError && (
+                <div className="px-2 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-medium flex items-center gap-3">
+                    <i className="fas fa-exclamation-circle ml-2" />
+                    {submitError}
+                </div>
+            )}
+
             {/* Navigation */}
             <div className="flex justify-between items-center px-2">
                 <Button variant="outline" className="px-10 py-4 border-slate-200" onClick={handlePrevious} disabled={currentStep === 1}>
                     Go Back
                 </Button>
                 <div className="flex gap-4">
-                    <Button variant="outline" className="px-10 border-slate-200" onClick={() => navigate('/campaigns')}>Exit</Button>
+                    <Button variant="outline" className="px-10 border-slate-200" onClick={() => navigate('/dashboard/campaigns')}>Exit</Button>
                     {currentStep < 3 ? (
                         <Button variant="primary" className="px-12 py-4 h-auto text-lg shadow-xl shadow-indigo-100" onClick={handleNext}>Next Step</Button>
                     ) : (
-                        <Button variant="primary" onClick={handleSubmit} className="px-16 py-4 h-auto text-lg bg-indigo-600 shadow-xl shadow-indigo-200">
-                            Launch Campaign
+                        <Button variant="primary" onClick={handleSubmit} disabled={submitting} className="px-16 py-4 h-auto text-lg bg-indigo-600 shadow-xl shadow-indigo-200">
+                            {submitting ? <><i className="fas fa-spinner fa-spin mr-2" />Launching...</> : 'Launch Campaign'}
                         </Button>
                     )}
                 </div>

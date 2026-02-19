@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect } from 'react'
+// src/pages/Projects.jsx — Phase 2: Persists projects to Firebase Realtime DB
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
@@ -6,97 +7,107 @@ import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import Input from '../components/ui/Input'
+import { useAuth } from '../context/AuthContext'
+import {
+    getUserProjects,
+    createProject,
+    updateProject,
+    deleteProject,
+} from '../services/db'
 
 const Projects = () => {
     const navigate = useNavigate()
+    const { currentUser } = useAuth()
 
-    // Initial data with all fields
-    const defaultProjects = [
-        {
-            id: 1,
-            name: 'SaaS Platform Outreach',
-            type: 'Product',
-            targetAudience: 'CTOs / Product Managers',
-            description: 'Accelerating digital transformation for enterprise clients with our core SaaS infrastructure.',
-            industry: 'B2B Software',
-            totalLeads: 450,
-            status: 'Active'
-        },
-        {
-            id: 2,
-            name: 'Cloud Consulting Service',
-            type: 'Service',
-            targetAudience: 'Retail Businesses',
-            description: 'Helping retail businesses transition to cloud-first operations and digital storefronts.',
-            industry: 'Retail Tech',
-            totalLeads: 210,
-            status: 'Active'
-        },
-        {
-            id: 3,
-            name: 'Internal Talent Acquisition',
-            type: 'Product',
-            targetAudience: 'HR Leaders',
-            description: 'Automated talent discovery and engagement platform for enterprise HR departments.',
-            industry: 'HR Tech',
-            totalLeads: 120,
-            status: 'Archived'
-        }
-    ]
+    // ── Data state ────────────────────────────────────────────────────────
+    const [projects, setProjects] = useState([])
+    const [dbLoading, setDbLoading] = useState(true)
+    const [dbError, setDbError] = useState('')
 
-    // State management
-    const [projects, setProjects] = useState(() => {
-        const saved = localStorage.getItem('cortex_projects')
-        return saved ? JSON.parse(saved) : defaultProjects
-    })
-
+    // ── Modal state ───────────────────────────────────────────────────────
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [currentProject, setCurrentProject] = useState(null)
     const [formData, setFormData] = useState({
-        name: '',
-        type: 'Product',
-        targetAudience: '',
-        description: '',
-        industry: ''
+        name: '', type: 'Product', targetAudience: '', description: '', industry: ''
     })
+    const [saving, setSaving] = useState(false)
+    const [formError, setFormError] = useState('')
 
-    // Persistence
-    useEffect(() => {
-        localStorage.setItem('cortex_projects', JSON.stringify(projects))
-    }, [projects])
+    // ── Fetch projects from DB ────────────────────────────────────────────
+    const loadProjects = useCallback(async () => {
+        if (!currentUser) return
+        try {
+            setDbLoading(true)
+            setDbError('')
+            const data = await getUserProjects(currentUser.uid)
+            // Sort newest first
+            setProjects(data.sort((a, b) => b.createdAt - a.createdAt))
+        } catch (err) {
+            console.error('[Projects] load error:', err)
+            setDbError('Failed to load projects. Please refresh.')
+        } finally {
+            setDbLoading(false)
+        }
+    }, [currentUser])
 
-    // Handlers
+    useEffect(() => { loadProjects() }, [loadProjects])
+
+    // ── Edit handler ──────────────────────────────────────────────────────
     const handleEditClick = (project) => {
         setCurrentProject(project)
         setFormData({
             name: project.name,
-            type: project.type,
-            targetAudience: project.targetAudience,
+            type: project.type || 'Product',
+            targetAudience: project.targetAudience || '',
             description: project.description || '',
-            industry: project.industry || ''
+            industry: project.industry || '',
         })
+        setFormError('')
         setIsEditModalOpen(true)
     }
 
+    const saveEdit = async (e) => {
+        e.preventDefault()
+        setFormError('')
+        setSaving(true)
+        try {
+            await updateProject(currentProject.id, {
+                name: formData.name.trim(),
+                type: formData.type,
+                targetAudience: formData.targetAudience,
+                description: formData.description,
+                industry: formData.industry,
+            })
+            setProjects(prev => prev.map(p =>
+                p.id === currentProject.id ? { ...p, ...formData } : p
+            ))
+            setIsEditModalOpen(false)
+        } catch (err) {
+            setFormError(err.message || 'Failed to save changes.')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    // ── Delete handler ────────────────────────────────────────────────────
     const handleDeleteClick = (project) => {
         setCurrentProject(project)
         setIsDeleteModalOpen(true)
     }
 
-    const saveEdit = (e) => {
-        e.preventDefault()
-        setProjects(prev => prev.map(p =>
-            p.id === currentProject.id ? { ...p, ...formData } : p
-        ))
-        setIsEditModalOpen(false)
+    const confirmDelete = async () => {
+        try {
+            await deleteProject(currentProject.id)
+            setProjects(prev => prev.filter(p => p.id !== currentProject.id))
+        } catch (err) {
+            console.error('[Projects] delete error:', err)
+        } finally {
+            setIsDeleteModalOpen(false)
+        }
     }
 
-    const confirmDelete = () => {
-        setProjects(prev => prev.filter(p => p.id !== currentProject.id))
-        setIsDeleteModalOpen(false)
-    }
-
+    // ── Table columns ─────────────────────────────────────────────────────
     const columns = useMemo(() => [
         {
             name: 'Project Name',
@@ -113,33 +124,29 @@ const Projects = () => {
             name: 'Type',
             selector: row => row.type,
             sortable: true,
-            cell: row => (
-                <span className="text-sm font-medium text-slate-600">{row.type}</span>
-            )
+            cell: row => <span className="text-sm font-medium text-slate-600">{row.type}</span>
         },
         {
             name: 'Target Audience',
             selector: row => row.targetAudience,
             sortable: true,
             grow: 1.5,
-            cell: row => (
-                <span className="text-sm text-slate-500">{row.targetAudience}</span>
-            )
+            cell: row => <span className="text-sm text-slate-500">{row.targetAudience}</span>
         },
         {
             name: 'Total Leads',
-            selector: row => row.totalLeads || 0,
+            selector: row => row.stats?.totalLeads || 0,
             sortable: true,
             center: true,
-            cell: row => <span className="font-bold text-slate-700">{row.totalLeads || 0}</span>
+            cell: row => <span className="font-bold text-slate-700">{row.stats?.totalLeads || 0}</span>
         },
         {
             name: 'Status',
             selector: row => row.status,
             sortable: true,
             cell: row => (
-                <Badge variant={row.status === 'Active' ? 'success' : 'default'}>
-                    {row.status}
+                <Badge variant={row.status === 'active' ? 'success' : 'default'}>
+                    {row.status === 'active' ? 'Active' : 'Archived'}
                 </Badge>
             )
         },
@@ -153,21 +160,21 @@ const Projects = () => {
                         className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
                         title="View Project"
                     >
-                        <i className="fas fa-eye"></i>
+                        <i className="fas fa-eye" />
                     </button>
                     <button
                         onClick={() => handleEditClick(row)}
                         className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
                         title="Edit Project"
                     >
-                        <i className="fas fa-edit"></i>
+                        <i className="fas fa-edit" />
                     </button>
                     <button
                         onClick={() => handleDeleteClick(row)}
                         className="p-2 text-slate-400 hover:text-red-500 transition-colors"
                         title="Delete Project"
                     >
-                        <i className="fas fa-trash-alt"></i>
+                        <i className="fas fa-trash-alt" />
                     </button>
                 </div>
             )
@@ -175,44 +182,13 @@ const Projects = () => {
     ], [navigate])
 
     const customStyles = {
-        table: {
-            style: {
-                backgroundColor: 'transparent',
-            },
-        },
-        headRow: {
-            style: {
-                backgroundColor: '#f8fafc',
-                borderBottomWidth: '1px',
-                borderBottomColor: '#f1f5f9',
-                minHeight: '64px',
-            },
-        },
-        headCells: {
-            style: {
-                color: '#64748b',
-                fontSize: '0.75rem',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-            },
-        },
-        rows: {
-            style: {
-                minHeight: '72px',
-                '&:not(:last-child)': {
-                    borderBottomWidth: '1px',
-                    borderBottomColor: '#f8fafc',
-                },
-                '&:hover': {
-                    backgroundColor: '#f8fafc',
-                    transitionDuration: '0.15s',
-                    transitionProperty: 'background-color',
-                },
-            },
-        },
+        table: { style: { backgroundColor: 'transparent' } },
+        headRow: { style: { backgroundColor: '#f8fafc', borderBottomWidth: '1px', borderBottomColor: '#f1f5f9', minHeight: '64px' } },
+        headCells: { style: { color: '#64748b', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' } },
+        rows: { style: { minHeight: '72px', '&:not(:last-child)': { borderBottomWidth: '1px', borderBottomColor: '#f8fafc' }, '&:hover': { backgroundColor: '#f8fafc', transitionDuration: '0.15s', transitionProperty: 'background-color' } } },
     }
 
+    // ── Render ────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen space-y-8 pb-12">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -232,19 +208,48 @@ const Projects = () => {
                 </Link>
             </div>
 
+            {/* Error banner */}
+            {dbError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-medium flex items-center gap-3">
+                    <i className="fas fa-exclamation-circle" />
+                    {dbError}
+                    <button onClick={loadProjects} className="ml-auto text-xs font-bold underline">Retry</button>
+                </div>
+            )}
+
+            {/* Table */}
             <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden">
-                <DataTable
-                    columns={columns}
-                    data={projects}
-                    customStyles={customStyles}
-                    highlightOnHover
-                    pointerOnHover
-                    responsive
-                    noHeader
-                />
+                {dbLoading ? (
+                    <div className="py-20 flex flex-col items-center gap-4">
+                        <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+                        <p className="text-slate-400 text-sm font-medium">Loading projects...</p>
+                    </div>
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={projects}
+                        customStyles={customStyles}
+                        highlightOnHover
+                        pointerOnHover
+                        responsive
+                        noHeader
+                    />
+                )}
             </div>
 
-            {/* Edit Modal */}
+            {/* Empty state */}
+            {!dbLoading && projects.length === 0 && !dbError && (
+                <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                    <i className="fas fa-folder-open text-slate-200 text-6xl mb-4" />
+                    <h3 className="text-xl font-bold text-slate-900">No projects yet</h3>
+                    <p className="text-slate-500 mb-6">Create your first project to start outreach.</p>
+                    <Link to="/dashboard/projects/create">
+                        <Button variant="primary">Create Project</Button>
+                    </Link>
+                </div>
+            )}
+
+            {/* ── Edit Modal ── */}
             <Modal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
@@ -252,28 +257,27 @@ const Projects = () => {
                 size="lg"
                 footer={
                     <>
-                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button variant="primary" onClick={saveEdit}>
-                            Save Changes
+                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={saving}>Cancel</Button>
+                        <Button variant="primary" onClick={saveEdit} disabled={saving}>
+                            {saving ? <><i className="fas fa-spinner fa-spin mr-2" />Saving...</> : 'Save Changes'}
                         </Button>
                     </>
                 }
             >
-                <form className="space-y-6">
+                <form className="space-y-6" onSubmit={saveEdit}>
+                    {formError && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                            {formError}
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Input
-                            label="Project Name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        />
+                        <Input label="Project Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                         <div className="space-y-2">
                             <label className="block text-xs font-black text-slate-400 uppercase tracking-widest px-1">Project Type</label>
                             <select
                                 className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700"
                                 value={formData.type}
-                                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                onChange={e => setFormData({ ...formData, type: e.target.value })}
                             >
                                 <option value="Product">Product</option>
                                 <option value="Service">Service</option>
@@ -281,16 +285,8 @@ const Projects = () => {
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Input
-                            label="Target Audience"
-                            value={formData.targetAudience}
-                            onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
-                        />
-                        <Input
-                            label="Industry"
-                            value={formData.industry}
-                            onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                        />
+                        <Input label="Target Audience" value={formData.targetAudience} onChange={e => setFormData({ ...formData, targetAudience: e.target.value })} />
+                        <Input label="Industry" value={formData.industry} onChange={e => setFormData({ ...formData, industry: e.target.value })} />
                     </div>
                     <div>
                         <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Short Description</label>
@@ -298,13 +294,13 @@ const Projects = () => {
                             rows={4}
                             className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700"
                             value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            onChange={e => setFormData({ ...formData, description: e.target.value })}
                         />
                     </div>
                 </form>
             </Modal>
 
-            {/* Delete Confirmation Modal */}
+            {/* ── Delete Modal ── */}
             <Modal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
@@ -312,12 +308,8 @@ const Projects = () => {
                 size="sm"
                 footer={
                     <>
-                        <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button variant="danger" onClick={confirmDelete}>
-                            Delete
-                        </Button>
+                        <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
+                        <Button variant="danger" onClick={confirmDelete}>Delete</Button>
                     </>
                 }
             >
@@ -326,7 +318,8 @@ const Projects = () => {
                         <i className="fas fa-exclamation-triangle text-2xl" />
                     </div>
                     <p className="text-slate-600 font-medium">
-                        Are you sure you want to delete <span className="font-bold text-slate-900">{currentProject?.name}</span>?
+                        Are you sure you want to delete{' '}
+                        <span className="font-bold text-slate-900">{currentProject?.name}</span>?
                         This action cannot be undone.
                     </p>
                 </div>
@@ -336,4 +329,3 @@ const Projects = () => {
 }
 
 export default Projects
-

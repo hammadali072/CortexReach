@@ -1,167 +1,89 @@
-import { useMemo } from 'react'
+// src/pages/Campaigns.jsx — Phase 4: Reads campaigns from Firebase Realtime DB
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
+import { useAuth } from '../context/AuthContext'
+import { getUserCampaigns } from '../services/db'
 
 const Campaigns = () => {
-    /**
-     * Product Rule: 
-     * Stopped = Recipients who did NOT open initial email.
-     * Yield = Opened / Total.
-     */
-    const campaigns = [
-        {
-            id: 1,
-            name: 'Jan SME Outreach',
-            status: 'Active',
-            totalLeads: 1234,
-            opened: 456,
-            stopped: 778,
-            sentDate: '2026-01-15'
-        },
-        {
-            id: 2,
-            name: 'Growth Series B',
-            status: 'Draft',
-            totalLeads: 892,
-            opened: 0,
-            stopped: 0,
-            sentDate: '-'
-        },
-        {
-            id: 3,
-            name: 'Tech Stack Update',
-            status: 'Completed',
-            totalLeads: 2100,
-            opened: 834,
-            stopped: 1266,
-            sentDate: '2026-01-10'
-        }
-    ]
+    const { currentUser } = useAuth()
 
-    const getStatusBadge = (status) => {
-        const variants = {
-            'Draft': 'default',
-            'Active': 'primary',
-            'Completed': 'success'
+    // ── DB state ────────────────────────────────────────────────────────────
+    const [campaigns, setCampaigns] = useState([])
+    const [dbLoading, setDbLoading] = useState(true)
+    const [dbError, setDbError] = useState('')
+
+    const load = useCallback(async () => {
+        if (!currentUser) return
+        try {
+            setDbLoading(true)
+            setDbError('')
+            const data = await getUserCampaigns(currentUser.uid)
+            setCampaigns(data.sort((a, b) => b.createdAt - a.createdAt))
+        } catch (err) {
+            console.error('[Campaigns] load error:', err)
+            setDbError('Failed to load campaigns.')
+        } finally {
+            setDbLoading(false)
         }
-        return variants[status] || 'default'
+    }, [currentUser])
+
+    useEffect(() => { load() }, [load])
+
+    // ── Status badge mapping ────────────────────────────────────────────────
+    const statusVariant = (status) => {
+        const map = { draft: 'default', active: 'primary', completed: 'success', paused: 'info' }
+        return map[status] || 'default'
     }
 
+    // ── Columns ─────────────────────────────────────────────────────────────
     const columns = useMemo(() => [
         {
             name: 'Campaign Name',
             selector: row => row.name,
             sortable: true,
+            grow: 2,
             cell: row => (
                 <Link to={`/dashboard/campaigns/${row.id}`} className="font-bold text-slate-900 hover:text-indigo-600 transition-colors">
                     {row.name}
                 </Link>
             ),
-            grow: 2,
+        },
+        {
+            name: 'Type',
+            selector: row => row.type,
+            sortable: true,
+            cell: row => <Badge variant={row.type === 'initial' ? 'primary' : 'info'}>{row.type}</Badge>
         },
         {
             name: 'Status',
             selector: row => row.status,
             sortable: true,
-            cell: row => (
-                <Badge variant={getStatusBadge(row.status)}>
-                    {row.status}
-                </Badge>
-            )
+            cell: row => <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
         },
         {
-            name: 'Total Leads',
-            selector: row => row.totalLeads,
+            name: 'Created',
+            selector: row => row.createdAt,
             sortable: true,
-            center: true,
-            cell: row => <span className="text-slate-700 font-medium">{row.totalLeads.toLocaleString()}</span>
+            cell: row => <span className="text-slate-500 text-sm">{new Date(row.createdAt).toLocaleDateString()}</span>
         },
-        {
-            name: 'Opened',
-            selector: row => row.opened,
-            sortable: true,
-            center: true,
-            cell: row => <span className="text-emerald-600 font-bold">{row.opened.toLocaleString()}</span>
-        },
-        {
-            name: 'Stopped',
-            selector: row => row.stopped,
-            sortable: true,
-            center: true,
-            cell: row => <span className="text-slate-400 font-medium">{row.stopped.toLocaleString()}</span>
-        },
-        {
-            name: 'First Sent',
-            selector: row => row.sentDate,
-            sortable: true,
-            cell: row => <span className="text-slate-500 text-sm">{row.sentDate}</span>
-        },
-        {
-            name: 'Yield',
-            selector: row => row.totalLeads > 0 ? (row.opened / row.totalLeads) : 0,
-            sortable: true,
-            right: true,
-            cell: row => (
-                <span className="font-bold text-slate-900">
-                    {row.totalLeads > 0 && row.opened > 0
-                        ? `${((row.opened / row.totalLeads) * 100).toFixed(1)}%`
-                        : '0%'}
-                </span>
-            )
-        }
     ], [])
 
     const customStyles = {
-        table: {
-            style: {
-                backgroundColor: 'transparent',
-            },
-        },
-        headRow: {
-            style: {
-                backgroundColor: '#f8fafc',
-                borderBottomWidth: '1px',
-                borderBottomColor: '#f1f5f9',
-                minHeight: '64px',
-            },
-        },
-        headCells: {
-            style: {
-                color: '#64748b',
-                fontSize: '0.75rem',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-            },
-        },
-        rows: {
-            style: {
-                minHeight: '72px',
-                '&:not(:last-child)': {
-                    borderBottomWidth: '1px',
-                    borderBottomColor: '#f8fafc',
-                },
-                '&:hover': {
-                    backgroundColor: '#f8fafc',
-                    transitionDuration: '0.15s',
-                    transitionProperty: 'background-color',
-                },
-            },
-        },
-        cells: {
-            style: {
-                paddingLeft: '1.5rem',
-                paddingRight: '1.5rem',
-            },
-        },
+        table: { style: { backgroundColor: 'transparent' } },
+        headRow: { style: { backgroundColor: '#f8fafc', borderBottomWidth: '1px', borderBottomColor: '#f1f5f9', minHeight: '64px' } },
+        headCells: { style: { color: '#64748b', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' } },
+        rows: { style: { minHeight: '72px', '&:not(:last-child)': { borderBottomWidth: '1px', borderBottomColor: '#f8fafc' }, '&:hover': { backgroundColor: '#f8fafc' } } },
+        cells: { style: { paddingLeft: '1.5rem', paddingRight: '1.5rem' } },
     }
 
+    // ── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen space-y-8 pb-12">
-            {/* Page Header */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <TitleComponent type="h1" className="text-slate-900 text-3xl font-bold">
@@ -173,38 +95,51 @@ const Campaigns = () => {
                 </div>
                 <Link to="/dashboard/campaigns/create">
                     <Button variant="primary">
-                        <i className="fas fa-plus mr-2"></i>
+                        <i className="fas fa-plus mr-2" />
                         New Outreach
                     </Button>
                 </Link>
             </div>
 
-            {/* Campaign Comparison Table */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                <DataTable
-                    columns={columns}
-                    data={campaigns}
-                    customStyles={customStyles}
-                    highlightOnHover
-                    pointerOnHover
-                    responsive
-                />
-            </div>
-
-            {campaigns.length === 0 && (
-                <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
-                    <i className="fas fa-paper-plane text-slate-200 text-6xl mb-4"></i>
-                    <h3 className="text-xl font-bold text-slate-900">No campaigns started</h3>
-                    <p className="text-slate-500 mb-6">Launch your first engagement-only outreach.</p>
-                    <Link to="/dashboard/campaigns/create">
-                        <Button variant="primary">Create Campaign</Button>
-                    </Link>
+            {/* Error */}
+            {dbError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-medium flex items-center gap-3">
+                    <i className="fas fa-exclamation-circle" />
+                    {dbError}
+                    <button onClick={load} className="ml-auto text-xs font-bold underline">Retry</button>
                 </div>
             )}
+
+            {/* Table */}
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                {dbLoading ? (
+                    <div className="py-20 flex flex-col items-center gap-4">
+                        <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+                        <p className="text-slate-400 text-sm font-medium">Loading campaigns...</p>
+                    </div>
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={campaigns}
+                        customStyles={customStyles}
+                        highlightOnHover
+                        pointerOnHover
+                        responsive
+                        noDataComponent={
+                            <div className="py-16 text-center">
+                                <i className="fas fa-paper-plane text-slate-200 text-5xl mb-4 block" />
+                                <h3 className="text-lg font-bold text-slate-700">No campaigns yet</h3>
+                                <p className="text-slate-400 text-sm mb-4">Launch your first engagement-only outreach.</p>
+                                <Link to="/dashboard/campaigns/create">
+                                    <Button variant="primary">Create Campaign</Button>
+                                </Link>
+                            </div>
+                        }
+                    />
+                )}
+            </div>
         </div>
     )
 }
 
 export default Campaigns
-
-
