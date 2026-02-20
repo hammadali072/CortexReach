@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import { useAuth } from '../../context/AuthContext'
 
 const Header = ({ onMenuClick }) => {
+    const { userProfile } = useAuth();
     const [showNotifications, setShowNotifications] = useState(false);
     const notificationRef = useRef(null);
 
@@ -92,16 +94,20 @@ const Header = ({ onMenuClick }) => {
                     {/* Profile Section */}
                     <div className="flex items-center space-x-3 pl-4 border-l border-gray-100">
                         <div className="text-right hidden sm:block">
-                            <p className="text-sm font-bold text-gray-900 leading-none">Hammad Ali</p>
-                            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-tighter mt-1">Senior Outreach Specialist</p>
+                            <p className="text-sm font-bold text-gray-900 leading-none">{userProfile?.name || 'User'}</p>
+                            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-tighter mt-1">{userProfile?.role || 'Member'}</p>
                         </div>
                         <div className="relative group cursor-pointer">
-                            <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-gray-100 group-hover:ring-indigo-500 transition-all duration-300">
-                                <img
-                                    src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=100&auto=format&fit=crop"
-                                    alt="Profile"
-                                    className="w-full h-full object-cover"
-                                />
+                            <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-gray-100 group-hover:ring-indigo-500 transition-all duration-300 bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                                {userProfile?.photoURL ? (
+                                    <img
+                                        src={userProfile.photoURL}
+                                        alt="Profile"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span>{userProfile?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'CR'}</span>
+                                )}
                             </div>
                             <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
                         </div>

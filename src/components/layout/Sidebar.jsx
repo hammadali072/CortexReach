@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
+import { useAuth } from '../../context/AuthContext'
 
 const Sidebar = ({ isOpen, onClose }) => {
+    const { userProfile, logout } = useAuth()
+    const navigate = useNavigate()
     const [showAccountDropdown, setShowAccountDropdown] = useState(false)
     const menuItems = [
         { path: '/dashboard', icon: 'fa-chart-line', label: 'Dashboard' },
@@ -82,9 +85,9 @@ const Sidebar = ({ isOpen, onClose }) => {
                             <div className="absolute bottom-full left-0 w-full mb-4 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
                                 <div className="p-2">
                                     <button
-                                        onClick={() => {
-                                            localStorage.removeItem('cortex_user');
-                                            window.location.href = '/';
+                                        onClick={async () => {
+                                            await logout();
+                                            navigate('/');
                                         }}
                                         className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-all duration-200 group/btn"
                                     >
@@ -110,16 +113,20 @@ const Sidebar = ({ isOpen, onClose }) => {
                             onClick={() => setShowAccountDropdown(!showAccountDropdown)}
                             className={`flex items-center space-x-3 p-2 rounded-2xl cursor-pointer transition-all duration-300 ${showAccountDropdown ? 'bg-white shadow-md ring-1 ring-black/5 scale-[1.02]' : 'hover:bg-white hover:shadow-sm'}`}
                         >
-                            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm group-hover:ring-indigo-500 transition-all">
-                                <img
-                                    src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=100&auto=format&fit=crop"
-                                    alt="Avatar"
-                                    className="w-full h-full object-cover"
-                                />
+                            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm group-hover:ring-indigo-500 transition-all bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                                {userProfile?.photoURL ? (
+                                    <img
+                                        src={userProfile.photoURL}
+                                        alt="Avatar"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span>{userProfile?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'CR'}</span>
+                                )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-gray-900 truncate">Hammad Ali</p>
-                                <p className="text-[9px] text-gray-500 font-bold uppercase truncate tracking-tighter">Senior Specialist</p>
+                                <p className="text-sm font-bold text-gray-900 truncate">{userProfile?.name || 'User'}</p>
+                                <p className="text-[9px] text-gray-500 font-bold uppercase truncate tracking-tighter">{userProfile?.role || 'Member'}</p>
                             </div>
                             <i className={`fas fa-chevron-up text-[10px] text-gray-300 transition-transform duration-300 ${showAccountDropdown ? 'rotate-180 text-indigo-500' : ''}`} />
                         </div>

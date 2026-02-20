@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import Modal from './Modal';
 import Button from './Button';
 import GooglePlacesResultsTable from './GooglePlacesResultsTable';
-import mockGooglePlacesResults from '../../data/mockGooglePlacesResults';
+import { searchPlaces, extractEmailFromWebsite } from '../../services/googleMapsService';
 
 // ─── Phase 5: Error simulation probabilities ─────────────────────────────────
 const QUOTA_ERROR_CHANCE = 0.10;  // 10 % → quota exceeded
@@ -45,8 +45,8 @@ const StepIndicator = ({ step }) => (
             return (
                 <div key={label} className="flex items-center gap-2">
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all duration-300 ${done ? 'bg-emerald-500 text-white'
-                            : active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
-                                : 'bg-slate-100 text-slate-400'
+                        : active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                            : 'bg-slate-100 text-slate-400'
                         }`}>
                         {done ? <i className="fas fa-check text-[10px]" /> : idx}
                     </div>
@@ -77,8 +77,8 @@ const SearchErrorBanner = ({ type, onRetry }) => {
     const isQuota = type === 'quota_exceeded';
     return (
         <div className={`p-5 rounded-2xl border flex items-start gap-4 animate-in fade-in slide-in-from-top-2 duration-300 ${isQuota
-                ? 'bg-amber-50 border-amber-200'
-                : 'bg-red-50 border-red-200'
+            ? 'bg-amber-50 border-amber-200'
+            : 'bg-red-50 border-red-200'
             }`}>
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isQuota ? 'bg-amber-500' : 'bg-red-500'
                 }`}>
@@ -96,8 +96,8 @@ const SearchErrorBanner = ({ type, onRetry }) => {
                 <button
                     onClick={onRetry}
                     className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${isQuota
-                            ? 'bg-amber-100 hover:bg-amber-200 text-amber-800'
-                            : 'bg-red-100 hover:bg-red-200 text-red-800'
+                        ? 'bg-amber-100 hover:bg-amber-200 text-amber-800'
+                        : 'bg-red-100 hover:bg-red-200 text-red-800'
                         }`}
                 >
                     <i className="fas fa-redo text-[9px]" />
@@ -197,46 +197,58 @@ const GoogleMapsImportModal = ({ isOpen, onClose, onAddLeads }) => {
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
-    const handleSearch = () => {
+    const handleSearch = async () => {
         if (!canSearch) return;
         setIsLoading(true);
         setSearchError(null);
         setSelectedIds([]);
         setEmailStates({});
 
-        setTimeout(() => {
-            const rand = Math.random();
-
-            // Phase 5: Simulate errors randomly
-            if (rand < QUOTA_ERROR_CHANCE) {
-                setSearchError('quota_exceeded');
-                setIsLoading(false);
-                return;
-            }
-            if (rand < API_ERROR_CHANCE) {
-                setSearchError('api_error');
-                setIsLoading(false);
-                return;
-            }
-
-            // Phase 5: Occasionally return empty results
-            const data = rand < EMPTY_RESULT_CHANCE ? [] : mockGooglePlacesResults;
+        try {
+            const data = await searchPlaces(keyword, location);
             setResults(data);
-            setIsLoading(false);
             setStep(2);
-        }, 2000);
+        } catch (error) {
+            console.error('Search error:', error);
+            if (error.message.includes('quota')) {
+                setSearchError('quota_exceeded');
+            } else {
+                setSearchError('api_error');
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleExtractEmail = (placeId) => {
+    const handleExtractEmail = async (placeId) => {
         if (emailStates[placeId]?.status === 'loading' || emailStates[placeId]?.status === 'done') return;
 
         setEmailStates((prev) => ({ ...prev, [placeId]: { status: 'loading', email: null } }));
 
-        setTimeout(() => {
-            const business = results.find((r) => r.id === placeId);
-            const mockEmail = business ? generateMockEmail(business.name) : 'info@business.com';
-            setEmailStates((prev) => ({ ...prev, [placeId]: { status: 'done', email: mockEmail } }));
-        }, 1500);
+        try {
+            // 1. Fetch deep details to get the website
+            const { fetchPlaceDetails } = await import('../../services/googleMapsService');
+            const details = await fetchPlaceDetails(placeId);
+
+            if (!details || !details.website) {
+                setEmailStates((prev) => ({ ...prev, [placeId]: { status: 'done', email: null } }));
+                return;
+            }
+
+            // 2. Update results UI with phone/website info
+            setResults(prev => prev.map(r => r.id === placeId ? {
+                ...r,
+                website: details.website,
+                phone: details.formatted_phone_number
+            } : r));
+
+            // 3. Extract email
+            const email = await extractEmailFromWebsite(details.website);
+            setEmailStates((prev) => ({ ...prev, [placeId]: { status: 'done', email: email } }));
+        } catch (error) {
+            console.error('Extraction error:', error);
+            setEmailStates((prev) => ({ ...prev, [placeId]: { status: 'failed', email: null } }));
+        }
     };
 
     const handleAddToProject = () => {
@@ -313,8 +325,8 @@ const GoogleMapsImportModal = ({ isOpen, onClose, onAddLeads }) => {
                 onClick={handleAddToProject}
                 disabled={selectedIds.length === 0}
                 className={`rounded-xl px-8 transition-all ${selectedIds.length > 0
-                        ? 'bg-indigo-600 shadow-lg shadow-indigo-100'
-                        : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-70'
+                    ? 'bg-indigo-600 shadow-lg shadow-indigo-100'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-70'
                     }`}
             >
                 <span className="flex items-center gap-2">
