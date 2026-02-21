@@ -50,6 +50,7 @@ export const createProject = async (userId, data) => {
         userId,
         name: data.name.trim(),
         description: data.description || '',
+        features: data.features || '',
         industry: data.industry || '',
         targetAudience: data.targetAudience || '',
         type: data.type || 'Product',
@@ -223,13 +224,20 @@ export const updateLead = async (leadId, updates) => {
 /**
  * Create a campaign.
  * Prevents duplicate names within the same project.
+ * Validates project ownership.
  *
  * @param {string} userId
  * @param {string} projectId
- * @param {{ name, templateId, type }} data
+ * @param {{ name, subject, body, templateId, templateTone }} data
  */
 export const createCampaign = async (userId, projectId, data) => {
-    // Duplicate name check
+    // 1. Validate Project Ownership
+    const project = await getProject(projectId);
+    if (!project || project.userId !== userId) {
+        throw new Error('Unauthorized: You do not own this project.');
+    }
+
+    // 2. Duplicate name check
     const existing = await getProjectCampaigns(projectId);
     const isDuplicate = existing.some(
         c => c.name.trim().toLowerCase() === data.name.trim().toLowerCase()
@@ -242,18 +250,27 @@ export const createCampaign = async (userId, projectId, data) => {
     const newRef = push(campaignsRef);
     const campaignId = newRef.key;
 
+    const timestamp = Date.now();
     const campaign = {
         id: campaignId,
-        projectId,
         userId,
+        projectId,
         name: data.name.trim(),
+        subject: data.subject || '',
+        body: data.body || '',
         templateId: data.templateId || null,
-        type: data.type || 'initial',             // 'initial' | 'followup'
-        status: 'draft',
-        createdAt: Date.now(),
+        templateTone: data.templateTone || '',
+        status: 'draft', // status: "draft" | "scheduled" | "sent" | "completed"
+        totalLeads: 0,
+        createdAt: timestamp,
+        updatedAt: timestamp,
     };
 
     await set(newRef, campaign);
+
+    // Increment project totalCampaigns count
+    await _incrementStat(projectId, 'totalCampaigns', 1);
+
     return campaign;
 };
 
@@ -286,16 +303,128 @@ export const getUserCampaigns = async (userId) => {
 };
 
 /**
+ * Fetch a single campaign by ID.
+ */
+export const getCampaign = async (campaignId) => {
+    const snapshot = await get(ref(db, `campaigns/${campaignId}`));
+    return snapshot.exists() ? snapshot.val() : null;
+};
+
+/**
  * Update campaign fields (e.g. status: 'active').
+ * Enforces integrity: Cannot edit if status is not 'draft'.
  */
 export const updateCampaign = async (campaignId, updates) => {
-    await update(ref(db, `campaigns/${campaignId}`), updates);
+    const campaign = await getCampaign(campaignId);
+    if (!campaign) throw new Error('Campaign not found.');
+
+    // Status Integrity: draft only
+    if (campaign.status !== 'draft' && !updates.status) {
+        throw new Error(`Cannot edit campaign content after it has been ${campaign.status}.`);
+    }
+
+    await update(ref(db, `campaigns/${campaignId}`), {
+        ...updates,
+        updatedAt: Date.now(),
+    });
+};
+
+/**
+ * Delete a campaign and all associated data.
+ * Enforces integrity: Cannot delete if status is not 'draft'.
+ * Validates project ownership.
+ */
+export const deleteCampaign = async (userId, projectId, campaignId) => {
+    // 1. Validate Project Ownership
+    const project = await getProject(projectId);
+    if (!project || project.userId !== userId) {
+        throw new Error('Unauthorized: You do not own this project.');
+    }
+
+    const campaign = await getCampaign(campaignId);
+    if (!campaign) return;
+
+    // 2. Status Integrity: draft only
+    if (campaign.status !== 'draft') {
+        throw new Error(`Cannot delete a campaign that has already been ${campaign.status}.`);
+    }
+
+    // 1. Remove related email_sends (if any exist for draft - unlikely but for integrity)
+    const sends = await getCampaignSends(campaignId);
+    if (sends.length > 0) {
+        for (const send of sends) {
+            await set(ref(db, `email_sends/${send.id}`), null);
+        }
+    }
+
+    // 2. Remove audience mapping
+    await set(ref(db, `campaign_audience/${campaignId}`), null);
+
+    // 3. Remove campaign record
+    await set(ref(db, `campaigns/${campaignId}`), null);
+
+    // 4. Update project stats
+    await _incrementStat(projectId, 'totalCampaigns', -1);
 };
 
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PHASE 5 — EMAIL SENDS TRACKING
-// Node: email_sends/{sendId}
+// PHASE 2.5 — CAMPAIGN AUDIENCE MAPPING (PHASE 2)
+// Node: campaign_audience/{campaignId}/{leadId}: true
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Replace/Set the audience mapping for a campaign.
+ * Validates that each lead belongs to the specified project.
+ * 
+ * @param {string} projectId 
+ * @param {string} campaignId 
+ * @param {Array<string>} leadIds 
+ */
+export const setCampaignAudience = async (projectId, campaignId, leadIds) => {
+    // 1. Fetch project leads to validate ownership
+    const projectLeads = await getProjectLeads(projectId);
+    const validLeadIds = new Set(projectLeads.map(l => l.id));
+
+    // 2. Filter leadIds to ensure they belong to this project
+    const filteredIds = leadIds.filter(id => validLeadIds.has(id));
+
+    // 3. Prepare audience object { leadId: true }
+    const audienceMap = {};
+    filteredIds.forEach(id => {
+        audienceMap[id] = true;
+    });
+
+    // 4. Update database
+    await set(ref(db, `campaign_audience/${campaignId}`), audienceMap);
+
+    // 5. Update campaign totalLeads count
+    await updateCampaign(campaignId, { totalLeads: filteredIds.length });
+
+    return filteredIds.length;
+};
+
+/**
+ * Get count of leads in a campaign audience.
+ */
+export const getCampaignAudienceCount = async (campaignId) => {
+    const snapshot = await get(ref(db, `campaign_audience/${campaignId}`));
+    if (!snapshot.exists()) return 0;
+    return Object.keys(snapshot.val()).length;
+};
+
+/**
+ * Get all lead IDs for a campaign.
+ */
+export const getCampaignAudienceIds = async (campaignId) => {
+    const snapshot = await get(ref(db, `campaign_audience/${campaignId}`));
+    if (!snapshot.exists()) return [];
+    return Object.keys(snapshot.val());
+};
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 3 — EMAIL SENDS TRACKING
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
@@ -338,6 +467,46 @@ export const recordEmailSend = async (data) => {
 
     return record;
 };
+
+/**
+ * Execute a campaign: Create email_sends for each lead, update lead statuses,
+ * and mark campaign as 'sent'.
+ * 
+ * @param {string} campaignId 
+ */
+export const launchCampaignExecution = async (campaignId) => {
+    const campaign = await getCampaign(campaignId);
+    if (!campaign) throw new Error('Campaign not found.');
+    if (campaign.status !== 'draft') throw new Error('Only draft campaigns can be launched.');
+
+    // 1. Get Audience
+    const leadIds = await getCampaignAudienceIds(campaignId);
+    if (leadIds.length === 0) throw new Error('No leads selected for this campaign.');
+
+    // 2. Mark Campaign as 'sent' immediately to prevent double-launch
+    await updateCampaign(campaignId, { status: 'sent' });
+
+    // 3. Process sends (Loop through audience)
+    // For large audiences, this should ideally be handled by a Cloud Function.
+    // For this prototype, we process them sequentially/parallel here.
+    const results = await Promise.all(leadIds.map(async (leadId) => {
+        try {
+            return await recordEmailSend({
+                campaignId: campaign.id,
+                projectId: campaign.projectId,
+                leadId: leadId,
+                subject: campaign.subject,
+                body: campaign.body
+            });
+        } catch (err) {
+            console.error(`[db] Failed to send to lead ${leadId}:`, err);
+            return null;
+        }
+    }));
+
+    return { total: leadIds.length, processed: results.filter(r => r !== null).length };
+};
+
 
 /**
  * Mark an email as opened.
@@ -435,5 +604,5 @@ export const getProjectStats = async (projectId) => {
     const snapshot = await get(ref(db, `projects/${projectId}/stats`));
     return snapshot.exists()
         ? snapshot.val()
-        : { totalLeads: 0, totalSent: 0, totalOpened: 0, totalReplied: 0 };
+        : { totalLeads: 0, totalCampaigns: 0, totalSent: 0, totalOpened: 0, totalReplied: 0 };
 };

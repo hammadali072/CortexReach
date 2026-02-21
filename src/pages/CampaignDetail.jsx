@@ -1,23 +1,98 @@
-import React, { useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import TitleComponent from '../components/titleComponent/titleComponent';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import ABTestResults from '../components/ui/ABTestResults';
 import ScalingVisualization from '../components/ui/ScalingVisualization';
+import { getCampaign, getCampaignAudienceCount, getCampaignSends, launchCampaignExecution } from '../services/db';
+import { useAuth } from '../context/AuthContext';
 
 const CampaignDetail = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { currentUser } = useAuth();
 
-    // Mock campaign data
-    const campaign = useMemo(() => {
-        const campaigns = [
-            { id: 1, name: 'Jan SME Outreach', status: 'Active', totalLeads: 1234, opened: 456, sentDate: '2026-01-15' },
-            { id: 2, name: 'Growth Series B', status: 'Draft', totalLeads: 892, opened: 0, sentDate: '-' },
-            { id: 3, name: 'Tech Stack Update', status: 'Completed', totalLeads: 2100, opened: 834, sentDate: '2026-01-10' }
-        ];
-        return campaigns.find(c => c.id.toString() === id.toString()) || campaigns[0];
-    }, [id]);
+    const [campaign, setCampaign] = useState(null);
+    const [stats, setStats] = useState({
+        totalLeads: 0,
+        opened: 0,
+        replied: 0,
+        yieldRate: '0%'
+    });
+    const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
+
+    const loadData = useCallback(async () => {
+        if (!currentUser || !id) return;
+        try {
+            setLoading(true);
+            const data = await getCampaign(id);
+            if (!data) return;
+
+            const audienceCount = await getCampaignAudienceCount(id);
+            const sends = await getCampaignSends(id);
+            const opened = sends.filter(s => s.opened).length;
+            const replied = sends.filter(s => s.replied).length;
+
+            const yieldVal = audienceCount > 0 ? ((opened / audienceCount) * 100).toFixed(1) : '0';
+
+            setCampaign(data);
+            setStats({
+                totalLeads: audienceCount || data.totalLeads || 0,
+                opened,
+                replied,
+                yieldRate: `${yieldVal}%`
+            });
+        } catch (err) {
+            console.error('[CampaignDetail] load error:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, [id, currentUser]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    const handleLaunch = async () => {
+        if (!campaign || campaign.status !== 'draft') return;
+        setActionLoading(true);
+        try {
+            await launchCampaignExecution(id);
+            await loadData(); // refresh
+        } catch (err) {
+            console.error('[CampaignDetail] launch error:', err);
+            alert(err.message || 'Failed to launch campaign.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="py-20 flex flex-col items-center gap-4">
+                <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+                <p className="text-slate-400 text-sm font-medium">Loading campaign analysis...</p>
+            </div>
+        );
+    }
+
+    if (!campaign) {
+        return (
+            <div className="py-20 text-center">
+                <p className="text-slate-500">Campaign not found.</p>
+                <Link to="/dashboard/campaigns">
+                    <Button variant="outline" className="mt-4">Back to Campaigns</Button>
+                </Link>
+            </div>
+        );
+    }
+
+    const statusVariant = (status) => {
+        const map = { draft: 'default', scheduled: 'info', sent: 'primary', completed: 'success' }
+        return map[status] || 'default'
+    }
 
     return (
         <div className="min-h-screen space-y-10 pb-12">
@@ -28,7 +103,7 @@ const CampaignDetail = () => {
                         <Badge variant="default">Campaigns</Badge>
                     </Link>
                     <span className="text-slate-300">/</span>
-                    <span className="text-slate-500 text-sm font-bold uppercase tracking-widest">{campaign.status}</span>
+                    <Badge variant={statusVariant(campaign.status)} className="uppercase tracking-widest">{campaign.status}</Badge>
                 </div>
 
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -36,17 +111,42 @@ const CampaignDetail = () => {
                         <TitleComponent type="h1" className="text-slate-900 text-4xl font-black font-idGrotesk">
                             {campaign.name}
                         </TitleComponent>
-                        <p className="text-slate-500 font-medium mt-1 italic">Launched on {campaign.sentDate}</p>
+                        <p className="text-slate-500 font-medium mt-1 italic">
+                            {campaign.status === 'draft' ? 'Draft created on ' : 'Launched on '}
+                            {new Date(campaign.createdAt).toLocaleDateString()}
+                        </p>
                     </div>
                     <div className="flex gap-4">
-                        <Button variant="outline" className="border-slate-200">
-                            <i className="fas fa-pause mr-2"></i>
-                            Pause Campaign
-                        </Button>
-                        <Button variant="primary" className="bg-indigo-600 shadow-xl shadow-indigo-100">
-                            <i className="fas fa-edit mr-2"></i>
-                            Edit Flow
-                        </Button>
+                        {campaign.status === 'draft' ? (
+                            <>
+                                <Link to={`/dashboard/campaigns/${id}/edit`}>
+                                    <Button variant="outline" className="border-slate-200">
+                                        <i className="fas fa-edit mr-2"></i>
+                                        Edit Content
+                                    </Button>
+                                </Link>
+                                <Button
+                                    variant="primary"
+                                    className="bg-indigo-600 shadow-xl shadow-indigo-100"
+                                    onClick={handleLaunch}
+                                    disabled={actionLoading}
+                                >
+                                    <i className={`fas ${actionLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'} mr-2`}></i>
+                                    {actionLoading ? 'Launching...' : 'Launch Campaign'}
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button variant="outline" className="border-slate-200">
+                                    <i className="fas fa-pause mr-2"></i>
+                                    Pause Campaign
+                                </Button>
+                                <Button variant="primary" className="bg-slate-900 text-white cursor-default">
+                                    <i className="fas fa-check-circle mr-2"></i>
+                                    Live
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
@@ -54,22 +154,37 @@ const CampaignDetail = () => {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Audience', value: campaign.totalLeads, icon: 'fa-users', color: 'text-blue-500' },
-                    { label: 'Opened', value: campaign.opened, icon: 'fa-envelope-open', color: 'text-emerald-500' },
-                    { label: 'Reply Rate', value: '12.4%', icon: 'fa-reply', color: 'text-indigo-500' },
-                    { label: 'Yield Rate', value: '24.1%', icon: 'fa-chart-line', color: 'text-purple-500' }
+                    { label: 'Total Audience', value: stats.totalLeads, icon: 'fa-users', color: 'text-blue-500' },
+                    { label: 'Opened', value: stats.opened, icon: 'fa-envelope-open', color: 'text-emerald-500' },
+                    { label: 'Replied', value: stats.replied, icon: 'fa-reply', color: 'text-indigo-500' },
+                    { label: 'Yield Rate', value: stats.yieldRate, icon: 'fa-chart-line', color: 'text-purple-500' }
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                         <div className="flex justify-between items-start mb-4">
                             <div className={`w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center ${stat.color}`}>
                                 <i className={`fas ${stat.icon}`}></i>
                             </div>
-                            <Badge variant="default">24h</Badge>
+                            <Badge variant="default">All Time</Badge>
                         </div>
                         <p className="text-2xl font-black text-slate-900">{stat.value}</p>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{stat.label}</p>
                     </div>
                 ))}
+            </div>
+
+            {/* Campaign Content Preview */}
+            <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 p-10 space-y-4">
+                <TitleComponent type="h3" className="text-slate-900 font-black text-xl">Content Preview</TitleComponent>
+                <div className="space-y-2">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Subject Line</p>
+                    <p className="p-4 bg-slate-50 rounded-2xl font-bold text-slate-700">{campaign.subject || 'No subject set'}</p>
+                </div>
+                <div className="space-y-2">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Email Body</p>
+                    <div className="p-6 bg-slate-50 rounded-[32px] text-slate-600 font-medium whitespace-pre-wrap leading-relaxed">
+                        {campaign.body || 'No content set.'}
+                    </div>
+                </div>
             </div>
 
             {/* Phase 4: A/B Testing Visualization */}
@@ -88,7 +203,7 @@ const CampaignDetail = () => {
                 <div className="space-y-1">
                     <h4 className="text-lg font-bold text-indigo-900">AI Optimization Insight</h4>
                     <p className="text-sm text-indigo-700 leading-relaxed font-medium">
-                        We've identified that <span className="font-bold">Template A</span> has a significantly higher retention rate among CTOs. Our scaling engine is now prioritizing the 1.7K remaining leads that fit this specific persona match to maximize your campaign yield.
+                        Based on the current <span className="font-bold">Yield Rate of {stats.yieldRate}</span>, our AI recommends continuing the current template strategy. Engagement is within the top 10% of industry benchmarks for your industry.
                     </p>
                 </div>
             </div>

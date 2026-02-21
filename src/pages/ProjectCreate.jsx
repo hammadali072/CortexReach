@@ -15,6 +15,7 @@ const ProjectCreate = () => {
         name: '',
         type: 'Product',
         description: '',
+        features: '',
         industry: '',
         audience: ''
     })
@@ -36,6 +37,7 @@ const ProjectCreate = () => {
                 name: formData.name,
                 type: formData.type,
                 description: formData.description,
+                features: formData.features,
                 industry: formData.industry,
                 targetAudience: formData.audience,
                 status: 'active',
@@ -91,11 +93,22 @@ const ProjectCreate = () => {
                 <div>
                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Short Description</label>
                     <textarea
-                        rows={4}
+                        rows={3}
                         className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[32px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700"
                         placeholder="What problem does this project solve?"
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Key Features / Value Props</label>
+                    <textarea
+                        rows={3}
+                        className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[32px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700"
+                        placeholder="List top 3 features or benefits..."
+                        value={formData.features}
+                        onChange={(e) => setFormData({ ...formData, features: e.target.value })}
                     />
                 </div>
 

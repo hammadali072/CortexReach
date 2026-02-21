@@ -4,9 +4,10 @@ import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import Badge from '../components/ui/Badge'
 import TemplateCard from '../components/ui/TemplateCard'
 import { useAuth } from '../context/AuthContext'
-import { getUserProjects, getProjectLeads, createCampaign } from '../services/db'
+import { getUserProjects, getProjectLeads, createCampaign, getProjectCampaigns, setCampaignAudience, launchCampaignExecution } from '../services/db'
 
 const CampaignCreate = () => {
     const navigate = useNavigate()
@@ -39,45 +40,66 @@ const CampaignCreate = () => {
     })
 
     const [genStatus, setGenStatus] = useState('idle'); // idle, generating, completed
-
-    const mockTemplates = [
-        {
-            id: 1,
-            title: "Executive Priority",
-            subject: "Streamlining your Q2 roadmap for {{company}}",
-            body: "Hi {{name}}, I noticed your recent push towards automation. Our AI model suggests this is a high-yield priority for Nexus Systems...",
-            tone: "Formal",
-            cta: "Meeting Link",
-            prediction: 94
-        },
-        {
-            id: 2,
-            title: "Growth Catalyst",
-            subject: "Quick question about growth at {{company}}",
-            body: "Hey {{name}}, really impressed with what you're doing. We've helped similar teams scale their outreach yield by 40%. Interested in a quick sync?",
-            tone: "Friendly",
-            cta: "Direct Reply",
-            prediction: 88
-        },
-        {
-            id: 3,
-            title: "Problem Solver",
-            subject: "Solving the developer churn at {{company}}",
-            body: "Hi {{name}}, most CTOs we talk to are struggling with engineering retention. We have a specific framework that might help. Open to a chat?",
-            tone: "Direct",
-            cta: "Calendar",
-            prediction: 91
-        }
-    ];
+    const [generatedTemplates, setGeneratedTemplates] = useState([]);
 
     const handleGenerateTemplates = () => {
+        if (!formData.project) {
+            setSubmitError('Please select a project first.');
+            return;
+        }
+
+        const project = dbProjects.find(p => p.id === formData.project);
         setGenStatus('generating');
-        setTimeout(() => setGenStatus('completed'), 2000);
+
+        // Simulation of AI processing the project context
+        setTimeout(() => {
+            const context = {
+                name: project?.name || 'our product',
+                industry: project?.industry || 'your industry',
+                description: project?.description || 'streamlining your business',
+                features: project?.features || 'advanced automation and insights'
+            };
+
+            const templates = [
+                {
+                    id: 1,
+                    title: "Brand Introduction",
+                    subject: `Question about ${context.name}`,
+                    body: `Hi {{name}},\n\nI wanted to personally introduce you to ${context.name}. We've built this platform to tackle ${context.description.toLowerCase()}.\n\nOur core focus is on ${context.features.toLowerCase()}, ensuring that your team can move faster and more efficiently. Would you be open to a quick chat about how ${context.name} could fit into your workflow?`,
+                    tone: "Professional",
+                    cta: "Reply 'Yes'",
+                    prediction: 92
+                },
+                {
+                    id: 2,
+                    title: "Feature Focus",
+                    subject: `${context.name}: Quick overview`,
+                    body: `Hi {{name}},\n\nI'm reaching out from the team at ${context.name}. We specifically designed our tool to help with ${context.description.toLowerCase()} by leveraging ${context.features.toLowerCase()}.\n\nI'd love to show you a 2-minute overview of how these features are helping teams like yours achieve better results. Do you have a moment next week?`,
+                    tone: "Informative",
+                    cta: "Watch Demo",
+                    prediction: 89
+                },
+                {
+                    id: 3,
+                    title: "Strategic Value",
+                    subject: `New from ${context.name}`,
+                    body: `Hi {{name}},\n\nWe built ${context.name} because we saw a gap in how ${context.description.toLowerCase()} was being handled. \n\nOur platform prioritizes ${context.features.toLowerCase()} to deliver immediate value to your organization. I've attached some details on how we can help you scale. Are you interested in a quick sync?`,
+                    tone: "Direct",
+                    cta: "Check Details",
+                    prediction: 95
+                }
+            ];
+
+            setGeneratedTemplates(templates);
+            setGenStatus('completed');
+        }, 1500);
     }
 
     // When project selection changes, load its leads from DB
     const handleProjectChange = async (projectId) => {
-        setFormData(prev => ({ ...prev, project: projectId, selectedRows: [] }))
+        setFormData(prev => ({ ...prev, project: projectId, selectedRows: [], templateId: null, subject: '', emailContent: '' }))
+        setGenStatus('idle');
+        setGeneratedTemplates([]);
         if (!projectId) { setDbLeads([]); return }
         try {
             setLeadsLoading(true)
@@ -159,16 +181,41 @@ const CampaignCreate = () => {
         },
     }
 
-    const handleNext = () => {
-        if (currentStep === 1 && !formData.project) {
-            setSubmitError('Please select a project before proceeding.')
-            return
-        }
-        if (currentStep === 1 && !formData.name.trim()) {
-            setSubmitError('Campaign name is required.')
-            return
-        }
+    const handleNext = async () => {
         setSubmitError('')
+
+        if (currentStep === 1) {
+            if (!formData.project) {
+                setSubmitError('Please select a project before proceeding.')
+                return
+            }
+            if (!formData.name.trim()) {
+                setSubmitError('Campaign name is required.')
+                return
+            }
+
+            // Validate name uniqueness per project
+            try {
+                const existing = await getProjectCampaigns(formData.project)
+                const isDuplicate = existing.some(
+                    c => c.name.trim().toLowerCase() === formData.name.trim().toLowerCase()
+                )
+                if (isDuplicate) {
+                    setSubmitError(`A campaign named "${formData.name}" already exists in this project.`)
+                    return
+                }
+            } catch (err) {
+                console.error('[CampaignCreate] check uniqueness:', err)
+            }
+        }
+
+        if (currentStep === 2) {
+            if (formData.selectedRows.length === 0) {
+                setSubmitError('Please select at least one lead for your audience.')
+                return
+            }
+        }
+
         if (currentStep < 3) setCurrentStep(currentStep + 1)
     }
 
@@ -181,12 +228,24 @@ const CampaignCreate = () => {
         setSubmitError('')
         setSubmitting(true)
         try {
-            await createCampaign(currentUser.uid, formData.project, {
+            // 1. Create Campaign Record & Update Project Stats
+            const campaign = await createCampaign(currentUser.uid, formData.project, {
                 name: formData.name,
+                subject: formData.subject,
+                body: formData.emailContent,
                 templateId: formData.templateId,
-                type: 'initial',
+                templateTone: formData.templateTone || '',
             })
-            navigate('/dashboard/campaigns')
+
+            // 2. Save Campaign Audience Mapping
+            const leadIds = formData.selectedRows.map(row => row.id)
+            await setCampaignAudience(formData.project, campaign.id, leadIds)
+
+            // 3. PHASE 8 — Execute/Launch Sends
+            await launchCampaignExecution(campaign.id)
+
+            // 4. Redirect to Detail Page
+            navigate(`/dashboard/campaigns/${campaign.id}`)
         } catch (err) {
             setSubmitError(err.message || 'Failed to create campaign.')
         } finally {
@@ -294,22 +353,58 @@ const CampaignCreate = () => {
                             )}
 
                             {genStatus === 'completed' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                                    {mockTemplates.map((template) => (
-                                        <TemplateCard
-                                            key={template.id}
-                                            template={template}
-                                            isSelected={formData.templateId === template.id}
-                                            onSelect={() => {
-                                                setFormData({
-                                                    ...formData,
-                                                    templateId: template.id,
-                                                    subject: template.subject,
-                                                    emailContent: template.body
-                                                });
-                                            }}
-                                        />
-                                    ))}
+                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {generatedTemplates.map((template) => (
+                                            <TemplateCard
+                                                key={template.id}
+                                                template={template}
+                                                isSelected={formData.templateId === template.id}
+                                                onSelect={() => {
+                                                    setFormData({
+                                                        ...formData,
+                                                        templateId: template.id,
+                                                        subject: template.subject,
+                                                        emailContent: template.body,
+                                                        templateTone: template.tone
+                                                    });
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {/* Preview Section */}
+                                    {formData.templateId && (
+                                        <div className="p-8 bg-slate-50 rounded-[40px] border border-slate-100 space-y-6 animate-in zoom-in-95 duration-500">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
+                                                        <i className="fas fa-eye text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-slate-900 font-bold">Draft Preview</h4>
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">AI Generated Response</p>
+                                                    </div>
+                                                </div>
+                                                <Badge variant="success">Optimized for Relevance</Badge>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Subject Line</p>
+                                                    <div className="p-4 bg-white rounded-2xl border border-slate-100 font-bold text-slate-700">
+                                                        {formData.subject}
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Message Content</p>
+                                                    <div className="p-6 bg-white rounded-[32px] border border-slate-100 text-slate-600 font-medium whitespace-pre-wrap leading-relaxed">
+                                                        {formData.emailContent}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
