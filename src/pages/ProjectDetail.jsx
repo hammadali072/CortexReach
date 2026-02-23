@@ -329,6 +329,12 @@ const ProjectDetail = () => {
                                         {project.description || 'No description provided.'}
                                     </p>
                                 </div>
+                                <div>
+                                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Project Features</h4>
+                                    <p className="text-slate-600 leading-relaxed font-medium whitespace-pre-wrap">
+                                        {project.features || 'No features listed.'}
+                                    </p>
+                                </div>
                                 <div className="grid grid-cols-2 gap-6 pt-4">
                                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
                                         <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Industry</h5>

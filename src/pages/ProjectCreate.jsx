@@ -15,7 +15,7 @@ const ProjectCreate = () => {
         name: '',
         type: 'Product',
         description: '',
-        features: '',
+        features: [''],
         industry: '',
         audience: ''
     })
@@ -37,7 +37,7 @@ const ProjectCreate = () => {
                 name: formData.name,
                 type: formData.type,
                 description: formData.description,
-                features: formData.features,
+                features: formData.features.filter(f => f.trim()).map(f => `• ${f.trim()}`).join('\n'),
                 industry: formData.industry,
                 targetAudience: formData.audience,
                 status: 'active',
@@ -91,7 +91,7 @@ const ProjectCreate = () => {
                 </div>
 
                 <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Short Description</label>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Project Description</label>
                     <textarea
                         rows={3}
                         className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[32px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700"
@@ -101,15 +101,53 @@ const ProjectCreate = () => {
                     />
                 </div>
 
-                <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Key Features / Value Props</label>
-                    <textarea
-                        rows={3}
-                        className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[32px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700"
-                        placeholder="List top 3 features or benefits..."
-                        value={formData.features}
-                        onChange={(e) => setFormData({ ...formData, features: e.target.value })}
-                    />
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-1">
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Key Features</label>
+                        <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, features: [...formData.features, ''] })}
+                            className="text-indigo-600 hover:text-indigo-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                        >
+                            <i className="fas fa-plus-circle" /> Add Bullet Point
+                        </button>
+                    </div>
+
+                    <div className="space-y-3">
+                        {formData.features.map((feature, index) => (
+                            <div key={index} className="flex gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                                <div className="flex-1 relative">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300">
+                                        <i className="fas fa-circle text-[6px]" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        className="w-full pl-10 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700"
+                                        placeholder="Enter a feature or benefit..."
+                                        value={feature}
+                                        onChange={(e) => {
+                                            const newFeatures = [...formData.features]
+                                            newFeatures[index] = e.target.value
+                                            setFormData({ ...formData, features: newFeatures })
+                                        }}
+                                    />
+                                </div>
+                                {formData.features.length > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const newFeatures = formData.features.filter((_, i) => i !== index)
+                                            setFormData({ ...formData, features: newFeatures })
+                                        }}
+                                        className="w-12 h-12 flex items-center justify-center rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                                        title="Remove feature"
+                                    >
+                                        <i className="fas fa-minus" />
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
