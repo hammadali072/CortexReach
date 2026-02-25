@@ -146,7 +146,10 @@ export const createLead = async (userId, projectId, data) => {
         email: data.email || null,
         phone: data.phone || null,
         website: data.website || null,
-        source: data.source || 'manual',          // google_maps | manual | ai
+        formatted_address: data.formatted_address || null,   // Google Maps address
+        category: data.category || null,                     // Business category/type
+        place_id: data.place_id || null,                     // Google Place ID
+        source: data.source || 'manual',                     // google_maps | manual | ai
         relevanceScore: data.relevanceScore || 0,
         status: 'new',
         lastEmailSentAt: null,

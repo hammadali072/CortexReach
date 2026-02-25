@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Badge from '../components/ui/Badge'
@@ -221,9 +222,12 @@ const Leads = () => {
                         </TitleComponent>
                     </div>
                     <div className="flex gap-4">
-                        <button className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all transform hover:-translate-y-0.5">
-                            Import New Prospects
-                        </button>
+                        <Link
+                            to="/dashboard/leads/search"
+                            className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all transform hover:-translate-y-0.5"
+                        >
+                            <i className="fab fa-google" /> Import from Google Maps
+                        </Link>
                     </div>
                 </div>
             </div>
