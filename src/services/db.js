@@ -51,7 +51,6 @@ export const createProject = async (userId, data) => {
         name: data.name.trim(),
         description: data.description || '',
         features: data.features || '',
-        industry: data.industry || '',
         targetAudience: data.targetAudience || '',
         type: data.type || 'Product',
         status: data.status || 'active',

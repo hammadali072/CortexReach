@@ -7,11 +7,11 @@
  *   Step 3  →  Results table with selection + DB save
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import Modal from './Modal';
 import Button from './Button';
 import { generateLeads } from '../../services/googleMapsService';
-import { bulkCreateLeads } from '../../services/db';
+import { bulkCreateLeads, getProject } from '../../services/db';
 import { useAuth } from '../../context/AuthContext';
 
 // ─── Tiny helpers ─────────────────────────────────────────────────────────────
@@ -213,7 +213,7 @@ const SaveResultBanner = ({ result, onClose }) => (
                 {result.skipped > 0 && <span className="ml-1 text-emerald-600">{result.skipped} duplicates skipped.</span>}
             </p>
         </div>
-        <button onClick={onClose} className="text-emerald-400 hover:text-emerald-600 transition-colors">
+        <button onClose={onClose} className="text-emerald-400 hover:text-emerald-600 transition-colors">
             <i className="fas fa-times" />
         </button>
     </div>
@@ -223,11 +223,29 @@ const SaveResultBanner = ({ result, onClose }) => (
 const GoogleMapsImportModal = ({ isOpen, onClose, projectId, onLeadsImported }) => {
     const { currentUser } = useAuth();
 
+    // Project context for suggestions
+    const [project, setProject] = useState(null);
+
+    useEffect(() => {
+        if (isOpen && projectId) {
+            getProject(projectId).then(setProject);
+        }
+    }, [isOpen, projectId]);
+
     // Navigation
     const [step, setStep] = useState(1); // 1=form, 2=scanning, 3=results
 
     // Form fields
     const [keyword, setKeyword] = useState('');
+
+    // Suggest keyword when project loads
+    useEffect(() => {
+        if (project && !keyword) {
+            const suggestion = project.targetAudience?.split(',')[0]?.trim() || project.name;
+            setKeyword(suggestion);
+        }
+    }, [project, keyword]);
+
     const [location, setLocation] = useState('');
     const [maxPages, setMaxPages] = useState('1');
     const [fetchDetails, setFetchDetails] = useState(true);

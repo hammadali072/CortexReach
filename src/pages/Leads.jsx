@@ -4,44 +4,60 @@ import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Badge from '../components/ui/Badge'
 import { useAuth } from '../context/AuthContext'
-import { getUserLeads } from '../services/db'
+import { getUserLeads, getUserProjects } from '../services/db'
 
 const Leads = () => {
     const { currentUser } = useAuth()
     const [searchTerm, setSearchTerm] = useState('')
     const [projectFilter, setProjectFilter] = useState('all')
     const [selectedLeads, setSelectedLeads] = useState([])
+    const [projects, setProjects] = useState([])
 
     // ── DB state 
     const [leads, setLeads] = useState([])
     const [dbLoading, setDbLoading] = useState(true)
     const [dbError, setDbError] = useState('')
 
-    const load = useCallback(async () => {
+    const loadData = useCallback(async () => {
         if (!currentUser) return
         try {
             setDbLoading(true)
             setDbError('')
-            const data = await getUserLeads(currentUser.uid)
-            setLeads(data.sort((a, b) => b.createdAt - a.createdAt))
+            const [leadsData, projectsData] = await Promise.all([
+                getUserLeads(currentUser.uid),
+                getUserProjects(currentUser.uid)
+            ])
+            setLeads(leadsData.sort((a, b) => b.createdAt - a.createdAt))
+            setProjects(projectsData)
         } catch (err) {
             console.error('[Leads] load error:', err)
-            setDbError('Failed to load leads.')
+            setDbError('Failed to load data.')
         } finally {
             setDbLoading(false)
         }
     }, [currentUser])
 
-    useEffect(() => { load() }, [load])
+    useEffect(() => { loadData() }, [loadData])
 
-    // Dynamically computed stats from live DB leads
+    const selectedProject = useMemo(() =>
+        projects.find(p => p.id === projectFilter),
+        [projects, projectFilter]
+    )
+
+    // Dynamically computed stats for the specific project or all
+    const filteredByProject = useMemo(() =>
+        projectFilter === 'all' ? leads : leads.filter(l => l.projectId === projectFilter),
+        [leads, projectFilter]
+    )
+
     const leadStats = [
-        { label: 'Eligible for Follow-up', value: leads.filter(l => l.status === 'opened').length, icon: 'fa-user-check', color: 'from-indigo-600 to-blue-500' },
-        { label: 'Google Maps Imports', value: leads.filter(l => l.source === 'google_maps').length, icon: 'fa-map-marker-alt', color: 'from-emerald-500 to-teal-500' },
-        { label: 'Total Leads', value: leads.length, icon: 'fa-users', color: 'from-purple-500 to-pink-500' },
+        { label: 'Project Leads', value: filteredByProject.length, icon: 'fa-users', color: 'from-purple-500 to-pink-500' },
+        { label: 'Follow-ups', value: filteredByProject.filter(l => l.status === 'opened').length, icon: 'fa-user-check', color: 'from-indigo-600 to-blue-500' },
+        { label: 'Maps Imports', value: filteredByProject.filter(l => l.source === 'google_maps').length, icon: 'fa-map-marker-alt', color: 'from-emerald-500 to-teal-500' },
     ]
 
     const columns = useMemo(() => [
+        // ... (columns logic remains same)
         {
             name: 'Contact Details',
             selector: row => row.name,
@@ -63,16 +79,6 @@ const Leads = () => {
                 )
             },
             grow: 2,
-        },
-        {
-            name: 'Project ID',
-            selector: row => row.projectId,
-            sortable: true,
-            cell: row => (
-                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full uppercase tracking-tighter">
-                    {row.projectId?.slice(0, 8) ?? '—'}
-                </span>
-            )
         },
         {
             name: 'Source',
@@ -98,19 +104,6 @@ const Leads = () => {
             }
         },
         {
-            name: 'Eligibility',
-            selector: row => row.status,
-            sortable: true,
-            center: true,
-            cell: row => row.status === 'opened' ? (
-                <Badge variant="primary" className="bg-indigo-100 text-indigo-700 border-indigo-200">
-                    <i className="fas fa-check-circle mr-1" /> Follow-up
-                </Badge>
-            ) : (
-                <span className="text-xs text-slate-400 italic">Stopped</span>
-            )
-        },
-        {
             name: 'Last Email',
             selector: row => row.lastEmailSentAt,
             sortable: true,
@@ -120,32 +113,20 @@ const Leads = () => {
                         ? <p className="text-slate-600 font-bold">{new Date(row.lastEmailSentAt).toLocaleDateString()}</p>
                         : <p className="text-slate-400 italic">Not sent</p>
                     }
-                    <p className="text-slate-400">{row.source}</p>
                 </div>
             )
-        },
-        {
-            name: 'Action',
-            cell: () => (
-                <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-                    <i className="fas fa-chevron-right" />
-                </button>
-            ),
-            button: true,
-            right: true,
         }
     ], [])
 
     const filteredLeads = useMemo(() => {
-        return leads.filter(lead => {
+        return filteredByProject.filter(lead => {
             const name = lead.name || ''
             const email = lead.email || ''
             const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 email.toLowerCase().includes(searchTerm.toLowerCase())
-            const matchesProject = projectFilter === 'all' || lead.projectId === projectFilter
-            return matchesSearch && matchesProject
+            return matchesSearch
         })
-    }, [searchTerm, projectFilter, leads])
+    }, [searchTerm, filteredByProject])
 
     const customStyles = {
         table: {
@@ -211,37 +192,84 @@ const Leads = () => {
     return (
         <div className="min-h-screen space-y-8 pb-12">
             {/* Page Header */}
-            <div className="relative overflow-hidden rounded-3xl bg-slate-900 p-10 shadow-xl border border-slate-800">
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                        <TitleComponent type="h1" className="text-white text-4xl font-bold mb-2">
+            <div className="relative overflow-hidden rounded-[40px] bg-slate-900 p-12 shadow-2xl border border-slate-800">
+                <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500 rounded-full blur-[120px] -mr-48 -mt-48" />
+                    <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500 rounded-full blur-[120px] -ml-48 -mb-48" />
+                </div>
+
+                <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-10">
+                    <div className="max-w-2xl">
+                        <Badge variant="primary" className="mb-4 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                            LEAD INTELLIGENCE中心
+                        </Badge>
+                        <TitleComponent type="h1" className="text-white text-5xl font-black mb-4 font-idGrotesk tracking-tight">
                             Lead Decisions
                         </TitleComponent>
-                        <TitleComponent type="p" size="lg" className="text-slate-400">
-                            Monitor engagement signals and identify follow-up opportunities.
+                        <TitleComponent type="p" size="lg" className="text-slate-400 leading-relaxed font-medium">
+                            Generate and manage high-intent leads specifically tailored to your projects.
+                            Select a project to see its target audience and start scouting.
                         </TitleComponent>
                     </div>
-                    <div className="flex gap-4">
+
+                    <div className="flex flex-col sm:flex-row gap-4">
                         <Link
-                            to="/dashboard/leads/search"
-                            className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all transform hover:-translate-y-0.5"
+                            to={projectFilter !== 'all' ? `/dashboard/leads/search?projectId=${projectFilter}` : '/dashboard/leads/search'}
+                            className={`inline-flex items-center justify-center gap-3 px-10 py-5 rounded-[22px] font-black text-sm transition-all transform hover:-translate-y-1 shadow-2xl ${projectFilter === 'all'
+                                ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                                : 'bg-emerald-500 text-white shadow-emerald-500/20 hover:bg-emerald-600'
+                                }`}
                         >
-                            <i className="fab fa-google" /> Import from Google Maps
+                            <i className="fab fa-google text-lg" />
+                            {projectFilter === 'all' ? 'Select Project to Generate' : `Generate for ${selectedProject?.name}`}
                         </Link>
                     </div>
                 </div>
             </div>
 
-            {/* Signal Stats */}
+            {/* Project Selection Area */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className={`p-8 rounded-[32px] border-2 transition-all cursor-pointer flex flex-col justify-between ${projectFilter === 'all'
+                    ? 'bg-slate-900 border-slate-900 shadow-xl text-white'
+                    : 'bg-white border-slate-100 text-slate-900 hover:border-indigo-200'
+                    }`}
+                    onClick={() => setProjectFilter('all')}>
+                    <div>
+                        <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${projectFilter === 'all' ? 'text-indigo-400' : 'text-slate-400'}`}>Intelligence View</p>
+                        <h3 className="text-xl font-bold">All Intelligence</h3>
+                    </div>
+                    <p className={`text-sm mt-4 font-medium ${projectFilter === 'all' ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {leads.length} total leads collected
+                    </p>
+                </div>
+
+                {projects.map(proj => (
+                    <div key={proj.id} className={`p-8 rounded-[32px] border-2 transition-all cursor-pointer flex flex-col justify-between ${projectFilter === proj.id
+                        ? 'bg-indigo-600 border-indigo-600 shadow-xl shadow-indigo-100 text-white'
+                        : 'bg-white border-slate-100 text-slate-900 hover:border-indigo-200'
+                        }`}
+                        onClick={() => setProjectFilter(proj.id)}>
+                        <div className="truncate">
+                            <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${projectFilter === proj.id ? 'text-indigo-200' : 'text-slate-400'}`}>{proj.type}</p>
+                            <h3 className="text-xl font-bold truncate">{proj.name}</h3>
+                        </div>
+                        <p className={`text-sm mt-4 font-medium ${projectFilter === proj.id ? 'text-indigo-100' : 'text-slate-500'}`}>
+                            {leads.filter(l => l.projectId === proj.id).length} project leads
+                        </p>
+                    </div>
+                ))}
+            </div>
+
+            {/* Stats row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {leadStats.map((stat, idx) => (
-                    <div key={idx} className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex items-center space-x-5">
-                        <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg shadow-indigo-100`}>
+                    <div key={idx} className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 flex items-center space-x-6">
+                        <div className={`w-16 h-16 rounded-[20px] bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
                             <i className={`fas ${stat.icon} text-white text-2xl`} />
                         </div>
                         <div>
-                            <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-1">{stat.label}</p>
-                            <h3 className="text-3xl font-idGrotesk font-black text-slate-900">{stat.value}</h3>
+                            <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest mb-1">{stat.label}</p>
+                            <h3 className="text-4xl font-idGrotesk font-black text-slate-900">{stat.value}</h3>
                         </div>
                     </div>
                 ))}
@@ -261,16 +289,16 @@ const Leads = () => {
                         />
                     </div>
 
-                    <div className="relative min-w-[240px]">
+                    <div className="relative min-w-[280px]">
                         <i className="fas fa-filter absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                         <select
-                            className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-sm text-slate-600 appearance-none"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-sm text-slate-600 appearance-none cursor-pointer"
                             value={projectFilter}
                             onChange={(e) => setProjectFilter(e.target.value)}
                         >
-                            <option value="all">All Projects</option>
-                            {[...new Set(leads.map(l => l.projectId).filter(Boolean))].map(pid => (
-                                <option key={pid} value={pid}>{pid.slice(0, 12)}...</option>
+                            <option value="all">Compare All Projects</option>
+                            {projects.map(proj => (
+                                <option key={proj.id} value={proj.id}>{proj.name}</option>
                             ))}
                         </select>
                     </div>
@@ -296,7 +324,7 @@ const Leads = () => {
             {dbError && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-medium flex items-center gap-3">
                     <i className="fas fa-exclamation-circle" />{dbError}
-                    <button onClick={load} className="ml-auto text-xs font-bold underline">Retry</button>
+                    <button onClick={loadData} className="ml-auto text-xs font-bold underline">Retry</button>
                 </div>
             )}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden px-2">
@@ -304,6 +332,29 @@ const Leads = () => {
                     <div className="py-20 flex flex-col items-center gap-4">
                         <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
                         <p className="text-slate-400 text-sm font-medium">Loading leads from database...</p>
+                    </div>
+                ) : projectFilter === 'all' && leads.length > 0 ? (
+                    <div className="py-24 text-center bg-slate-50/50">
+                        <div className="w-24 h-24 bg-white rounded-[32px] shadow-sm flex items-center justify-center mx-auto mb-8 text-indigo-600 border border-slate-100">
+                            <i className="fas fa-project-diagram text-4xl" />
+                        </div>
+                        <p className="text-2xl font-black text-slate-900 mb-3 font-idGrotesk">Lead Generation is Project-Specific</p>
+                        <p className="text-slate-500 max-w-md mx-auto mb-10 leading-relaxed font-medium">
+                            To generate new leads using Google Maps, please select one of your projects above.
+                            This allows us to tailor the search parameters to your specific target audience.
+                        </p>
+                        <div className="flex flex-wrap justify-center gap-4">
+                            {projects.map(p => (
+                                <button
+                                    key={p.id}
+                                    onClick={() => setProjectFilter(p.id)}
+                                    className="px-8 py-4 bg-white border-2 border-slate-100 rounded-[22px] text-sm font-black text-slate-700 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm hover:shadow-xl hover:shadow-indigo-50 transform hover:-translate-y-1"
+                                >
+                                    <i className="fas fa-folder-open mr-2 opacity-50" />
+                                    {p.name}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 ) : (
                     <DataTable
@@ -317,9 +368,19 @@ const Leads = () => {
                         pointerOnHover
                         responsive
                         noDataComponent={
-                            <div className="py-16 text-center">
-                                <i className="fas fa-user-slash text-slate-200 text-5xl mb-4 block" />
-                                <p className="text-slate-400 font-medium">No leads found. Import leads via a project page.</p>
+                            <div className="py-24 text-center">
+                                <i className="fas fa-search-dollar text-indigo-100 text-7xl mb-8 block" />
+                                <p className="text-slate-900 font-black text-xl mb-2 font-idGrotesk tracking-tight">Ready to Scout?</p>
+                                <p className="text-slate-400 text-sm max-w-xs mx-auto mb-8 font-medium">
+                                    No leads generated for <span className="text-indigo-600 font-bold">"{selectedProject?.name}"</span> yet.
+                                </p>
+                                <Link
+                                    to={`/dashboard/leads/search?projectId=${projectFilter}`}
+                                    className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all transform hover:-translate-y-1"
+                                >
+                                    <i className="fab fa-google" />
+                                    Launch Maps Discovery
+                                </Link>
                             </div>
                         }
                     />

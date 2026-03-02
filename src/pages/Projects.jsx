@@ -29,7 +29,7 @@ const Projects = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [currentProject, setCurrentProject] = useState(null)
     const [formData, setFormData] = useState({
-        name: '', type: 'Product', targetAudience: '', description: '', industry: '', features: ['']
+        name: '', type: 'Product', audiences: [''], description: '', features: ['']
     })
     const [saving, setSaving] = useState(false)
     const [formError, setFormError] = useState('')
@@ -59,9 +59,8 @@ const Projects = () => {
         setFormData({
             name: project.name,
             type: project.type || 'Product',
-            targetAudience: project.targetAudience || '',
+            audiences: project.targetAudience ? project.targetAudience.split(', ').map(a => a.trim()) : [''],
             description: project.description || '',
-            industry: project.industry || '',
             features: project.features ? project.features.split('\n').map(f => f.replace(/^• /, '').trim()) : [''],
         })
         setFormError('')
@@ -76,9 +75,8 @@ const Projects = () => {
             await updateProject(currentProject.id, {
                 name: formData.name.trim(),
                 type: formData.type,
-                targetAudience: formData.targetAudience,
+                targetAudience: formData.audiences.filter(a => a.trim()).join(', '),
                 description: formData.description,
-                industry: formData.industry,
                 features: formData.features.filter(f => f.trim()).map(f => `• ${f.trim()}`).join('\n'),
             })
             setProjects(prev => prev.map(p =>
@@ -277,7 +275,7 @@ const Projects = () => {
                         <div className="space-y-2">
                             <label className="block text-xs font-black text-slate-400 uppercase tracking-widest px-1">Project Type</label>
                             <select
-                                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700"
+                                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700"
                                 value={formData.type}
                                 onChange={e => setFormData({ ...formData, type: e.target.value })}
                             >
@@ -286,22 +284,57 @@ const Projects = () => {
                             </select>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Input label="Intended Audience" value={formData.targetAudience} onChange={e => setFormData({ ...formData, targetAudience: e.target.value })} />
-                        <Input label="Target Industry / Domain" value={formData.industry} onChange={e => setFormData({ ...formData, industry: e.target.value })} />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Project Description</label>
-                        <textarea
-                            rows={3}
-                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700"
-                            value={formData.description}
-                            onChange={e => setFormData({ ...formData, description: e.target.value })}
-                        />
-                    </div>
                     <div className="space-y-4">
                         <div className="flex items-center justify-between px-1">
-                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Key Features</label>
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Targeted Audience</label>
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, audiences: [...formData.audiences, ''] })}
+                                className="text-indigo-600 hover:text-indigo-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                            >
+                                <i className="fas fa-plus-circle" /> Add Audience
+                            </button>
+                        </div>
+
+                        <div className="space-y-3">
+                            {formData.audiences.map((audience, index) => (
+                                <div key={index} className="flex gap-3">
+                                    <div className="flex-1 relative">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-300">
+                                            <i className="fas fa-user-tag text-[8px]" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700 text-sm"
+                                            placeholder="Enter audience segment..."
+                                            value={audience}
+                                            onChange={(e) => {
+                                                const newAudiences = [...formData.audiences]
+                                                newAudiences[index] = e.target.value
+                                                setFormData({ ...formData, audiences: newAudiences })
+                                            }}
+                                        />
+                                    </div>
+                                    {formData.audiences.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newAudiences = formData.audiences.filter((_, i) => i !== index)
+                                                setFormData({ ...formData, audiences: newAudiences })
+                                            }}
+                                            className="w-10 h-10 flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                                        >
+                                            <i className="fas fa-minus" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between px-1">
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Key Features / Bullet Points</label>
                             <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, features: [...formData.features, ''] })}
@@ -320,7 +353,7 @@ const Projects = () => {
                                         </div>
                                         <input
                                             type="text"
-                                            className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700 text-sm"
+                                            className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700 text-sm"
                                             placeholder="Enter feature..."
                                             value={feature}
                                             onChange={(e) => {
@@ -337,7 +370,7 @@ const Projects = () => {
                                                 const newFeatures = formData.features.filter((_, i) => i !== index)
                                                 setFormData({ ...formData, features: newFeatures })
                                             }}
-                                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                                            className="w-10 h-10 flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                                         >
                                             <i className="fas fa-minus" />
                                         </button>

@@ -19,7 +19,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import TitleComponent from '../components/titleComponent/titleComponent';
 import { useAuth } from '../context/AuthContext';
 import { generateLeads } from '../services/googleMapsService';
@@ -119,6 +119,8 @@ const LeadRow = ({ lead, selected, onToggle }) => (
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const LeadsSearch = () => {
     const { currentUser } = useAuth();
+    const [searchParams] = useSearchParams();
+    const projectIdFromUrl = searchParams.get('projectId');
 
     // User's projects for the "save to project" dropdown
     const [projects, setProjects] = useState([]);
@@ -128,13 +130,28 @@ const LeadsSearch = () => {
         if (!currentUser) return;
         getUserProjects(currentUser.uid).then((ps) => {
             setProjects(ps);
-            if (ps.length > 0) setSelectedProjectId(ps[0].id);
+            if (projectIdFromUrl && ps.some(p => p.id === projectIdFromUrl)) {
+                setSelectedProjectId(projectIdFromUrl);
+            } else if (ps.length > 0) {
+                setSelectedProjectId(ps[0].id);
+            }
         });
-    }, [currentUser]);
+    }, [currentUser, projectIdFromUrl]);
 
     // ── Form state ────────────────────────────────────────────────────────────
     const [keyword, setKeyword] = useState('');
     const [location, setLocation] = useState('');
+
+    // Suggest keyword if project selected
+    useEffect(() => {
+        const proj = projects.find(p => p.id === selectedProjectId);
+        if (proj && !keyword) {
+            // Use project name or first audience segment as a starting point
+            const suggestion = proj.targetAudience?.split(',')[0]?.trim() || proj.name;
+            setKeyword(suggestion);
+        }
+    }, [selectedProjectId, projects, keyword]);
+
     const [radius, setRadius] = useState('10km');
     const [maxPages, setMaxPages] = useState('1');
     const [fetchDetails, setFetchDetails] = useState(true);

@@ -335,14 +335,17 @@ const ProjectDetail = () => {
                                         {project.features || 'No features listed.'}
                                     </p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-6 pt-4">
-                                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                                        <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Industry</h5>
-                                        <p className="font-bold text-slate-900">{project.industry || '—'}</p>
-                                    </div>
-                                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                                        <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Audience</h5>
-                                        <p className="font-bold text-slate-900">{project.targetAudience || '—'}</p>
+                                <div className="pt-4">
+                                    <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100">
+                                        <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Targeted Audience Segments</h5>
+                                        <div className="flex flex-wrap gap-3">
+                                            {project.targetAudience ? project.targetAudience.split(', ').map((aud, i) => (
+                                                <Badge key={i} variant="outline" className="bg-white border-indigo-100 text-indigo-600">
+                                                    <i className="fas fa-user-tag mr-2 text-[8px]" />
+                                                    {aud}
+                                                </Badge>
+                                            )) : <span className="text-slate-400 font-medium italic">No specific audience segments defined.</span>}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

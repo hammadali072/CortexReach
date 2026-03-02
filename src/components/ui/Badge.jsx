@@ -8,12 +8,13 @@ const Badge = ({ children, variant = 'default', className = '' }) => {
         success: 'bg-green-100 text-green-800',
         warning: 'bg-yellow-100 text-yellow-800',
         danger: 'bg-red-100 text-red-800',
-        info: 'bg-cyan-100 text-cyan-800'
+        info: 'bg-cyan-100 text-cyan-800',
+        outline: 'border border-slate-200 text-slate-600 bg-transparent'
     }
 
     return (
         <span className={clsx(
-            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+            'inline-flex items-center px-4 py-1.5 rounded-2xl text-[10px] uppercase font-black tracking-widest',
             variantClasses[variant],
             className
         )}>
@@ -24,7 +25,7 @@ const Badge = ({ children, variant = 'default', className = '' }) => {
 
 Badge.propTypes = {
     children: PropTypes.node.isRequired,
-    variant: PropTypes.oneOf(['default', 'primary', 'success', 'warning', 'danger', 'info']),
+    variant: PropTypes.oneOf(['default', 'primary', 'success', 'warning', 'danger', 'info', 'outline']),
     className: PropTypes.string
 }
 
