@@ -8,7 +8,7 @@ import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
 import ProjectCreate from './pages/ProjectCreate'
 import Leads from './pages/Leads'
-import LeadsSearch from './pages/LeadsSearch'
+import LeadsImport from './pages/LeadsImport'
 import Campaigns from './pages/Campaigns'
 import CampaignCreate from './pages/CampaignCreate'
 import CampaignDetail from './pages/CampaignDetail'
@@ -69,7 +69,7 @@ function App() {
               <Route path="projects/:id" element={<ProjectDetail />} />
               <Route path="projects/create" element={<ProjectCreate />} />
               <Route path="leads" element={<Leads />} />
-              <Route path="leads/search" element={<LeadsSearch />} />
+              <Route path="leads/search" element={<LeadsImport />} />
               <Route path="campaigns" element={<Campaigns />} />
               <Route path="campaigns/:id" element={<CampaignDetail />} />
               <Route path="campaigns/:id/edit" element={<CampaignEdit />} />

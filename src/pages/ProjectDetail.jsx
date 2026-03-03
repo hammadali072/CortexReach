@@ -7,7 +7,7 @@ import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import AIAnalysisCard from '../components/ui/AIAnalysisCard'
 import LeadSourcingModal from '../components/ui/LeadSourcingModal'
-import GoogleMapsImportModal from '../components/ui/GoogleMapsImportModal'
+
 import ImportSuccessToast from '../components/ui/ImportSuccessToast'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -31,7 +31,7 @@ const ProjectDetail = () => {
     // ── UI state ────────────────────────────────────────────────────────────
     const [activeTab, setActiveTab] = useState('overview')
     const [isSourcingModalOpen, setIsSourcingModalOpen] = useState(false)
-    const [isGoogleMapsModalOpen, setIsGoogleMapsModalOpen] = useState(false)
+
     const [importToast, setImportToast] = useState(null)
     const [aiLeads, setAiLeads] = useState([])
     const [relevanceFilter, setRelevanceFilter] = useState(0)
@@ -79,31 +79,6 @@ const ProjectDetail = () => {
         return () => clearTimeout(t)
     }, [importToast])
 
-    // ── Google Maps import → write to DB ────────────────────────────────────
-    const handleAddGoogleLeads = async (newLeads) => {
-        if (!currentUser) return
-        setImporting(true)
-        try {
-            const shaped = newLeads.map(l => ({
-                name: l.name || 'Unknown Business',
-                email: l.email || null,
-                phone: l.phone || null,
-                website: l.website || null,
-                source: 'google_maps',
-                relevanceScore: 0,
-            }))
-            const { inserted, skipped } = await bulkCreateLeads(currentUser.uid, id, shaped)
-            // Refresh from DB
-            const fresh = await getProjectLeads(id)
-            setProjectLeads(fresh.sort((a, b) => b.createdAt - a.createdAt))
-            setImportToast({ count: inserted, skipped })
-        } catch (err) {
-            console.error('[ProjectDetail] import error:', err)
-        } finally {
-            setImporting(false)
-        }
-    }
-
     const handleGenerateLeads = (config) => {
         const filtered = mockGeneratedLeads.filter(l => l.persona === config.persona)
         setAiLeads(filtered.length > 0 ? filtered : mockGeneratedLeads)
@@ -119,9 +94,9 @@ const ProjectDetail = () => {
 
     // ── Source label helper ─────────────────────────────────────────────────
     const SourceBadge = ({ source }) => {
-        if (source === 'google_maps') return (
+        if (source === 'csv_import') return (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-100">
-                <i className="fab fa-google text-[9px]" /> Google Maps
+                <i className="fas fa-file-csv text-[9px]" /> CSV Import
             </span>
         )
         if (source === 'ai') return (
@@ -389,17 +364,14 @@ const ProjectDetail = () => {
                                 <Button onClick={() => setIsSourcingModalOpen(true)} variant="primary" className="bg-indigo-600 shadow-xl shadow-indigo-100">
                                     <i className="fas fa-magic mr-2" /> Source Leads via AI
                                 </Button>
-                                <Button
-                                    onClick={() => setIsGoogleMapsModalOpen(true)}
-                                    variant="primary"
-                                    className="bg-emerald-600 shadow-xl shadow-emerald-100"
-                                    disabled={importing}
-                                >
-                                    {importing
-                                        ? <><i className="fas fa-spinner fa-spin mr-2" />Saving...</>
-                                        : <><i className="fab fa-google mr-2" />Import from Google Maps</>
-                                    }
-                                </Button>
+                                <Link to={`/dashboard/leads/search?projectId=${id}`}>
+                                    <Button
+                                        variant="primary"
+                                        className="bg-emerald-600 shadow-xl shadow-emerald-100"
+                                    >
+                                        <i className="fas fa-file-import mr-2" />Import CSV/XLSX
+                                    </Button>
+                                </Link>
                             </div>
                         </div>
 
@@ -407,7 +379,7 @@ const ProjectDetail = () => {
                         <div className="grid grid-cols-3 gap-4">
                             {[
                                 { label: 'Total Leads', value: projectLeads.length, icon: 'fa-users', color: 'indigo' },
-                                { label: 'Google Maps', value: projectLeads.filter(l => l.source === 'google_maps').length, icon: 'fa-map-marker-alt', color: 'emerald' },
+                                { label: 'CSV/XLSX', value: projectLeads.filter(l => l.source === 'csv_import').length, icon: 'fa-file-import', color: 'emerald' },
                                 { label: 'Emails Sent', value: project.stats?.totalSent || 0, icon: 'fa-paper-plane', color: 'purple' },
                             ].map(stat => (
                                 <div key={stat.label} className={`p-4 bg-${stat.color}-50 border border-${stat.color}-100 rounded-2xl`}>
@@ -447,14 +419,14 @@ const ProjectDetail = () => {
                         </div>
 
                         {/* Google Maps flash notice */}
-                        {projectLeads.some(l => l.source === 'google_maps') && (
+                        {projectLeads.some(l => l.source === 'csv_import') && (
                             <div className="flex items-center gap-3 px-5 py-3.5 bg-emerald-50 border border-emerald-100 rounded-2xl animate-in fade-in slide-in-from-bottom-2 duration-500">
                                 <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i className="fab fa-google text-white text-sm" />
+                                    <i className="fas fa-file-csv text-white text-sm" />
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-sm font-bold text-emerald-900">
-                                        {projectLeads.filter(l => l.source === 'google_maps').length} lead{projectLeads.filter(l => l.source === 'google_maps').length !== 1 ? 's' : ''} imported from Google Maps
+                                        {projectLeads.filter(l => l.source === 'csv_import').length} lead{projectLeads.filter(l => l.source === 'csv_import').length !== 1 ? 's' : ''} imported from files
                                     </p>
                                     <p className="text-xs text-emerald-700 font-medium">Permanently saved to Firebase Realtime Database. Duplicates automatically skipped.</p>
                                 </div>
@@ -539,11 +511,7 @@ const ProjectDetail = () => {
                 onClose={() => setIsSourcingModalOpen(false)}
                 onGenerate={handleGenerateLeads}
             />
-            <GoogleMapsImportModal
-                isOpen={isGoogleMapsModalOpen}
-                onClose={() => setIsGoogleMapsModalOpen(false)}
-                onAddLeads={handleAddGoogleLeads}
-            />
+
             {importToast && (
                 <ImportSuccessToast
                     count={importToast.count}

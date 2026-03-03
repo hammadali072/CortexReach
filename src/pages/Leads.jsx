@@ -53,7 +53,7 @@ const Leads = () => {
     const leadStats = [
         { label: 'Project Leads', value: filteredByProject.length, icon: 'fa-users', color: 'from-purple-500 to-pink-500' },
         { label: 'Follow-ups', value: filteredByProject.filter(l => l.status === 'opened').length, icon: 'fa-user-check', color: 'from-indigo-600 to-blue-500' },
-        { label: 'Maps Imports', value: filteredByProject.filter(l => l.source === 'google_maps').length, icon: 'fa-map-marker-alt', color: 'from-emerald-500 to-teal-500' },
+        { label: 'CSV/XLSX Imports', value: filteredByProject.filter(l => l.source === 'csv_import').length, icon: 'fa-file-import', color: 'from-emerald-500 to-teal-500' },
     ]
 
     const columns = useMemo(() => [
@@ -84,8 +84,8 @@ const Leads = () => {
             name: 'Source',
             selector: row => row.source,
             sortable: true,
-            cell: row => row.source === 'google_maps'
-                ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-100"><i className="fab fa-google text-[9px]" />Maps</span>
+            cell: row => row.source === 'csv_import'
+                ? <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-100"><i className="fas fa-file-csv text-[9px]" />CSV</span>
                 : <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-500 text-[11px] font-black"><i className="fas fa-user text-[9px]" /></span>
         },
         {
@@ -220,8 +220,8 @@ const Leads = () => {
                                 : 'bg-emerald-500 text-white shadow-emerald-500/20 hover:bg-emerald-600'
                                 }`}
                         >
-                            <i className="fab fa-google text-lg" />
-                            {projectFilter === 'all' ? 'Select Project to Generate' : `Generate for ${selectedProject?.name}`}
+                            <i className="fas fa-file-import text-lg" />
+                            {projectFilter === 'all' ? 'Select Project to Import' : `Import for ${selectedProject?.name}`}
                         </Link>
                     </div>
                 </div>
@@ -340,8 +340,8 @@ const Leads = () => {
                         </div>
                         <p className="text-2xl font-black text-slate-900 mb-3 font-idGrotesk">Lead Generation is Project-Specific</p>
                         <p className="text-slate-500 max-w-md mx-auto mb-10 leading-relaxed font-medium">
-                            To generate new leads using Google Maps, please select one of your projects above.
-                            This allows us to tailor the search parameters to your specific target audience.
+                            To import new leads from CSV or XLSX files, please select one of your projects above.
+                            This allows us to associate data with your specific initiatives.
                         </p>
                         <div className="flex flex-wrap justify-center gap-4">
                             {projects.map(p => (
@@ -378,8 +378,8 @@ const Leads = () => {
                                     to={`/dashboard/leads/search?projectId=${projectFilter}`}
                                     className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all transform hover:-translate-y-1"
                                 >
-                                    <i className="fab fa-google" />
-                                    Launch Maps Discovery
+                                    <i className="fas fa-file-import" />
+                                    Import CSV/XLSX File
                                 </Link>
                             </div>
                         }
