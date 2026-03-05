@@ -33,7 +33,7 @@ const Modal = ({ isOpen, onClose, title, children, footer, size = 'md' }) => {
             
             {/* Modal Content */}
             <div className={clsx(
-                "relative bg-white rounded-[40px] shadow-2xl border border-slate-100 w-full overflow-hidden transition-all animate-in zoom-in-95 duration-200",
+                "relative bg-white rounded-[8px] shadow-2xl border border-slate-100 w-full overflow-hidden transition-all animate-in zoom-in-95 duration-200",
                 sizeClasses[size]
             )}>
                 {/* Header */}
@@ -41,7 +41,7 @@ const Modal = ({ isOpen, onClose, title, children, footer, size = 'md' }) => {
                     <h3 className="text-2xl font-black text-slate-900 font-idGrotesk">{title}</h3>
                     <button 
                         onClick={onClose}
-                        className="w-10 h-10 flex items-center justify-center rounded-2xl hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all"
+                        className="w-10 h-10 flex items-center justify-center rounded-[8px] hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all"
                     >
                         <i className="fas fa-times text-xl" />
                     </button>

@@ -11,7 +11,7 @@ const Card = ({ children, className = '', padding = 'default' }) => {
 
     return (
         <div className={clsx(
-            'bg-white rounded-lg shadow-sm border border-gray-200',
+            'bg-white rounded-[8px] shadow-sm border border-gray-200',
             paddingClasses[padding],
             className
         )}>

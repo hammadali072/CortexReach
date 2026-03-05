@@ -7,14 +7,14 @@ const TemplateCard = ({ template, isSelected, onSelect }) => {
     return (
         <div
             onClick={onSelect}
-            className={`relative p-6 rounded-[32px] border-2 transition-all duration-300 cursor-pointer group hover:scale-[1.02] ${isSelected
+            className={`relative p-6 rounded-[8px] border-2 transition-all duration-300 cursor-pointer group hover:scale-[1.02] ${isSelected
                     ? 'border-indigo-600 bg-white shadow-2xl shadow-indigo-100 ring-4 ring-indigo-50'
                     : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-indigo-200'
                 }`}
         >
             {/* Selection Indicator */}
             {isSelected && (
-                <div className="absolute -top-3 -right-3 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg animate-in zoom-in duration-300">
+                <div className="absolute -top-3 -right-3 w-8 h-8 bg-indigo-600 rounded-[8px] flex items-center justify-center text-white shadow-lg animate-in zoom-in duration-300">
                     <i className="fas fa-check text-xs"></i>
                 </div>
             )}
@@ -41,7 +41,7 @@ const TemplateCard = ({ template, isSelected, onSelect }) => {
 
                 <div className="space-y-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Preview Body</p>
-                    <div className="p-4 bg-white/50 rounded-2xl border border-slate-100/50">
+                    <div className="p-4 bg-white/50 rounded-[8px] border border-slate-100/50">
                         <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
                             {body}
                         </p>
@@ -49,7 +49,7 @@ const TemplateCard = ({ template, isSelected, onSelect }) => {
                 </div>
 
                 <button
-                    className={`w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isSelected
+                    className={`w-full py-3 rounded-[8px] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isSelected
                             ? 'bg-indigo-600 text-white'
                             : 'bg-slate-200/50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600'
                         }`}

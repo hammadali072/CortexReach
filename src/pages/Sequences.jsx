@@ -45,8 +45,8 @@ const FollowUps = () => {
             </div>
 
             {/* Logical Rule Indicator */}
-            <div className="p-6 bg-slate-900 rounded-3xl text-white flex items-center gap-6 shadow-xl border border-slate-700">
-                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center">
+            <div className="p-6 bg-slate-900 rounded-[8px] text-white flex items-center gap-6 shadow-xl border border-slate-700">
+                <div className="w-16 h-16 bg-indigo-600 rounded-[8px] flex items-center justify-center">
                     <i className="fas fa-microchip text-2xl" />
                 </div>
                 <div>
@@ -58,7 +58,7 @@ const FollowUps = () => {
             {/* Follow-Ups List */}
             <div className="grid grid-cols-1 gap-4">
                 {followUps.map((item) => (
-                    <div key={item.id} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div key={item.id} className="bg-white p-8 rounded-[8px] border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
@@ -94,7 +94,7 @@ const FollowUps = () => {
                 ))}
             </div>
 
-            <div className="p-8 bg-indigo-50 rounded-3xl border border-indigo-100">
+            <div className="p-8 bg-indigo-50 rounded-[8px] border border-indigo-100">
                 <div className="flex gap-6">
                     <i className="fas fa-info-circle text-indigo-600 text-2xl mt-1" />
                     <div>

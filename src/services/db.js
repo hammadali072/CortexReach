@@ -124,12 +124,22 @@ export const deleteProject = async (projectId) => {
  * @returns {Promise<object|null>} — lead object, or null if skipped
  */
 export const createLead = async (userId, projectId, data) => {
-    // Duplicate email check within same project
-    if (data.email) {
+    // Phase 1 — Simple deduplication based on email
+    const getEmail = (obj) => {
+        if (obj.email) return obj.email;
+        const key = Object.keys(obj).find(k => k.includes('email') || k.includes('mail'));
+        return key ? obj[key] : null;
+    };
+
+    const email = getEmail(data);
+
+    if (email) {
+        // Fetch existing for this project to ensure we don't duplicate
         const existing = await getProjectLeads(projectId);
-        const isDuplicate = existing.some(
-            l => l.email && l.email.toLowerCase() === data.email.toLowerCase()
-        );
+        const isDuplicate = existing.some(l => {
+            const existingEmail = getEmail(l);
+            return existingEmail && existingEmail.toLowerCase() === email.toLowerCase();
+        });
         if (isDuplicate) return null; // skip silently
     }
 
@@ -138,21 +148,13 @@ export const createLead = async (userId, projectId, data) => {
     const leadId = newRef.key;
 
     const lead = {
+        ...data,
         id: leadId,
         projectId,
         userId,
-        name: data.name || 'Unknown',
-        email: data.email || null,
-        phone: data.phone || null,
-        website: data.website || null,
-        formatted_address: data.formatted_address || null,   // Google Maps address
-        category: data.category || null,                     // Business category/type
-        place_id: data.place_id || null,                     // Google Place ID
-        source: data.source || 'manual',                     // google_maps | manual | ai
-        relevanceScore: data.relevanceScore || 0,
-        status: 'new',
-        lastEmailSentAt: null,
-        createdAt: Date.now(),
+        status: data.status || 'new',
+        lastEmailSentAt: data.lastEmailSentAt || null,
+        createdAt: data.createdAt || Date.now(),
     };
 
     await set(newRef, lead);
@@ -173,10 +175,35 @@ export const bulkCreateLeads = async (userId, projectId, leads) => {
     let inserted = 0;
     let skipped = 0;
 
+    // Fetch existing once to optimize duplicate checks
+    const existingLeads = await getProjectLeads(projectId);
+    const getEmail = (obj) => {
+        if (obj.email) return obj.email;
+        const key = Object.keys(obj).find(k => k.includes('email') || k.includes('mail'));
+        return key ? obj[key] : null;
+    };
+
+    const existingEmails = new Set(
+        existingLeads.map(l => getEmail(l)?.toLowerCase()).filter(Boolean)
+    );
+
     for (const lead of leads) {
+        const email = getEmail(lead);
+        if (email && existingEmails.has(email.toLowerCase())) {
+            skipped++;
+            continue;
+        }
+
+        // We use createLead but skipping its internal fetch check by ensuring we only pass leads that didn't match emails
+        // Ideally we'd bypass the fetch in createLead too for performance
+        // For now, calling createLead is safe (won't overwrite because of push())
         const result = await createLead(userId, projectId, lead);
-        if (result) inserted++;
-        else skipped++;
+        if (result) {
+            inserted++;
+            if (email) existingEmails.add(email.toLowerCase());
+        } else {
+            skipped++;
+        }
     }
 
     return { inserted, skipped };
@@ -214,7 +241,31 @@ export const getUserLeads = async (userId) => {
  * Update a lead's fields (e.g. status, lastEmailSentAt).
  */
 export const updateLead = async (leadId, updates) => {
-    await update(ref(db, `leads/${leadId}`), updates);
+    await update(ref(db, `leads/${leadId}`), {
+        ...updates,
+        updatedAt: Date.now()
+    });
+};
+
+/**
+ * Delete a single lead.
+ * Decrements project totalLeads counter.
+ */
+export const deleteLead = async (projectId, leadId) => {
+    await set(ref(db, `leads/${leadId}`), null);
+    await _incrementStat(projectId, 'totalLeads', -1);
+};
+
+/**
+ * Delete multiple leads at once.
+ */
+export const bulkDeleteLeads = async (projectId, leadIds) => {
+    const updates = {};
+    leadIds.forEach(id => {
+        updates[`leads/${id}`] = null;
+    });
+    await update(ref(db), updates);
+    await _incrementStat(projectId, 'totalLeads', -leadIds.length);
 };
 
 

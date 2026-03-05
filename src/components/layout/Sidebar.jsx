@@ -37,7 +37,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {/* Logo Section */}
                 <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
                     <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <div className="w-8 h-8 bg-blue-600 rounded-[8px] flex items-center justify-center">
                             <i className="fas fa-brain text-white text-lg"></i>
                         </div>
                         <span className="text-xl font-bold text-gray-800">CortexReach</span>
@@ -61,7 +61,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                                     end={item.path === '/dashboard'}
                                     onClick={onClose}
                                     className={({ isActive }) => clsx(
-                                        'flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200',
+                                        'flex items-center space-x-3 px-4 py-3 rounded-[8px] transition-colors duration-200',
                                         isActive
                                             ? 'bg-blue-50 text-blue-600'
                                             : 'text-gray-700 hover:bg-gray-100'
@@ -82,24 +82,24 @@ const Sidebar = ({ isOpen, onClose }) => {
                     <div className="relative group">
                         {/* Dropdown Menu (Opens Upward) */}
                         {showAccountDropdown && (
-                            <div className="absolute bottom-full left-0 w-full mb-4 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
+                            <div className="absolute bottom-full left-0 w-full mb-4 bg-white rounded-[8px] shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
                                 <div className="p-2">
                                     <button
                                         onClick={async () => {
                                             await logout();
                                             navigate('/');
                                         }}
-                                        className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-all duration-200 group/btn"
+                                        className="w-full flex items-center space-x-3 px-4 py-3 rounded-[8px] text-red-600 hover:bg-red-50 transition-all duration-200 group/btn"
                                     >
-                                        <div className="w-8 h-8 rounded-lg bg-red-50 group-hover/btn:bg-red-100 flex items-center justify-center transition-colors">
+                                        <div className="w-8 h-8 rounded-[8px] bg-red-50 group-hover/btn:bg-red-100 flex items-center justify-center transition-colors">
                                             <i className="fas fa-sign-out-alt text-sm"></i>
                                         </div>
                                         <span className="font-bold text-xs tracking-wider">SIGN OUT</span>
                                     </button>
                                 </div>
                                 <div className="p-2 border-t border-gray-50 bg-gray-50/50">
-                                    <button className="w-full flex items-center space-x-3 px-4 py-2 rounded-xl text-gray-600 hover:bg-white hover:shadow-sm transition-all duration-200">
-                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+                                    <button className="w-full flex items-center space-x-3 px-4 py-2 rounded-[8px] text-gray-600 hover:bg-white hover:shadow-sm transition-all duration-200">
+                                        <div className="w-8 h-8 rounded-[8px] flex items-center justify-center">
                                             <i className="fas fa-user-gear text-sm"></i>
                                         </div>
                                         <span className="font-bold text-[10px] tracking-widest uppercase">Settings</span>
@@ -111,9 +111,9 @@ const Sidebar = ({ isOpen, onClose }) => {
                         {/* Profile Trigger */}
                         <div
                             onClick={() => setShowAccountDropdown(!showAccountDropdown)}
-                            className={`flex items-center space-x-3 p-2 rounded-2xl cursor-pointer transition-all duration-300 ${showAccountDropdown ? 'bg-white shadow-md ring-1 ring-black/5 scale-[1.02]' : 'hover:bg-white hover:shadow-sm'}`}
+                            className={`flex items-center space-x-3 p-2 rounded-[8px] cursor-pointer transition-all duration-300 ${showAccountDropdown ? 'bg-white shadow-md ring-1 ring-black/5 scale-[1.02]' : 'hover:bg-white hover:shadow-sm'}`}
                         >
-                            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm group-hover:ring-indigo-500 transition-all bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                            <div className="w-10 h-10 rounded-[8px] overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm group-hover:ring-indigo-500 transition-all bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
                                 {userProfile?.photoURL ? (
                                     <img
                                         src={userProfile.photoURL}

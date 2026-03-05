@@ -14,7 +14,7 @@ const Badge = ({ children, variant = 'default', className = '' }) => {
 
     return (
         <span className={clsx(
-            'inline-flex items-center px-4 py-1.5 rounded-2xl text-[10px] uppercase font-black tracking-widest',
+            'inline-flex items-center px-4 py-1.5 rounded-[8px] text-[10px] uppercase font-black tracking-widest',
             variantClasses[variant],
             className
         )}>

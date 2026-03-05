@@ -96,7 +96,7 @@ const Campaigns = () => {
             cell: row => (
                 <div className="flex flex-col items-center">
                     <span className="font-black text-indigo-600">{row.yieldPct.toFixed(1)}%</span>
-                    <div className="w-12 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                    <div className="w-12 h-1 bg-slate-100 rounded-[8px] mt-1 overflow-hidden">
                         <div className="h-full bg-indigo-500" style={{ width: `${row.yieldPct}%` }} />
                     </div>
                 </div>
@@ -114,18 +114,18 @@ const Campaigns = () => {
             cell: row => (
                 <div className="flex items-center gap-2">
                     <Link to={`/dashboard/campaigns/${row.id}`}>
-                        <button className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all">
+                        <button className="w-8 h-8 rounded-[8px] bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all">
                             <i className="fas fa-eye text-xs" />
                         </button>
                     </Link>
                     <Link to={`/dashboard/campaigns/${row.id}/edit`}>
-                        <button className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all">
+                        <button className="w-8 h-8 rounded-[8px] bg-slate-50 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all">
                             <i className="fas fa-edit text-xs" />
                         </button>
                     </Link>
                     <button
                         onClick={() => setConfirmDelete(row)}
-                        className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all"
+                        className="w-8 h-8 rounded-[8px] bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all"
                     >
                         <i className="fas fa-trash text-xs" />
                     </button>
@@ -184,7 +184,7 @@ const Campaigns = () => {
 
             {/* Error */}
             {dbError && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-medium flex items-center gap-3">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-[8px] text-red-700 text-sm font-medium flex items-center gap-3">
                     <i className="fas fa-exclamation-circle" />
                     {dbError}
                     <button onClick={load} className="ml-auto text-xs font-bold underline">Retry</button>
@@ -192,10 +192,10 @@ const Campaigns = () => {
             )}
 
             {/* Table */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white rounded-[8px] shadow-sm border border-slate-200 overflow-hidden">
                 {dbLoading ? (
                     <div className="py-20 flex flex-col items-center gap-4">
-                        <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+                        <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-[8px] animate-spin" />
                         <p className="text-slate-400 text-sm font-medium">Loading campaigns...</p>
                     </div>
                 ) : (

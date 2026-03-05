@@ -270,7 +270,7 @@ const CampaignCreate = () => {
                     </TitleComponent>
                 </div>
                 {formData.project && (
-                    <div className="bg-indigo-600 text-white px-6 py-3 rounded-2xl shadow-lg shadow-indigo-100 flex items-center gap-3 animate-in fade-in slide-in-from-right-4">
+                    <div className="bg-indigo-600 text-white px-6 py-3 rounded-[8px] shadow-lg shadow-indigo-100 flex items-center gap-3 animate-in fade-in slide-in-from-right-4">
                         <i className="fas fa-folder-open" />
                         <div className="text-left">
                             <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Active Project</p>
@@ -281,11 +281,11 @@ const CampaignCreate = () => {
             </div>
 
             {/* Step Indicator */}
-            <div className="flex items-center justify-between px-8 py-6 bg-white rounded-3xl shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between px-8 py-6 bg-white rounded-[8px] shadow-sm border border-slate-100">
                 {steps.map((step, index) => (
                     <div key={step.number} className="flex items-center flex-1 last:flex-none">
                         <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black font-idGrotesk text-lg transition-all ${currentStep === step.number ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 scale-110' :
+                            <div className={`w-12 h-12 rounded-[8px] flex items-center justify-center font-black font-idGrotesk text-lg transition-all ${currentStep === step.number ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 scale-110' :
                                 currentStep > step.number ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'
                                 }`}>
                                 {currentStep > step.number ? <i className="fas fa-check"></i> : step.number}
@@ -302,7 +302,7 @@ const CampaignCreate = () => {
             </div>
 
             {/* Content Area */}
-            <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 p-10 min-h-[450px]">
+            <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-10 min-h-[450px]">
                 {/* Step 1: Content */}
                 {currentStep === 1 && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
@@ -310,7 +310,7 @@ const CampaignCreate = () => {
                             <div className="space-y-2">
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest px-1">Target Project</label>
                                 <select
-                                    className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-700"
+                                    className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-700"
                                     value={formData.project}
                                     onChange={(e) => handleProjectChange(e.target.value)}
                                     required
@@ -347,7 +347,7 @@ const CampaignCreate = () => {
 
                             {genStatus === 'generating' && (
                                 <div className="py-12 flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500">
-                                    <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                                    <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-[8px] animate-spin"></div>
                                     <p className="text-sm font-bold text-slate-500 animate-pulse">Our AI is drafting high-intent templates...</p>
                                 </div>
                             )}
@@ -375,10 +375,10 @@ const CampaignCreate = () => {
 
                                     {/* Preview Section */}
                                     {formData.templateId && (
-                                        <div className="p-8 bg-slate-50 rounded-[40px] border border-slate-100 space-y-6 animate-in zoom-in-95 duration-500">
+                                        <div className="p-8 bg-slate-50 rounded-[8px] border border-slate-100 space-y-6 animate-in zoom-in-95 duration-500">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
+                                                    <div className="w-10 h-10 bg-indigo-600 rounded-[8px] flex items-center justify-center shadow-lg shadow-indigo-100">
                                                         <i className="fas fa-eye text-white" />
                                                     </div>
                                                     <div>
@@ -392,13 +392,13 @@ const CampaignCreate = () => {
                                             <div className="space-y-4">
                                                 <div className="space-y-1">
                                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Subject Line</p>
-                                                    <div className="p-4 bg-white rounded-2xl border border-slate-100 font-bold text-slate-700">
+                                                    <div className="p-4 bg-white rounded-[8px] border border-slate-100 font-bold text-slate-700">
                                                         {formData.subject}
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1">
                                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Message Content</p>
-                                                    <div className="p-6 bg-white rounded-[32px] border border-slate-100 text-slate-600 font-medium whitespace-pre-wrap leading-relaxed">
+                                                    <div className="p-6 bg-white rounded-[8px] border border-slate-100 text-slate-600 font-medium whitespace-pre-wrap leading-relaxed">
                                                         {formData.emailContent}
                                                     </div>
                                                 </div>
@@ -409,8 +409,8 @@ const CampaignCreate = () => {
                             )}
 
                             {(genStatus === 'idle' || genStatus === 'generating') && (
-                                <div className="p-12 border-2 border-dashed border-slate-100 rounded-[40px] flex flex-col items-center justify-center text-center opacity-50">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mb-4">
+                                <div className="p-12 border-2 border-dashed border-slate-100 rounded-[8px] flex flex-col items-center justify-center text-center opacity-50">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-[8px] flex items-center justify-center mb-4">
                                         <i className="fas fa-magic text-2xl text-slate-200"></i>
                                     </div>
                                     <p className="text-sm font-bold text-slate-300">Run the generator to see AI insights</p>
@@ -427,10 +427,10 @@ const CampaignCreate = () => {
                             <TitleComponent type="h3" className="text-slate-900 font-black text-xl">Target Leads</TitleComponent>
                             <div className="flex items-center gap-4">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Only leads for "{formData.project}" shown</span>
-                                <span className="text-sm font-bold text-indigo-600 px-4 py-1 bg-indigo-50 rounded-full">{formData.selectedRows.length} Selected</span>
+                                <span className="text-sm font-bold text-indigo-600 px-4 py-1 bg-indigo-50 rounded-[8px]">{formData.selectedRows.length} Selected</span>
                             </div>
                         </div>
-                        <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+                        <div className="border border-slate-100 rounded-[8px] overflow-hidden shadow-sm">
                             <DataTable
                                 columns={columns}
                                 data={availableLeads}
@@ -456,7 +456,7 @@ const CampaignCreate = () => {
                                     <p className="text-slate-500 font-medium">Context: <span className="text-indigo-600 font-bold">{formData.project}</span></p>
                                     <p className="text-slate-500 font-medium mt-1">Subject: <span className="text-slate-900">{formData.subject || 'Not specified'}</span></p>
                                 </div>
-                                <div className="flex items-center gap-4 p-4 bg-emerald-50 rounded-2xl">
+                                <div className="flex items-center gap-4 p-4 bg-emerald-50 rounded-[8px]">
                                     <i className="fas fa-users text-emerald-600 text-xl" />
                                     <div>
                                         <p className="text-sm font-black text-emerald-900">{formData.selectedRows.length} Leads Targeted</p>
@@ -464,7 +464,7 @@ const CampaignCreate = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[32px] shadow-xl relative overflow-hidden group">
+                            <div className="p-8 bg-slate-900 text-white rounded-[8px] shadow-xl relative overflow-hidden group">
                                 <h4 className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-4">Project Relevance</h4>
                                 <p className="text-sm leading-relaxed text-slate-300 font-medium">
                                     You are initiating outreach for <span className="text-white underline decoration-indigo-500 decoration-2 underline-offset-4">{formData.project}</span>. The system will ensure all content and leads are synchronized with this project scope.
@@ -473,7 +473,7 @@ const CampaignCreate = () => {
                         </div>
                         <div>
                             <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Final Message Preview</h4>
-                            <div className="p-8 bg-slate-50 text-slate-700 rounded-[32px] border border-slate-100 leading-relaxed font-medium">
+                            <div className="p-8 bg-slate-50 text-slate-700 rounded-[8px] border border-slate-100 leading-relaxed font-medium">
                                 {formData.emailContent || 'No content provided.'}
                             </div>
                         </div>
@@ -483,7 +483,7 @@ const CampaignCreate = () => {
 
             {/* Error display */}
             {submitError && (
-                <div className="px-2 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-medium flex items-center gap-3">
+                <div className="px-2 py-3 bg-red-50 border border-red-200 rounded-[8px] text-red-700 text-sm font-medium flex items-center gap-3">
                     <i className="fas fa-exclamation-circle ml-2" />
                     {submitError}
                 </div>

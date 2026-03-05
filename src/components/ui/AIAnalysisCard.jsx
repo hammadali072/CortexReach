@@ -67,7 +67,7 @@ const AIAnalysisCard = () => {
             {status === 'analyzing' && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="bg-slate-50 h-64 rounded-3xl border border-slate-100 relative overflow-hidden">
+                        <div key={i} className="bg-slate-50 h-64 rounded-[8px] border border-slate-100 relative overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
                         </div>
                     ))}
@@ -93,7 +93,7 @@ const AIAnalysisCard = () => {
                         </TitleComponent>
                         <div className="flex overflow-x-auto pb-4 gap-3 no-scrollbar">
                             {suggestedSegments.map((segment, index) => (
-                                <div key={index} className="flex-shrink-0 bg-indigo-50/50 border border-indigo-100 px-4 py-2 rounded-xl text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors cursor-default whitespace-nowrap">
+                                <div key={index} className="flex-shrink-0 bg-indigo-50/50 border border-indigo-100 px-4 py-2 rounded-[8px] text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors cursor-default whitespace-nowrap">
                                     {segment}
                                 </div>
                             ))}

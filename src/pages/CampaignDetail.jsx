@@ -72,7 +72,7 @@ const CampaignDetail = () => {
     if (loading) {
         return (
             <div className="py-20 flex flex-col items-center gap-4">
-                <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+                <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-[8px] animate-spin" />
                 <p className="text-slate-400 text-sm font-medium">Loading campaign analysis...</p>
             </div>
         );
@@ -159,9 +159,9 @@ const CampaignDetail = () => {
                     { label: 'Replied', value: stats.replied, icon: 'fa-reply', color: 'text-indigo-500' },
                     { label: 'Yield Rate', value: stats.yieldRate, icon: 'fa-chart-line', color: 'text-purple-500' }
                 ].map((stat, i) => (
-                    <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <div key={i} className="bg-white p-6 rounded-[8px] border border-slate-100 shadow-sm">
                         <div className="flex justify-between items-start mb-4">
-                            <div className={`w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center ${stat.color}`}>
+                            <div className={`w-10 h-10 rounded-[8px] bg-slate-50 flex items-center justify-center ${stat.color}`}>
                                 <i className={`fas ${stat.icon}`}></i>
                             </div>
                             <Badge variant="default">All Time</Badge>
@@ -173,22 +173,22 @@ const CampaignDetail = () => {
             </div>
 
             {/* Campaign Content Preview */}
-            <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 p-10 space-y-4">
+            <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-10 space-y-4">
                 <TitleComponent type="h3" className="text-slate-900 font-black text-xl">Content Preview</TitleComponent>
                 <div className="space-y-2">
                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Subject Line</p>
-                    <p className="p-4 bg-slate-50 rounded-2xl font-bold text-slate-700">{campaign.subject || 'No subject set'}</p>
+                    <p className="p-4 bg-slate-50 rounded-[8px] font-bold text-slate-700">{campaign.subject || 'No subject set'}</p>
                 </div>
                 <div className="space-y-2">
                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Email Body</p>
-                    <div className="p-6 bg-slate-50 rounded-[32px] text-slate-600 font-medium whitespace-pre-wrap leading-relaxed">
+                    <div className="p-6 bg-slate-50 rounded-[8px] text-slate-600 font-medium whitespace-pre-wrap leading-relaxed">
                         {campaign.body || 'No content set.'}
                     </div>
                 </div>
             </div>
 
             {/* Phase 4: A/B Testing Visualization */}
-            <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 p-10">
+            <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-10">
                 <ABTestResults />
             </div>
 
@@ -196,8 +196,8 @@ const CampaignDetail = () => {
             <ScalingVisualization />
 
             {/* Bottom Insights Callout */}
-            <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-[32px] flex items-start gap-6">
-                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-indigo-100 shadow-sm shrink-0">
+            <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-[8px] flex items-start gap-6">
+                <div className="w-12 h-12 bg-white rounded-[8px] flex items-center justify-center border border-indigo-100 shadow-sm shrink-0">
                     <i className="fas fa-lightbulb text-indigo-600"></i>
                 </div>
                 <div className="space-y-1">

@@ -64,8 +64,8 @@ const LeadSourcingModal = ({ isOpen, onClose, onGenerate }) => {
             }
         >
             <div className="space-y-6 py-4">
-                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-start gap-4">
-                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-200">
+                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-[8px] flex items-start gap-4">
+                    <div className="w-10 h-10 bg-indigo-600 rounded-[8px] flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-200">
                         <i className="fas fa-radar text-white"></i>
                     </div>
                     <div>
@@ -80,7 +80,7 @@ const LeadSourcingModal = ({ isOpen, onClose, onGenerate }) => {
                         <select
                             value={persona}
                             onChange={(e) => setPersona(e.target.value)}
-                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700"
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700"
                         >
                             <option value="">Choose a Persona...</option>
                             {personas.map((p, i) => (
@@ -94,7 +94,7 @@ const LeadSourcingModal = ({ isOpen, onClose, onGenerate }) => {
                         <select
                             value={industry}
                             onChange={(e) => setIndustry(e.target.value)}
-                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700"
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700"
                         >
                             <option value="">Select Industry...</option>
                             {industries.map((ind, i) => (
@@ -110,8 +110,8 @@ const LeadSourcingModal = ({ isOpen, onClose, onGenerate }) => {
                             <span>Hunting qualified leads...</span>
                             <span>74%</span>
                         </div>
-                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-indigo-600 rounded-full animate-[shimmer_2s_infinite]" style={{ width: '74%' }}></div>
+                        <div className="h-1.5 w-full bg-slate-100 rounded-[8px] overflow-hidden">
+                            <div className="h-full bg-indigo-600 rounded-[8px] animate-[shimmer_2s_infinite]" style={{ width: '74%' }}></div>
                         </div>
                     </div>
                 )}

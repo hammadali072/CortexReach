@@ -63,15 +63,15 @@ const SignIn = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#0f172a] relative overflow-hidden">
             {/* Ambient glows */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse delay-700" />
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-[8px] blur-[120px] animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-[8px] blur-[120px] animate-pulse delay-700" />
 
             <div className="w-full max-w-md p-8 relative z-10">
-                <div className="glass rounded-3xl p-8 border border-white/10 shadow-2xl backdrop-blur-xl bg-white/5">
+                <div className="glass rounded-[8px] p-8 border border-white/10 shadow-2xl backdrop-blur-xl bg-white/5">
 
                     {/* Brand */}
                     <div className="text-center mb-10">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl shadow-lg mb-4 animate-float">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-[8px] shadow-lg mb-4 animate-float">
                             <i className="fas fa-brain text-white text-3xl" />
                         </div>
                         <h1 className="text-4xl font-bold text-white tracking-tight mb-2">
@@ -84,7 +84,7 @@ const SignIn = () => {
 
                     {/* Error Banner */}
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs py-3 px-4 rounded-xl mb-6 animate-shake">
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs py-3 px-4 rounded-[8px] mb-6 animate-shake">
                             <i className="fas fa-exclamation-circle mr-2" />
                             {error}
                         </div>
@@ -108,7 +108,7 @@ const SignIn = () => {
                                         placeholder="John Doe"
                                         value={name}
                                         onChange={e => setName(e.target.value)}
-                                        className="w-full bg-[#1e293b]/50 border border-white/10 text-white pl-11 pr-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
+                                        className="w-full bg-[#1e293b]/50 border border-white/10 text-white pl-11 pr-4 py-3 rounded-[8px] outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
                                         required
                                     />
                                 </div>
@@ -130,7 +130,7 @@ const SignIn = () => {
                                     placeholder="you@company.com"
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
-                                    className="w-full bg-[#1e293b]/50 border border-white/10 text-white pl-11 pr-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
+                                    className="w-full bg-[#1e293b]/50 border border-white/10 text-white pl-11 pr-4 py-3 rounded-[8px] outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
                                     required
                                 />
                             </div>
@@ -151,7 +151,7 @@ const SignIn = () => {
                                     placeholder={mode === 'signup' ? 'Min 6 characters' : 'Enter your password'}
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    className="w-full bg-[#1e293b]/50 border border-white/10 text-white pl-11 pr-12 py-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
+                                    className="w-full bg-[#1e293b]/50 border border-white/10 text-white pl-11 pr-12 py-3 rounded-[8px] outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
                                     required
                                 />
                                 <button
@@ -168,11 +168,11 @@ const SignIn = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3.5 rounded-xl shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden group mt-2"
+                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3.5 rounded-[8px] shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden group mt-2"
                         >
                             {isLoading ? (
                                 <div className="flex items-center justify-center space-x-2">
-                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-[8px] animate-spin" />
                                     <span>{mode === 'signup' ? 'Creating account...' : 'Signing in...'}</span>
                                 </div>
                             ) : (

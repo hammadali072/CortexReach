@@ -17,48 +17,109 @@ import { bulkCreateLeads, getUserProjects } from '../services/db';
 
 const cls = (...p) => p.filter(Boolean).join(' ');
 
-const selectCls = 'w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700 shadow-sm cursor-pointer';
+const selectCls = 'w-full px-5 py-4 bg-white border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700 shadow-sm cursor-pointer';
+
+const slugify = (text) => {
+    if (!text) return '';
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '_')           // Replace spaces with underscores
+        .replace(/[^\w-]+/g, '')         // Remove all non-word chars
+        .replace(/__+/g, '_')            // Replace multiple underscores with single
+        .replace(/^_/, '')               // Trim underscore from start
+        .replace(/_$/, '');              // Trim underscore from end
+};
 
 // ─── Result row ───────────────────────────────────────────────────────────────
-const LeadRow = ({ lead, selected, onToggle }) => (
-    <tr
-        onClick={onToggle}
-        className={cls('cursor-pointer transition-colors border-b border-slate-50', selected ? 'bg-indigo-50/70' : 'hover:bg-slate-50')}
-    >
-        <td className="px-4 py-3 w-10">
-            <input
-                type="checkbox"
-                className="w-4 h-4 rounded accent-indigo-600"
-                checked={selected}
-                onChange={onToggle}
-                onClick={(e) => e.stopPropagation()}
-            />
-        </td>
-        <td className="px-4 py-3">
-            <p className="text-sm font-bold text-slate-800 truncate max-w-[200px]">{lead.name || 'Unknown'}</p>
-        </td>
-        <td className="px-4 py-3">
-            {lead.email ? (
-                <span className="flex items-center gap-1 text-[11px] text-indigo-600 font-medium">
-                    <i className="fas fa-envelope text-[9px]" />{lead.email}
+const LeadRow = ({ lead, selected, onToggle }) => {
+    const findField = (options) => {
+        const lowerOptions = options.map(o => o.toLowerCase());
+        const keys = Object.keys(lead);
+
+        for (const opt of options) {
+            if (lead[opt] !== undefined && lead[opt] !== null && lead[opt] !== '') return lead[opt];
+        }
+
+        const exactSlugKey = keys.find(k => lowerOptions.includes(k.toLowerCase().replace(/[\s_]/g, '')));
+        if (exactSlugKey) return lead[exactSlugKey];
+
+        const isNameLookup = lowerOptions.some(o => o.includes('name') || o.includes('company') || o.includes('business') || o.includes('person'));
+
+        if (isNameLookup) {
+            const nameKey = keys.find(k => {
+                const lk = k.toLowerCase();
+                return lowerOptions.some(opt => lk.includes(opt)) && (lk.includes('name') || lk.includes('title'));
+            });
+            if (nameKey) return lead[nameKey];
+        }
+
+        const key = keys.find(k => {
+            const lk = k.toLowerCase();
+            if (isNameLookup) {
+                const noise = ['city', 'state', 'address', 'zip', 'postal', 'street', 'lat', 'lng', 'location'];
+                if (noise.some(n => lk.includes(n)) && !lowerOptions.some(o => lk === o)) return false;
+            }
+            return lowerOptions.some(opt => lk.includes(opt));
+        });
+        return key ? lead[key] : null;
+    };
+
+    const getFullName = () => {
+        const first = findField(['first_name', 'firstName', 'fname']);
+        const last = findField(['last_name', 'lastName', 'lname']);
+        if (first || last) return `${first || ''} ${last || ''}`.trim();
+        return findField(['name', 'full_name', 'contact_name', 'person', 'contact']);
+    };
+
+    const name = getFullName();
+    const company = findField(['company', 'business', 'org', 'firm', 'organization']);
+    const email = findField(['email', 'mail', 'contact']);
+
+    return (
+        <tr
+            onClick={onToggle}
+            className={cls('cursor-pointer transition-colors border-b border-slate-50', selected ? 'bg-indigo-50/70' : 'hover:bg-slate-50')}
+        >
+            <td className="px-4 py-3 w-10">
+                <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded accent-indigo-600"
+                    checked={selected}
+                    onChange={onToggle}
+                    onClick={(e) => e.stopPropagation()}
+                />
+            </td>
+            <td className="px-4 py-3">
+                <p className="text-sm font-bold text-slate-800 truncate max-w-[200px]">{name || 'Unknown'}</p>
+            </td>
+            <td className="px-4 py-3">
+                <p className="text-[11px] text-slate-800 font-bold truncate max-w-[150px]">{company || '—'}</p>
+            </td>
+            <td className="px-4 py-3">
+                {email ? (
+                    <span className="flex items-center gap-1 text-[11px] text-indigo-600 font-medium">
+                        <i className="fas fa-envelope text-[9px]" />{email}
+                    </span>
+                ) : <span className="text-[11px] text-slate-300">—</span>}
+            </td>
+            <td className="px-4 py-3">
+                <span className="text-[11px] text-slate-600 font-medium">{findField(['phone', 'mobile', 'tel']) || '—'}</span>
+            </td>
+            <td className="px-4 py-3">
+                {findField(['website', 'url', 'site']) ? (
+                    <span className="text-[11px] text-slate-500 truncate max-w-[160px]">{findField(['website', 'url', 'site'])}</span>
+                ) : <span className="text-[11px] text-slate-300">—</span>}
+            </td>
+            <td className="px-4 py-3">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-[8px] bg-slate-100 text-slate-600 text-[10px] font-bold">
+                    {findField(['category', 'industry', 'type']) || 'Imported'}
                 </span>
-            ) : <span className="text-[11px] text-slate-300">—</span>}
-        </td>
-        <td className="px-4 py-3">
-            <span className="text-[11px] text-slate-600 font-medium">{lead.phone || '—'}</span>
-        </td>
-        <td className="px-4 py-3">
-            {lead.website ? (
-                <span className="text-[11px] text-slate-500 truncate max-w-[160px]">{lead.website}</span>
-            ) : <span className="text-[11px] text-slate-300">—</span>}
-        </td>
-        <td className="px-4 py-3">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold">
-                {lead.category || 'Imported'}
-            </span>
-        </td>
-    </tr>
-);
+            </td>
+        </tr>
+    );
+};
 
 const LeadsImport = () => {
     const { currentUser } = useAuth();
@@ -146,28 +207,40 @@ const LeadsImport = () => {
 
         // Simple mapping heuristic
         const formatted = data.map((item, idx) => {
-            // Find keys case-insensitively
-            const findVal = (options) => {
-                const key = Object.keys(item).find(k =>
-                    options.some(opt => k.toLowerCase().includes(opt))
+            // Slugify all original keys and store their values
+            const record = {};
+            Object.keys(item).forEach(key => {
+                const cleanKey = slugify(key);
+                if (cleanKey) {
+                    record[cleanKey] = item[key];
+                }
+            });
+
+            // Helper to find core field values from the slugified record
+            const getFieldVal = (options) => {
+                const foundKey = Object.keys(record).find(k =>
+                    options.some(opt => k.includes(opt.toLowerCase()))
                 );
-                return key ? item[key] : null;
+                return foundKey ? record[foundKey] : null;
             };
 
+            const name = getFieldVal(['full_name', 'name', 'contact', 'person', 'business']);
+            const company = getFieldVal(['company', 'business', 'firm', 'organization']);
+            const email = getFieldVal(['email', 'mail', 'contact']);
+
             return {
-                place_id: `import_${Date.now()}_${idx}`, // unique temporary ID
-                name: findVal(['name', 'company', 'business', 'title']),
-                email: findVal(['email', 'mail', 'contact']),
-                phone: findVal(['phone', 'mobile', 'tel', 'call']),
-                website: findVal(['website', 'url', 'site', 'link']),
-                category: findVal(['category', 'industry', 'type', 'niche']) || 'Imported',
-                formatted_address: findVal(['address', 'location', 'city', 'street']),
-                source: 'csv_import',
-                relevanceScore: 85,
+                ...record,
+                projectId: selectedProjectId,
             };
         });
 
-        const validLeads = formatted.filter(l => l.name || l.email);
+        // Filter valid leads (must have something that looks like a name or email in slugified keys)
+        const validLeads = formatted.filter(l => {
+            const keys = Object.keys(l);
+            const hasName = keys.some(k => ['name', 'full_name', 'contact', 'person', 'business'].some(opt => k.includes(opt)));
+            const hasEmail = keys.some(k => ['email', 'mail'].some(opt => k.includes(opt)));
+            return hasName || hasEmail;
+        });
         if (validLeads.length === 0) {
             setError('No valid leads found (missing Name or Email).');
             setPhase('error');
@@ -210,10 +283,10 @@ const LeadsImport = () => {
         <div className="min-h-screen space-y-8 pb-16">
 
             {/* ── Page Header ── */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-10 shadow-xl border border-slate-800">
+            <div className="relative overflow-hidden rounded-[8px] bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-10 shadow-xl border border-slate-800">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute -top-20 -right-20 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl" />
-                    <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-emerald-600/10 rounded-full blur-3xl" />
+                    <div className="absolute -top-20 -right-20 w-80 h-80 bg-indigo-600/10 rounded-[8px] blur-3xl" />
+                    <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-emerald-600/10 rounded-[8px] blur-3xl" />
                 </div>
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
@@ -231,16 +304,6 @@ const LeadsImport = () => {
                             Upload your existing lead lists. We'll automatically map columns for names, emails, and contact details.
                         </TitleComponent>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                        <div className="flex items-center gap-2 px-5 py-3 bg-emerald-600/20 border border-emerald-600/30 rounded-2xl">
-                            <i className="fas fa-file-csv text-emerald-400" />
-                            <span className="text-emerald-300 text-sm font-bold">CSV / Excel</span>
-                        </div>
-                        <div className="flex items-center gap-2 px-5 py-3 bg-indigo-600/20 border border-indigo-600/30 rounded-2xl">
-                            <i className="fas fa-database text-indigo-400" />
-                            <span className="text-indigo-300 text-sm font-bold">Firebase DB</span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -248,7 +311,7 @@ const LeadsImport = () => {
 
                 {/* ── LEFT: Upload area ── */}
                 <div className="space-y-6 sticky top-6">
-                    <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 space-y-6">
+                    <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-8 space-y-6">
                         <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
                             <i className="fas fa-cloud-upload-alt text-indigo-500" />
                             Upload File
@@ -262,8 +325,8 @@ const LeadsImport = () => {
                                     onChange={handleFileSelect}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                 />
-                                <div className="border-2 border-dashed border-slate-200 group-hover:border-indigo-400 group-hover:bg-indigo-50/30 rounded-3xl p-10 text-center transition-all">
-                                    <div className="w-16 h-16 bg-slate-50 group-hover:bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100 transition-all">
+                                <div className="border-2 border-dashed border-slate-200 group-hover:border-indigo-400 group-hover:bg-indigo-50/30 rounded-[8px] p-10 text-center transition-all">
+                                    <div className="w-16 h-16 bg-slate-50 group-hover:bg-white rounded-[8px] flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100 transition-all">
                                         <i className="fas fa-file-excel text-2xl text-slate-300 group-hover:text-indigo-500" />
                                     </div>
                                     <p className="text-sm font-bold text-slate-700 mb-1">Select CSV or Excel</p>
@@ -271,7 +334,7 @@ const LeadsImport = () => {
                                 </div>
                             </div>
 
-                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div className="p-4 bg-slate-50 rounded-[8px] border border-slate-100">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Instructions</p>
                                 <ul className="text-xs text-slate-500 space-y-2">
                                     <li className="flex gap-2">
@@ -293,7 +356,7 @@ const LeadsImport = () => {
 
                     {/* ── Save to Project card ── */}
                     {(phase === 'results' || phase === 'saved') && leads.length > 0 && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
                             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
                                 <i className="fas fa-database text-indigo-500" /> Target Project
                             </h3>
@@ -316,7 +379,7 @@ const LeadsImport = () => {
                                     </select>
 
                                     {saveResult && (
-                                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-[8px]">
                                             <p className="text-sm font-black text-emerald-800">
                                                 <i className="fas fa-check-circle mr-1" /> {saveResult.inserted} leads saved!
                                             </p>
@@ -330,7 +393,7 @@ const LeadsImport = () => {
                                         onClick={handleSave}
                                         disabled={selectedLeadsCount === 0 || phase === 'saving' || phase === 'saved'}
                                         className={cls(
-                                            'w-full py-3 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2',
+                                            'w-full py-3 rounded-[8px] font-black text-sm transition-all flex items-center justify-center gap-2',
                                             selectedLeadsCount > 0 && phase !== 'saved'
                                                 ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100'
                                                 : 'bg-slate-100 text-slate-400 cursor-not-allowed'
@@ -354,8 +417,8 @@ const LeadsImport = () => {
                 <div className="space-y-6">
 
                     {phase === 'idle' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-16 text-center">
-                            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-slate-100 to-slate-50 rounded-3xl flex items-center justify-center">
+                        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-16 text-center">
+                            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-slate-100 to-slate-50 rounded-[8px] flex items-center justify-center">
                                 <i className="fas fa-file-import text-slate-300 text-4xl" />
                             </div>
                             <p className="text-xl font-black text-slate-700 mb-2">Waiting for Data</p>
@@ -366,7 +429,7 @@ const LeadsImport = () => {
                     )}
 
                     {phase === 'parsing' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-20 text-center animate-pulse">
+                        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-20 text-center animate-pulse">
                             <i className="fas fa-spinner fa-spin text-4xl text-indigo-500 mb-4" />
                             <p className="text-lg font-black text-slate-800">Reading File...</p>
                             <p className="text-sm text-slate-400 mt-1">Extracting lead data and mapping columns.</p>
@@ -374,9 +437,9 @@ const LeadsImport = () => {
                     )}
 
                     {phase === 'error' && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-10 space-y-5">
-                            <div className="p-5 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-4">
-                                <div className="w-12 h-12 bg-red-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-10 space-y-5">
+                            <div className="p-5 bg-red-50 border border-red-100 rounded-[8px] flex items-start gap-4">
+                                <div className="w-12 h-12 bg-red-500 rounded-[8px] flex items-center justify-center flex-shrink-0">
                                     <i className="fas fa-exclamation-triangle text-white" />
                                 </div>
                                 <div className="flex-1">
@@ -384,7 +447,7 @@ const LeadsImport = () => {
                                     <p className="text-sm text-red-700 leading-relaxed">{error}</p>
                                     <button
                                         onClick={() => setPhase('idle')}
-                                        className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-black rounded-xl transition-all"
+                                        className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-black rounded-[8px] transition-all"
                                     >
                                         Try Another File
                                     </button>
@@ -394,14 +457,14 @@ const LeadsImport = () => {
                     )}
 
                     {(phase === 'results' || phase === 'saved' || phase === 'saving') && (
-                        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
 
                             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-xl border border-emerald-100">
+                                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-[8px] border border-emerald-100">
                                         <i className="fas fa-check text-[9px]" />{leads.length} leads found
                                     </span>
-                                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-xl border border-indigo-100">
+                                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-[8px] border border-indigo-100">
                                         <i className="fas fa-check-square text-[9px]" />{selectedLeadsCount} to import
                                     </span>
                                 </div>
@@ -425,7 +488,7 @@ const LeadsImport = () => {
                                                     onChange={toggleAll}
                                                 />
                                             </th>
-                                            {['Name', 'Email', 'Phone', 'Website', 'Category'].map((h) => (
+                                            {['Name', 'Company', 'Email', 'Phone', 'Website', 'Category'].map((h) => (
                                                 <th key={h} className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">{h}</th>
                                             ))}
                                         </tr>

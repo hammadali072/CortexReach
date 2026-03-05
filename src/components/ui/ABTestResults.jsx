@@ -46,7 +46,7 @@ const ABTestResults = () => {
                 {testData.map((test) => (
                     <div
                         key={test.id}
-                        className={`p-6 rounded-[32px] border transition-all duration-500 relative overflow-hidden ${test.isWinner
+                        className={`p-6 rounded-[8px] border transition-all duration-500 relative overflow-hidden ${test.isWinner
                                 ? 'bg-white border-indigo-200 shadow-2xl shadow-indigo-100 ring-1 ring-indigo-50'
                                 : 'bg-slate-50 border-slate-100'
                             }`}
@@ -72,9 +72,9 @@ const ABTestResults = () => {
                                         <span className="text-slate-400">Open Rate</span>
                                         <span className="text-indigo-600">{test.openRate}%</span>
                                     </div>
-                                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-1.5 w-full bg-slate-100 rounded-[8px] overflow-hidden">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-1000 ease-out delay-300 ${test.isWinner ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                            className={`h-full rounded-[8px] transition-all duration-1000 ease-out delay-300 ${test.isWinner ? 'bg-indigo-600' : 'bg-slate-300'}`}
                                             style={{ width: `${test.openRate}%` }}
                                         ></div>
                                     </div>
@@ -86,9 +86,9 @@ const ABTestResults = () => {
                                         <span className="text-slate-400">Click Rate</span>
                                         <span className="text-blue-500">{test.clickRate}%</span>
                                     </div>
-                                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-1.5 w-full bg-slate-100 rounded-[8px] overflow-hidden">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-1000 ease-out delay-500 ${test.isWinner ? 'bg-blue-500' : 'bg-slate-300'}`}
+                                            className={`h-full rounded-[8px] transition-all duration-1000 ease-out delay-500 ${test.isWinner ? 'bg-blue-500' : 'bg-slate-300'}`}
                                             style={{ width: `${test.clickRate}%` }}
                                         ></div>
                                     </div>
@@ -100,9 +100,9 @@ const ABTestResults = () => {
                                         <span className="text-slate-400">Reply Rate</span>
                                         <span className="text-emerald-500">{test.replyRate}%</span>
                                     </div>
-                                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-1.5 w-full bg-slate-100 rounded-[8px] overflow-hidden">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-1000 ease-out delay-700 ${test.isWinner ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                                            className={`h-full rounded-[8px] transition-all duration-1000 ease-out delay-700 ${test.isWinner ? 'bg-emerald-500' : 'bg-slate-300'}`}
                                             style={{ width: `${test.replyRate}%` }}
                                         ></div>
                                     </div>
@@ -110,7 +110,7 @@ const ABTestResults = () => {
                             </div>
 
                             <div className="pt-2">
-                                <div className={`p-3 rounded-2xl text-[10px] font-black text-center uppercase tracking-widest ${test.isWinner ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/50 text-slate-400'
+                                <div className={`p-3 rounded-[8px] text-[10px] font-black text-center uppercase tracking-widest ${test.isWinner ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/50 text-slate-400'
                                     }`}>
                                     {test.isWinner ? 'Validated for Scaling' : 'Low Relevance Detected'}
                                 </div>

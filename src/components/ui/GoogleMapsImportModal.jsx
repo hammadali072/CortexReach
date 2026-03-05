@@ -24,8 +24,8 @@ const Field = ({ label, children }) => (
     </div>
 );
 
-const inputCls = 'w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700 placeholder:text-slate-300';
-const selectCls = 'w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700 cursor-pointer';
+const inputCls = 'w-full p-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700 placeholder:text-slate-300';
+const selectCls = 'w-full p-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700 cursor-pointer';
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 const STEPS = ['Parameters', 'Scanning', 'Results'];
@@ -39,7 +39,7 @@ const StepIndicator = ({ step }) => (
             return (
                 <div key={label} className="flex items-center gap-2">
                     <div className={cls(
-                        'w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all duration-300',
+                        'w-7 h-7 rounded-[8px] flex items-center justify-center text-xs font-black transition-all duration-300',
                         done ? 'bg-emerald-500 text-white' : active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400'
                     )}>
                         {done ? <i className="fas fa-check text-[10px]" /> : idx}
@@ -70,10 +70,10 @@ const ProgressRow = ({ icon, label, status, done, total }) => {
                     {status === 'done' ? `${done} done` : status === 'active' ? `${done} / ${total}` : 'Waiting...'}
                 </span>
             </div>
-            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-slate-100 rounded-[8px] overflow-hidden">
                 <div
                     className={cls(
-                        'h-full rounded-full transition-all duration-500',
+                        'h-full rounded-[8px] transition-all duration-500',
                         status === 'done' ? 'bg-emerald-400' : status === 'active' ? 'bg-indigo-500' : 'bg-slate-200'
                     )}
                     style={{ width: `${status === 'done' ? 100 : pct}%` }}
@@ -88,8 +88,8 @@ const ErrorBanner = ({ error, onRetry }) => {
     const isQuota = error === 'quota_exceeded';
     const isKey = error === 'api_key_invalid';
     return (
-        <div className={cls('p-5 rounded-2xl border flex items-start gap-4', isQuota ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200')}>
-            <div className={cls('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', isQuota ? 'bg-amber-500' : 'bg-red-500')}>
+        <div className={cls('p-5 rounded-[8px] border flex items-start gap-4', isQuota ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200')}>
+            <div className={cls('w-10 h-10 rounded-[8px] flex items-center justify-center flex-shrink-0', isQuota ? 'bg-amber-500' : 'bg-red-500')}>
                 <i className={cls('fas text-white text-sm', isQuota ? 'fa-tachometer-alt' : isKey ? 'fa-key' : 'fa-wifi')} />
             </div>
             <div className="flex-1">
@@ -105,7 +105,7 @@ const ErrorBanner = ({ error, onRetry }) => {
                 </p>
                 <button
                     onClick={onRetry}
-                    className={cls('mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black transition-all',
+                    className={cls('mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[11px] font-black transition-all',
                         isQuota ? 'bg-amber-100 hover:bg-amber-200 text-amber-800' : 'bg-red-100 hover:bg-red-200 text-red-800')}
                 >
                     <i className="fas fa-redo text-[9px]" /> Try Again
@@ -120,7 +120,7 @@ const ResultsTable = ({ leads, selectedIds, onToggle, onToggleAll }) => {
     const allSelected = leads.length > 0 && selectedIds.length === leads.length;
 
     return (
-        <div className="border border-slate-100 rounded-2xl overflow-hidden">
+        <div className="border border-slate-100 rounded-[8px] overflow-hidden">
             {/* Header */}
             <div className="grid grid-cols-[auto_2fr_1.5fr_1fr_1fr] gap-3 px-4 py-3 bg-slate-50 border-b border-slate-100">
                 <input
@@ -178,7 +178,7 @@ const ResultsTable = ({ leads, selectedIds, onToggle, onToggleAll }) => {
                                 )}
                             </div>
                             <div>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-[8px] bg-slate-100 text-slate-600 text-[10px] font-bold">
                                     {lead.category || 'Business'}
                                 </span>
                             </div>
@@ -202,8 +202,8 @@ const ResultsTable = ({ leads, selectedIds, onToggle, onToggleAll }) => {
 
 // ─── Save Result Toast ────────────────────────────────────────────────────────
 const SaveResultBanner = ({ result, onClose }) => (
-    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
+    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-[8px] flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="w-10 h-10 bg-emerald-500 rounded-[8px] flex items-center justify-center flex-shrink-0">
             <i className="fas fa-check text-white" />
         </div>
         <div className="flex-1">
@@ -369,14 +369,14 @@ const GoogleMapsImportModal = ({ isOpen, onClose, projectId, onLeadsImported }) 
         <div className="flex gap-3 justify-between w-full">
             {step === 1 && (
                 <>
-                    <Button variant="outline" onClick={handleClose} className="border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl">
+                    <Button variant="outline" onClick={handleClose} className="border-slate-200 text-slate-500 hover:bg-slate-50 rounded-[8px]">
                         Cancel
                     </Button>
                     <Button
                         variant="primary"
                         onClick={handleSearch}
                         disabled={!canSearch}
-                        className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-100 rounded-xl px-8"
+                        className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-100 rounded-[8px] px-8"
                     >
                         <span className="flex items-center gap-2">
                             <i className="fas fa-search" /> Search Google Maps
@@ -392,7 +392,7 @@ const GoogleMapsImportModal = ({ isOpen, onClose, projectId, onLeadsImported }) 
                     <Button
                         variant="outline"
                         onClick={() => { setStep(1); setLeads([]); setSaveResult(null); }}
-                        className="border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl"
+                        className="border-slate-200 text-slate-500 hover:bg-slate-50 rounded-[8px]"
                     >
                         <i className="fas fa-arrow-left mr-2" /> New Search
                     </Button>
@@ -401,7 +401,7 @@ const GoogleMapsImportModal = ({ isOpen, onClose, projectId, onLeadsImported }) 
                         onClick={handleSave}
                         disabled={selectedIds.length === 0 || isSaving || !!saveResult}
                         className={cls(
-                            'rounded-xl px-8',
+                            'rounded-[8px] px-8',
                             selectedIds.length > 0 && !saveResult
                                 ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100'
                                 : 'bg-slate-200 text-slate-400 cursor-not-allowed'
@@ -444,8 +444,8 @@ const GoogleMapsImportModal = ({ isOpen, onClose, projectId, onLeadsImported }) 
                         )}
 
                         {/* Info badge */}
-                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-start gap-4">
-                            <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-200">
+                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-[8px] flex items-start gap-4">
+                            <div className="w-10 h-10 bg-emerald-600 rounded-[8px] flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-200">
                                 <i className="fab fa-google text-white text-sm" />
                             </div>
                             <div>
@@ -522,7 +522,7 @@ const GoogleMapsImportModal = ({ isOpen, onClose, projectId, onLeadsImported }) 
                 {step === 2 && (
                     <div className="space-y-6 animate-in fade-in duration-300">
                         <div className="text-center py-4">
-                            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-100">
+                            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-[8px] flex items-center justify-center shadow-xl shadow-emerald-100">
                                 <i className="fab fa-google text-white text-2xl" />
                             </div>
                             <p className="font-black text-slate-800 text-lg">Scanning Google Maps</p>
@@ -531,7 +531,7 @@ const GoogleMapsImportModal = ({ isOpen, onClose, projectId, onLeadsImported }) 
                             </p>
                         </div>
 
-                        <div className="space-y-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="space-y-4 p-5 bg-slate-50 rounded-[8px] border border-slate-100">
                             <ProgressRow
                                 icon="fa-spinner"
                                 label="Searching businesses"
@@ -579,7 +579,7 @@ const GoogleMapsImportModal = ({ isOpen, onClose, projectId, onLeadsImported }) 
                                     { label: 'With Phone', value: stats.withPhone, icon: 'fa-phone', color: 'text-teal-700 bg-teal-50' },
                                     { label: 'With Email', value: stats.withEmail, icon: 'fa-envelope', color: 'text-emerald-700 bg-emerald-50' },
                                 ].map((s) => (
-                                    <div key={s.label} className={cls('rounded-xl p-3 text-center', s.color)}>
+                                    <div key={s.label} className={cls('rounded-[8px] p-3 text-center', s.color)}>
                                         <p className="text-lg font-black">{s.value}</p>
                                         <p className="text-[10px] font-bold uppercase tracking-wide opacity-70">
                                             <i className={cls('fas mr-1', s.icon)} />{s.label}
@@ -591,13 +591,13 @@ const GoogleMapsImportModal = ({ isOpen, onClose, projectId, onLeadsImported }) 
 
                         {/* Search chips */}
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-xl">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-[8px]">
                                 <i className="fas fa-search text-[9px] text-slate-400" />{keyword}
                             </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-xl">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-[8px]">
                                 <i className="fas fa-map-marker-alt text-[9px] text-emerald-500" />{location}
                             </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 text-[11px] font-bold rounded-xl">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 text-[11px] font-bold rounded-[8px]">
                                 <i className="fas fa-check-square text-[9px]" />{selectedIds.length} selected
                             </span>
                         </div>
@@ -605,7 +605,7 @@ const GoogleMapsImportModal = ({ isOpen, onClose, projectId, onLeadsImported }) 
                         {/* Results or empty */}
                         {leads.length === 0 ? (
                             <div className="py-12 text-center space-y-4">
-                                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto">
+                                <div className="w-16 h-16 bg-slate-100 rounded-[8px] flex items-center justify-center mx-auto">
                                     <i className="fas fa-map-marker-alt text-slate-300 text-2xl" />
                                 </div>
                                 <p className="font-black text-slate-700 text-lg">No Businesses Found</p>

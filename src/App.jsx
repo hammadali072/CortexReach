@@ -1,6 +1,7 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { Toaster } from 'react-hot-toast'
 
 import AppLayout from './components/layout/AppLayout'
 import Dashboard from './pages/Dashboard'
@@ -27,7 +28,7 @@ const AuthGate = ({ children }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0f172a]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-indigo-600/30 border-t-indigo-600 rounded-[8px] animate-spin" />
           <p className="text-slate-500 text-sm font-medium">Loading CortexReach...</p>
         </div>
       </div>
@@ -54,6 +55,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <AuthGate>
+          <Toaster position="top-right" toastOptions={{ duration: 4000, style: { background: '#1e293b', color: '#fff', borderRadius: '16px' } }} />
           <Routes>
             {/* Public */}
             <Route path="/" element={
@@ -69,7 +71,7 @@ function App() {
               <Route path="projects/:id" element={<ProjectDetail />} />
               <Route path="projects/create" element={<ProjectCreate />} />
               <Route path="leads" element={<Leads />} />
-              <Route path="leads/search" element={<LeadsImport />} />
+              <Route path="leads/import" element={<LeadsImport />} />
               <Route path="campaigns" element={<Campaigns />} />
               <Route path="campaigns/:id" element={<CampaignDetail />} />
               <Route path="campaigns/:id/edit" element={<CampaignEdit />} />

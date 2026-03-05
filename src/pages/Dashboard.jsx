@@ -84,7 +84,7 @@ const Dashboard = () => {
     return (
         <div className="min-h-screen space-y-8">
             {/* Page Header with Gradient */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-8 shadow-xl">
+            <div className="relative overflow-hidden rounded-[8px] bg-gradient-to-br from-slate-800 to-slate-900 p-8 shadow-xl">
                 <div className="absolute inset-0 bg-blue-500 opacity-5" />
 
                 <div className="relative z-10">
@@ -102,7 +102,7 @@ const Dashboard = () => {
                 {stats.map((stat) => (
                     <div
                         key={stat.id}
-                        className="group relative overflow-hidden rounded-2xl bg-white shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-300"
+                        className="group relative overflow-hidden rounded-[8px] bg-white shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-300"
                         onMouseEnter={() => setHoveredCard(stat.id)}
                         onMouseLeave={() => setHoveredCard(null)}
                     >
@@ -116,16 +116,16 @@ const Dashboard = () => {
                                         {stat.value}
                                     </TitleComponent>
                                 </div>
-                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-sm`}>
+                                <div className={`w-12 h-12 rounded-[8px] bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-sm`}>
                                     <i className={`fas ${stat.icon} text-white text-xl`} />
                                 </div>
                             </div>
                             <TitleComponent type="p" size="small" className="text-slate-500 mb-4">
                                 {stat.description}
                             </TitleComponent>
-                            <div className="relative w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="relative w-full h-1.5 bg-slate-100 rounded-[8px] overflow-hidden">
                                 <div
-                                    className={`absolute top-0 left-0 h-full bg-gradient-to-r ${stat.gradient} rounded-full transition-all duration-1000 ease-out`}
+                                    className={`absolute top-0 left-0 h-full bg-gradient-to-r ${stat.gradient} rounded-[8px] transition-all duration-1000 ease-out`}
                                     style={{ width: hoveredCard === stat.id ? `${stat.percentage}%` : '50%' }}
                                 ></div>
                             </div>
@@ -135,7 +135,7 @@ const Dashboard = () => {
             </div>
 
             {/* Campaign Comparison Table */}
-            <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg border border-slate-100">
+            <div className="relative overflow-hidden rounded-[8px] bg-white shadow-lg border border-slate-100">
                 <div className="border-b border-slate-100 bg-slate-50/50 p-6">
                     <TitleComponent type="h3" className="text-slate-900 text-xl font-bold">
                         Outreach Performance
@@ -186,10 +186,10 @@ const Dashboard = () => {
                     <div
                         key={action.id}
                         onClick={() => navigate(action.path)}
-                        className="group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg border border-slate-200 transition-all duration-300 cursor-pointer p-8"
+                        className="group relative overflow-hidden rounded-[8px] bg-white shadow-md hover:shadow-lg border border-slate-200 transition-all duration-300 cursor-pointer p-8"
                     >
                         <div className="flex items-center space-x-6">
-                            <div className={`w-16 h-16 rounded-2xl ${action.iconBg} flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform`}>
+                            <div className={`w-16 h-16 rounded-[8px] ${action.iconBg} flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform`}>
                                 <i className={`fas ${action.icon} text-white text-2xl`} />
                             </div>
                             <div className="flex-1">

@@ -13,7 +13,7 @@ const EmailExtractionCell = ({ placeId, website, extractionState, onExtract }) =
     // ── No website ────────────────────────────────────────────────────────────
     if (!website) {
         return (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-400 text-[11px] font-bold select-none">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] bg-slate-100 text-slate-400 text-[11px] font-bold select-none">
                 <i className="fas fa-ban text-[9px]" />
                 No Website
             </span>
@@ -25,7 +25,7 @@ const EmailExtractionCell = ({ placeId, website, extractionState, onExtract }) =
     // ── Loading ───────────────────────────────────────────────────────────────
     if (status === 'loading') {
         return (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-100 text-amber-600 text-[11px] font-bold animate-in fade-in duration-200">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[8px] bg-amber-50 border border-amber-100 text-amber-600 text-[11px] font-bold animate-in fade-in duration-200">
                 <svg
                     className="w-3 h-3 animate-spin"
                     xmlns="http://www.w3.org/2000/svg"
@@ -59,7 +59,7 @@ const EmailExtractionCell = ({ placeId, website, extractionState, onExtract }) =
                     <i className="fas fa-envelope text-[10px] text-indigo-400" />
                     {extractionState.email}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-700 text-[10px] font-black w-fit">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[8px] bg-emerald-100 text-emerald-700 text-[10px] font-black w-fit">
                     <i className="fas fa-shield-check text-[8px]" />
                     Verified
                 </span>
@@ -71,7 +71,7 @@ const EmailExtractionCell = ({ placeId, website, extractionState, onExtract }) =
     return (
         <button
             onClick={() => onExtract(placeId)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-600 text-[11px] font-bold transition-all duration-150 border border-indigo-100 hover:border-indigo-200 hover:shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-600 text-[11px] font-bold transition-all duration-150 border border-indigo-100 hover:border-indigo-200 hover:shadow-sm"
         >
             <i className="fas fa-at text-[10px]" />
             Extract Email

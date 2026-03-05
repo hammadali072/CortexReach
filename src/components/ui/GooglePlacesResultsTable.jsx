@@ -67,7 +67,7 @@ const GooglePlacesResultsTable = ({
         str && str.length > max ? str.slice(0, max) + '…' : str;
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-slate-100">
+        <div className="overflow-hidden rounded-[8px] border border-slate-100">
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     {/* Head */}

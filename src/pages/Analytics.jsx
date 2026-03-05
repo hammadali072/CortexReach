@@ -143,7 +143,7 @@ const Analytics = () => {
             {/* Signal Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {overviewSummary.map((stat, idx) => (
-                    <div key={idx} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <div key={idx} className="bg-white p-6 rounded-[8px] border border-slate-200 shadow-sm">
                         <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{stat.label}</p>
                         <h2 className="text-3xl font-bold text-slate-900 mb-2">{stat.value}</h2>
                         <p className="text-sm text-slate-400">{stat.description}</p>
@@ -152,7 +152,7 @@ const Analytics = () => {
             </div>
 
             {/* Funnel Performance Table */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[8px] border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-8 border-b border-slate-100 bg-slate-50/50">
                     <h3 className="font-bold text-xl text-slate-900">Campaign engagement Analysis</h3>
                 </div>
@@ -171,7 +171,7 @@ const Analytics = () => {
 
             {/* System Decisions Insight */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-slate-900 p-8 rounded-3xl text-white">
+                <div className="bg-slate-900 p-8 rounded-[8px] text-white">
                     <h4 className="text-lg font-bold mb-4">Auto-Stop Decision Log</h4>
                     <div className="space-y-4">
                         <div className="flex justify-between items-center pb-4 border-b border-slate-800">
@@ -192,7 +192,7 @@ const Analytics = () => {
                     </p>
                 </div>
 
-                <div className="bg-white p-8 rounded-3xl border border-slate-200">
+                <div className="bg-white p-8 rounded-[8px] border border-slate-200">
                     <h4 className="text-lg font-bold text-slate-900 mb-6 font-idGrotesk">Yield Trend (Last 30 Days)</h4>
                     {/* Simplified Visual Indicator */}
                     <div className="space-y-6">
@@ -201,7 +201,7 @@ const Analytics = () => {
                                 <span>Signal Pickup</span>
                                 <span>78%</span>
                             </div>
-                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-2 bg-slate-100 rounded-[8px] overflow-hidden">
                                 <div className="h-full bg-indigo-500 w-[78%]" />
                             </div>
                         </div>
@@ -210,7 +210,7 @@ const Analytics = () => {
                                 <span>Conversion Velocity</span>
                                 <span>42%</span>
                             </div>
-                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-2 bg-slate-100 rounded-[8px] overflow-hidden">
                                 <div className="h-full bg-emerald-500 w-[42%]" />
                             </div>
                         </div>
