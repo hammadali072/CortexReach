@@ -13,6 +13,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         { path: '/dashboard/projects', icon: 'fa-folder-open', label: 'Projects' },
         { path: '/dashboard/leads', icon: 'fa-users', label: 'Leads' },
         { path: '/dashboard/campaigns', icon: 'fa-envelope', label: 'Campaigns' },
+        { path: '/dashboard/templates', icon: 'fa-file-invoice', label: 'Templates' },
         { path: '/dashboard/sequences', icon: 'fa-reply-all', label: 'Follow-Ups' },
         { path: '/dashboard/analytics', icon: 'fa-chart-bar', label: 'Analytics' },
         { path: '/dashboard/settings', icon: 'fa-cog', label: 'Settings' }

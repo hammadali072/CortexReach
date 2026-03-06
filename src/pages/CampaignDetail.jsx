@@ -177,12 +177,12 @@ const CampaignDetail = () => {
                 <TitleComponent type="h3" className="text-slate-900 font-black text-xl">Content Preview</TitleComponent>
                 <div className="space-y-2">
                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Subject Line</p>
-                    <p className="p-4 bg-slate-50 rounded-[8px] font-bold text-slate-700">{campaign.subject || 'No subject set'}</p>
+                    <p className="p-4 bg-slate-50 rounded-[8px] font-bold text-slate-700">{campaign.subjectLine || campaign.subject || 'No subject set'}</p>
                 </div>
                 <div className="space-y-2">
                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Email Body</p>
-                    <div className="p-6 bg-slate-50 rounded-[8px] text-slate-600 font-medium whitespace-pre-wrap leading-relaxed">
-                        {campaign.body || 'No content set.'}
+                    <div className="p-8 bg-slate-50 rounded-[8px] text-slate-600 font-medium leading-relaxed prose prose-slate max-w-none">
+                        <div dangerouslySetInnerHTML={{ __html: campaign.emailBodyHTML || campaign.emailContent || campaign.body || 'No content set.' }} />
                     </div>
                 </div>
             </div>

@@ -262,7 +262,7 @@ const ProjectDetail = () => {
                         {project.name}
                     </TitleComponent>
                 </div>
-                <Link to="/dashboard/campaigns/create">
+                <Link to={`/dashboard/campaigns/create?projectId=${id}`}>
                     <Button variant="primary" className="bg-indigo-600 shadow-xl shadow-indigo-100 h-auto py-4 px-8">
                         Launch Campaign for this Project
                     </Button>

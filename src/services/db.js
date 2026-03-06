@@ -76,14 +76,18 @@ export const createProject = async (userId, data) => {
  * @returns {Promise<Array>}
  */
 export const getUserProjects = async (userId) => {
-    const q = query(
-        ref(db, 'projects'),
-        orderByChild('userId'),
-        equalTo(userId)
-    );
-    const snapshot = await get(q);
-    if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val());
+    try {
+        const snapshot = await get(ref(db, 'projects'));
+        if (!snapshot.exists()) return [];
+
+        const data = snapshot.val();
+        return Object.values(data)
+            .filter(p => p.userId === userId)
+            .sort((a, b) => b.createdAt - a.createdAt);
+    } catch (err) {
+        console.error('[db] getUserProjects error:', err);
+        throw err;
+    }
 };
 
 /**
@@ -213,28 +217,30 @@ export const bulkCreateLeads = async (userId, projectId, leads) => {
  * Fetch all leads for a project.
  */
 export const getProjectLeads = async (projectId) => {
-    const q = query(
-        ref(db, 'leads'),
-        orderByChild('projectId'),
-        equalTo(projectId)
-    );
-    const snapshot = await get(q);
-    if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val());
+    try {
+        const snapshot = await get(ref(db, 'leads'));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val();
+        return Object.values(data).filter(l => l.projectId === projectId);
+    } catch (err) {
+        console.error('[db] getProjectLeads error:', err);
+        return [];
+    }
 };
 
 /**
  * Fetch all leads for a user across all projects.
  */
 export const getUserLeads = async (userId) => {
-    const q = query(
-        ref(db, 'leads'),
-        orderByChild('userId'),
-        equalTo(userId)
-    );
-    const snapshot = await get(q);
-    if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val());
+    try {
+        const snapshot = await get(ref(db, 'leads'));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val();
+        return Object.values(data).filter(l => l.userId === userId);
+    } catch (err) {
+        console.error('[db] getUserLeads error:', err);
+        return [];
+    }
 };
 
 /**
@@ -307,14 +313,19 @@ export const createCampaign = async (userId, projectId, data) => {
     const campaign = {
         id: campaignId,
         userId,
+        createdBy: userId,
         projectId,
-        name: data.name.trim(),
-        subject: data.subject || '',
-        body: data.body || '',
-        templateId: data.templateId || null,
-        templateTone: data.templateTone || '',
-        status: 'draft', // status: "draft" | "scheduled" | "sent" | "completed"
-        totalLeads: 0,
+        campaignName: data.name.trim(),
+        name: data.name.trim(), // Keep for compatibility
+        subjectLine: data.subjectLine || data.subject || '',
+        subject: data.subject || '', // Keep for compatibility
+        emailBodyHTML: data.emailBodyHTML || data.body || data.emailContent || '',
+        emailContent: data.emailContent || data.body || '', // Keep for compatibility
+        body: data.body || '', // Keep for compatibility
+        selectedLeadIds: data.selectedLeadIds || [],
+        templateId: data.templateId || '',
+        status: 'draft',
+        totalLeads: data.selectedLeadIds ? data.selectedLeadIds.length : 0,
         createdAt: timestamp,
         updatedAt: timestamp,
     };
@@ -345,14 +356,15 @@ export const getProjectCampaigns = async (projectId) => {
  * Fetch all campaigns for a user.
  */
 export const getUserCampaigns = async (userId) => {
-    const q = query(
-        ref(db, 'campaigns'),
-        orderByChild('userId'),
-        equalTo(userId)
-    );
-    const snapshot = await get(q);
-    if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val());
+    try {
+        const snapshot = await get(ref(db, 'campaigns'));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val();
+        return Object.values(data).filter(c => c.userId === userId);
+    } catch (err) {
+        console.error('[db] getUserCampaigns error:', err);
+        return [];
+    }
 };
 
 /**
@@ -475,6 +487,81 @@ export const getCampaignAudienceIds = async (campaignId) => {
     return Object.keys(snapshot.val());
 };
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 8 — TEMPLATES (CRUD)
+// Node: templates/{templateId}
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Create a new email template.
+ */
+export const createTemplate = async (userId, data) => {
+    const templatesRef = ref(db, 'templates');
+    const newRef = push(templatesRef);
+    const templateId = newRef.key;
+
+    const template = {
+        id: templateId,
+        userId,
+        name: data.name.trim(),
+        campaignType: data.campaignType, // brand_introduction, product_pitch, etc.
+        subjectTemplate: data.subjectTemplate.trim(),
+        bodyTemplate: data.bodyTemplate.trim(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+    };
+
+    await set(newRef, template);
+    return template;
+};
+
+
+/**
+ * Fetch all templates for a user.
+ */
+export const getUserTemplates = async (userId) => {
+    try {
+        const snapshot = await get(ref(db, 'templates'));
+        if (!snapshot.exists()) return [];
+
+        const data = snapshot.val();
+        // Client-side filtering to avoid index requirements in dev
+        return Object.values(data)
+            .filter(t => t.userId === userId)
+            .sort((a, b) => a.name.localeCompare(b.name));
+    } catch (err) {
+        console.error('[db] getUserTemplates error:', err);
+        throw err;
+    }
+};
+
+/**
+ * Fetch a single template by ID.
+ */
+export const getTemplate = async (templateId) => {
+    const snapshot = await get(ref(db, `templates/${templateId}`));
+    return snapshot.exists() ? snapshot.val() : null;
+};
+
+/**
+ * Update a template.
+ */
+export const updateTemplate = async (templateId, updates) => {
+    const templateRef = ref(db, `templates/${templateId}`);
+    const data = {
+        ...updates,
+        updatedAt: Date.now()
+    };
+    await update(templateRef, data);
+};
+
+/**
+ * Delete a template.
+ */
+export const deleteTemplate = async (templateId) => {
+    await set(ref(db, `templates/${templateId}`), null);
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PHASE 3 — EMAIL SENDS TRACKING
