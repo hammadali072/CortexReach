@@ -17,21 +17,6 @@ const CAMPAIGN_TYPES = [
     { id: 'partnership', name: 'Partnership', icon: 'fa-handshake', color: 'bg-purple-50 text-purple-600' }
 ]
 
-const DEFAULT_TEMPLATES = [
-    {
-        name: 'Standard Brand Intro',
-        campaignType: 'brand_introduction',
-        subjectTemplate: 'Helping {{companyName}} simplify wellness bookings',
-        bodyTemplate: `<p>Hi {{firstName}},</p><p>I came across {{companyName}} while researching businesses in the {{industry}} space.</p><p>I'm reaching out because we built <strong>{{projectName}}</strong>, a platform designed to help {{targetAudience}} streamline daily operations.</p><p>With features like <em>{{keyFeature1}}</em> and <em>{{keyFeature2}}</em>, teams are able to reduce manual work and provide a smoother experience for their clients.</p><p>Would you be open to a quick 10-minute call next week to see if this could be relevant for your team?</p><p>Best regards,<br>{{projectName}} Team</p>`
-    },
-    {
-        name: 'Feature Pitch',
-        campaignType: 'product_pitch',
-        subjectTemplate: 'New way to handle {{industry}} tasks for {{projectName}}',
-        bodyTemplate: `<p>Hello {{firstName}},</p><p>I wanted to share <strong>{{projectName}}</strong> with you. We've seen great results helping {{targetAudience}} achieve better efficiency through {{keyFeature1}}.</p><p>Check out our site at {{website}} to see how it works.</p><p>Best,<br>The {{projectName}} Team</p>`
-    }
-]
-
 const Templates = () => {
     const { currentUser } = useAuth()
     const [templates, setTemplates] = useState([])
@@ -56,15 +41,7 @@ const Templates = () => {
         try {
             setLoading(true)
             setError('')
-            let data = await getUserTemplates(currentUser.uid)
-
-            // Auto-seed if empty
-            if (data.length === 0) {
-                console.log('[Templates] Seeding default templates...')
-                await Promise.all(DEFAULT_TEMPLATES.map(t => createTemplate(currentUser.uid, t)))
-                data = await getUserTemplates(currentUser.uid)
-            }
-
+            const data = await getUserTemplates(currentUser.uid)
             setTemplates(data)
         } catch (err) {
             console.error('[Templates] load error:', err)
@@ -249,28 +226,6 @@ const Templates = () => {
                             className="bg-slate-50 border-slate-100 font-bold"
                         />
 
-                        <div className="bg-indigo-50 rounded-3xl p-8 space-y-4 border border-indigo-100">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
-                                    <i className="fas fa-tags" />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-indigo-900 text-sm">Dynamic Placeholders</p>
-                                    <p className="text-xs text-indigo-700 opacity-70">Click to copy placeholder to your clipboard (conceptually)</p>
-                                </div>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {[
-                                    '{{firstName}}', '{{companyName}}', '{{projectName}}',
-                                    '{{industry}}', '{{targetAudience}}', '{{mainBenefit}}',
-                                    '{{keyFeature1}}', '{{keyFeature2}}', '{{website}}'
-                                ].map(p => (
-                                    <span key={p} className="px-3 py-1.5 bg-white text-[10px] font-black text-indigo-600 rounded-lg border border-indigo-200 cursor-pointer hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
-                                        {p}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
 
                         <RichTextEditor
                             label="Email Body Template"

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import DataTable from 'react-data-table-component'
 import TitleComponent from '../components/titleComponent/titleComponent'
 import Button from '../components/ui/Button'
@@ -16,8 +17,10 @@ import {
     launchCampaignExecution,
     getProject,
     getUserTemplates,
-    createTemplate
+    recordEmailSend,
+    updateCampaign
 } from '../services/db'
+import { sendCampaignEmail } from '../services/emailService'
 
 const CAMPAIGN_TYPES = [
     { id: 'brand_introduction', name: 'Brand Introduction', icon: 'fa-bullhorn', color: 'bg-blue-50 text-blue-600' },
@@ -26,21 +29,6 @@ const CAMPAIGN_TYPES = [
     { id: 'demo_request', name: 'Demo Request', icon: 'fa-calendar-check', color: 'bg-indigo-50 text-indigo-600' },
     { id: 'follow_up', name: 'Follow-up', icon: 'fa-reply-all', color: 'bg-slate-50 text-slate-600' },
     { id: 'partnership', name: 'Partnership', icon: 'fa-handshake', color: 'bg-purple-50 text-purple-600' }
-]
-
-const DEFAULT_TEMPLATES = [
-    {
-        name: 'Standard Brand Intro',
-        campaignType: 'brand_introduction',
-        subjectTemplate: 'Helping {{companyName}} simplify wellness bookings',
-        bodyTemplate: `<p>Hi {{firstName}},</p><p>I came across {{companyName}} while researching businesses in the {{industry}} space.</p><p>I'm reaching out because we built <strong>{{projectName}}</strong>, a platform designed to help {{targetAudience}} streamline daily operations.</p><p>With features like <em>{{keyFeature1}}</em> and <em>{{keyFeature2}}</em>, teams are able to reduce manual work and provide a smoother experience for their clients.</p><p>Would you be open to a quick 10-minute call next week to see if this could be relevant for your team?</p><p>Best regards,<br>{{projectName}} Team</p>`
-    },
-    {
-        name: 'Feature Pitch',
-        campaignType: 'product_pitch',
-        subjectTemplate: 'New way to handle {{industry}} tasks for {{projectName}}',
-        bodyTemplate: `<p>Hello {{firstName}},</p><p>I wanted to share <strong>{{projectName}}</strong> with you. We've seen great results helping {{targetAudience}} achieve better efficiency through {{keyFeature1}}.</p><p>Check out our site at {{website}} to see how it works.</p><p>Best,<br>The {{projectName}} Team</p>`
-    }
 ]
 
 const CampaignCreate = () => {
@@ -59,6 +47,8 @@ const CampaignCreate = () => {
     const [submitError, setSubmitError] = useState('')
     const [projectsError, setProjectsError] = useState('')
     const [submitting, setSubmitting] = useState(false)
+    const [launching, setLaunching] = useState(false)
+    const [launchProgress, setLaunchProgress] = useState({ total: 0, current: 0 })
     const [selectedProject, setSelectedProject] = useState(null)
 
     // Form state
@@ -101,13 +91,7 @@ const CampaignCreate = () => {
         const loadTemplates = async () => {
             try {
                 const templates = await getUserTemplates(currentUser.uid)
-                if (templates.length === 0) {
-                    await Promise.all(DEFAULT_TEMPLATES.map(t => createTemplate(currentUser.uid, t)))
-                    const fresh = await getUserTemplates(currentUser.uid)
-                    setDbTemplates(fresh)
-                } else {
-                    setDbTemplates(templates)
-                }
+                setDbTemplates(templates)
             } catch (err) {
                 console.error('[CampaignCreate] template load error:', err)
                 // Don't block projects if templates fail
@@ -228,27 +212,96 @@ const CampaignCreate = () => {
     const handleSubmit = async () => {
         if (!currentUser) return
         setSubmitting(true)
+        setSubmitError('')
         try {
             const leadIds = formData.selectedRows.map(row => row.id)
             const campaign = await createCampaign(currentUser.uid, formData.project, {
                 campaignName: formData.name,
-                name: formData.name, // Keep for compatibility
+                name: formData.name,
                 templateId: formData.templateId,
                 subjectLine: formData.subject,
-                subject: formData.subject, // Keep for compatibility
+                subject: formData.subject,
                 emailBodyHTML: formData.emailContent,
-                emailContent: formData.emailContent, // Keep for compatibility
-                body: formData.emailContent, // Keep for compatibility
+                emailContent: formData.emailContent,
+                body: formData.emailContent,
                 selectedLeadIds: leadIds,
                 createdAt: Date.now(),
                 status: 'draft'
             })
             await setCampaignAudience(formData.project, campaign.id, leadIds)
+            toast.success('Campaign saved as draft.')
             navigate(`/dashboard/campaigns/${campaign.id}`)
         } catch (err) {
+            toast.error('Failed to save campaign.')
             setSubmitError(err.message || 'Failed to save campaign.')
         } finally {
             setSubmitting(false)
+        }
+    }
+
+    const handleLaunchCampaign = async () => {
+        if (!currentUser) return
+        setLaunching(true)
+        setSubmitError('')
+        setLaunchProgress({ total: formData.selectedRows.length, current: 0 })
+
+        try {
+            // 1. Create the campaign (as draft initially)
+            const leadIds = formData.selectedRows.map(row => row.id)
+            const campaign = await createCampaign(currentUser.uid, formData.project, {
+                campaignName: formData.name,
+                name: formData.name,
+                templateId: formData.templateId,
+                subjectLine: formData.subject,
+                subject: formData.subject,
+                emailBodyHTML: formData.emailContent,
+                emailContent: formData.emailContent,
+                body: formData.emailContent,
+                selectedLeadIds: leadIds,
+                createdAt: Date.now(),
+                status: 'draft'
+            })
+            await setCampaignAudience(formData.project, campaign.id, leadIds)
+
+            toast.loading('Launching emails...', { id: 'launch-progress' })
+
+            // 2. Loop through audience and send
+            for (let i = 0; i < formData.selectedRows.length; i++) {
+                const lead = formData.selectedRows[i]
+                try {
+                    // a. SendGrid Dispatch (via function)
+                    await sendCampaignEmail({
+                        to: lead.email,
+                        subject: formData.subject,
+                        html: formData.emailContent,
+                        leadId: lead.id,
+                        campaignId: campaign.id
+                    })
+
+                    // b. Record Send in DB
+                    await recordEmailSend({
+                        campaignId: campaign.id,
+                        projectId: campaign.projectId,
+                        leadId: lead.id,
+                        subject: formData.subject,
+                        body: formData.emailContent
+                    })
+                } catch (emailErr) {
+                    console.warn(`[CampaignLaunch] Failed for ${lead.email}:`, emailErr)
+                }
+                setLaunchProgress(prev => ({ ...prev, current: i + 1 }))
+            }
+
+            // 3. Complete Campaign
+            await updateCampaign(campaign.id, { status: 'sent' })
+            toast.success('Campaign launched and emails sent!', { id: 'launch-progress' })
+            navigate(`/dashboard/campaigns/${campaign.id}`)
+
+        } catch (err) {
+            toast.error('Campaign launch failed.', { id: 'launch-progress' })
+            setSubmitError(err.message || 'Campaign launch failed.')
+        } finally {
+            setLaunching(false)
         }
     }
 
@@ -491,9 +544,28 @@ const CampaignCreate = () => {
                         {currentStep < 7 ? (
                             <Button variant="primary" className="px-16 h-14 bg-indigo-600 font-bold" onClick={handleNext}>Next Step</Button>
                         ) : (
-                            <Button variant="primary" className="px-16 h-14 bg-emerald-600 font-bold" onClick={handleSubmit} disabled={submitting}>
-                                {submitting ? 'Saving...' : 'Save Campaign'}
-                            </Button>
+                            <>
+                                <Button
+                                    variant="outline"
+                                    className="px-8 h-14 border-emerald-200 text-emerald-700 font-bold"
+                                    onClick={handleSubmit}
+                                    disabled={submitting || launching}
+                                >
+                                    {submitting ? 'Saving...' : 'Save as Draft'}
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    className="px-12 h-14 bg-emerald-600 font-bold shadow-lg shadow-emerald-100"
+                                    onClick={handleLaunchCampaign}
+                                    disabled={submitting || launching}
+                                >
+                                    {launching ? (
+                                        <><i className="fas fa-spinner fa-spin mr-2" /> {launchProgress.current}/{launchProgress.total}</>
+                                    ) : (
+                                        <><i className="fas fa-paper-plane mr-2" /> Launch & Send</>
+                                    )}
+                                </Button>
+                            </>
                         )}
                     </div>
                 </div>
