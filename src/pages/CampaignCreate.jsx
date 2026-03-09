@@ -14,13 +14,12 @@ import {
     createCampaign,
     getProjectCampaigns,
     setCampaignAudience,
-    launchCampaignExecution,
     getProject,
     getUserTemplates,
     recordEmailSend,
     updateCampaign
 } from '../services/db'
-import { sendCampaignEmail } from '../services/emailService'
+// import { sendCampaignEmail } from '../services/emailService' // removed (deprecated SendGrid)
 
 const CAMPAIGN_TYPES = [
     { id: 'brand_introduction', name: 'Brand Introduction', icon: 'fa-bullhorn', color: 'bg-blue-50 text-blue-600' },
@@ -240,69 +239,7 @@ const CampaignCreate = () => {
     }
 
     const handleLaunchCampaign = async () => {
-        if (!currentUser) return
-        setLaunching(true)
-        setSubmitError('')
-        setLaunchProgress({ total: formData.selectedRows.length, current: 0 })
-
-        try {
-            // 1. Create the campaign (as draft initially)
-            const leadIds = formData.selectedRows.map(row => row.id)
-            const campaign = await createCampaign(currentUser.uid, formData.project, {
-                campaignName: formData.name,
-                name: formData.name,
-                templateId: formData.templateId,
-                subjectLine: formData.subject,
-                subject: formData.subject,
-                emailBodyHTML: formData.emailContent,
-                emailContent: formData.emailContent,
-                body: formData.emailContent,
-                selectedLeadIds: leadIds,
-                createdAt: Date.now(),
-                status: 'draft'
-            })
-            await setCampaignAudience(formData.project, campaign.id, leadIds)
-
-            toast.loading('Launching emails...', { id: 'launch-progress' })
-
-            // 2. Loop through audience and send
-            for (let i = 0; i < formData.selectedRows.length; i++) {
-                const lead = formData.selectedRows[i]
-                try {
-                    // a. SendGrid Dispatch (via function)
-                    await sendCampaignEmail({
-                        to: lead.email,
-                        subject: formData.subject,
-                        html: formData.emailContent,
-                        leadId: lead.id,
-                        campaignId: campaign.id
-                    })
-
-                    // b. Record Send in DB
-                    await recordEmailSend({
-                        campaignId: campaign.id,
-                        projectId: campaign.projectId,
-                        leadId: lead.id,
-                        subject: formData.subject,
-                        body: formData.emailContent
-                    })
-                } catch (emailErr) {
-                    console.warn(`[CampaignLaunch] Failed for ${lead.email}:`, emailErr)
-                }
-                setLaunchProgress(prev => ({ ...prev, current: i + 1 }))
-            }
-
-            // 3. Complete Campaign
-            await updateCampaign(campaign.id, { status: 'sent' })
-            toast.success('Campaign launched and emails sent!', { id: 'launch-progress' })
-            navigate(`/dashboard/campaigns/${campaign.id}`)
-
-        } catch (err) {
-            toast.error('Campaign launch failed.', { id: 'launch-progress' })
-            setSubmitError(err.message || 'Campaign launch failed.')
-        } finally {
-            setLaunching(false)
-        }
+        toast.error('Direct launching is disabled (Email Service removed). Please save as draft instead.');
     }
 
     const filteredTemplates = useMemo(() => {
@@ -555,15 +492,11 @@ const CampaignCreate = () => {
                                 </Button>
                                 <Button
                                     variant="primary"
-                                    className="px-12 h-14 bg-emerald-600 font-bold shadow-lg shadow-emerald-100"
+                                    className="px-12 h-14 bg-slate-100 text-slate-400 font-bold border-slate-200 cursor-not-allowed"
                                     onClick={handleLaunchCampaign}
-                                    disabled={submitting || launching}
+                                    disabled
                                 >
-                                    {launching ? (
-                                        <><i className="fas fa-spinner fa-spin mr-2" /> {launchProgress.current}/{launchProgress.total}</>
-                                    ) : (
-                                        <><i className="fas fa-paper-plane mr-2" /> Launch & Send</>
-                                    )}
+                                    <i className="fas fa-ban mr-2" /> Sending Disabled
                                 </Button>
                             </>
                         )}

@@ -15,7 +15,8 @@ import {
     orderByChild,
     equalTo,
 } from 'firebase/database';
-import { db } from '../firebase';
+import { db, functions } from '../firebase';
+import { httpsCallable } from 'firebase/functions';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PHASE 2 — PROJECTS
@@ -614,38 +615,7 @@ export const recordEmailSend = async (data) => {
  * 
  * @param {string} campaignId 
  */
-export const launchCampaignExecution = async (campaignId) => {
-    const campaign = await getCampaign(campaignId);
-    if (!campaign) throw new Error('Campaign not found.');
-    if (campaign.status !== 'draft') throw new Error('Only draft campaigns can be launched.');
-
-    // 1. Get Audience
-    const leadIds = await getCampaignAudienceIds(campaignId);
-    if (leadIds.length === 0) throw new Error('No leads selected for this campaign.');
-
-    // 2. Mark Campaign as 'sent' immediately to prevent double-launch
-    await updateCampaign(campaignId, { status: 'sent' });
-
-    // 3. Process sends (Loop through audience)
-    // For large audiences, this should ideally be handled by a Cloud Function.
-    // For this prototype, we process them sequentially/parallel here.
-    const results = await Promise.all(leadIds.map(async (leadId) => {
-        try {
-            return await recordEmailSend({
-                campaignId: campaign.id,
-                projectId: campaign.projectId,
-                leadId: leadId,
-                subject: campaign.subject,
-                body: campaign.body
-            });
-        } catch (err) {
-            console.error(`[db] Failed to send to lead ${leadId}:`, err);
-            return null;
-        }
-    }));
-
-    return { total: leadIds.length, processed: results.filter(r => r !== null).length };
-};
+// launchCampaignExecution removed (deprecated SendGrid)
 
 
 /**

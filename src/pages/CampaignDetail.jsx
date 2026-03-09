@@ -5,7 +5,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import ABTestResults from '../components/ui/ABTestResults';
 import ScalingVisualization from '../components/ui/ScalingVisualization';
-import { getCampaign, getCampaignAudienceCount, getCampaignSends, launchCampaignExecution } from '../services/db';
+import { getCampaign, getCampaignAudienceCount, getCampaignSends } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 
 const CampaignDetail = () => {
@@ -55,19 +55,7 @@ const CampaignDetail = () => {
         loadData();
     }, [loadData]);
 
-    const handleLaunch = async () => {
-        if (!campaign || campaign.status !== 'draft') return;
-        setActionLoading(true);
-        try {
-            await launchCampaignExecution(id);
-            await loadData(); // refresh
-        } catch (err) {
-            console.error('[CampaignDetail] launch error:', err);
-            alert(err.message || 'Failed to launch campaign.');
-        } finally {
-            setActionLoading(false);
-        }
-    };
+    // handleLaunch removed (deprecated SendGrid)
 
     if (loading) {
         return (
@@ -125,15 +113,12 @@ const CampaignDetail = () => {
                                         Edit Content
                                     </Button>
                                 </Link>
-                                <Button
-                                    variant="primary"
-                                    className="bg-indigo-600 shadow-xl shadow-indigo-100"
-                                    onClick={handleLaunch}
-                                    disabled={actionLoading}
+                                <button
+                                    className="px-6 h-12 bg-slate-100 text-slate-400 font-bold rounded-[8px] cursor-not-allowed"
+                                    disabled
                                 >
-                                    <i className={`fas ${actionLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'} mr-2`}></i>
-                                    {actionLoading ? 'Launching...' : 'Launch Campaign'}
-                                </Button>
+                                    Launch Disabled
+                                </button>
                             </>
                         ) : (
                             <>
