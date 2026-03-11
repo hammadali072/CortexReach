@@ -19,7 +19,8 @@ import {
     recordEmailSend,
     updateCampaign
 } from '../services/db'
-// import { sendCampaignEmail } from '../services/emailService' // removed (deprecated SendGrid)
+import { renderCampaignEmail } from '../emails/renderEmails'
+import { EMAIL_TEMPLATE_REGISTRY } from '../emails'
 
 const CAMPAIGN_TYPES = [
     { id: 'brand_introduction', name: 'Brand Introduction', icon: 'fa-bullhorn', color: 'bg-blue-50 text-blue-600' },
@@ -87,18 +88,7 @@ const CampaignCreate = () => {
             }
         }
 
-        const loadTemplates = async () => {
-            try {
-                const templates = await getUserTemplates(currentUser.uid)
-                setDbTemplates(templates)
-            } catch (err) {
-                console.error('[CampaignCreate] template load error:', err)
-                // Don't block projects if templates fail
-            }
-        }
-
         loadProjects()
-        loadTemplates()
     }, [currentUser, urlProjectId])
 
     const handleProjectChange = async (projectId) => {
@@ -146,19 +136,56 @@ const CampaignCreate = () => {
         return result
     }
 
-    const handleGenerateEmail = () => {
-        const template = dbTemplates.find(t => t.id === formData.templateId)
-        if (!template || !selectedProject) return
+    const replaceLeadPlaceholders = (text, lead) => {
+        if (!text || !lead) return text
+        let result = text
+        const replacements = {
+            '{{firstName}}': lead.firstName || lead.first_name || lead.name?.split(' ')[0] || 'there',
+            '{{lastName}}': lead.lastName || lead.last_name || lead.name?.split(' ').slice(1).join(' ') || '',
+            '{{companyName}}': lead.company_name || lead.company || 'your company',
+            '{{email}}': lead.email || ''
+        }
 
-        const subject = replaceProjectPlaceholders(template.subjectTemplate, selectedProject)
-        const body = replaceProjectPlaceholders(template.bodyTemplate, selectedProject)
+        Object.keys(replacements).forEach(key => {
+            result = result.split(key).join(replacements[key])
+        })
+        return result
+    }
 
-        setFormData(prev => ({
-            ...prev,
-            subject,
-            emailContent: body
-        }))
-        setCurrentStep(5)
+    const handleGenerateEmail = async () => {
+        if (!selectedProject || !formData.campaignType) return
+
+        try {
+            setSubmitting(true)
+            const template = EMAIL_TEMPLATE_REGISTRY[formData.campaignType]
+            if (!template) throw new Error('Template not found for this category')
+
+            // Use placeholders for lead data so they can be replaced at send time
+            const leadPlaceholder = {
+                firstName: '{{firstName}}',
+                lastName: '{{lastName}}',
+                company_name: '{{companyName}}'
+            }
+
+            const subject = replaceProjectPlaceholders('Quick question for {{firstName}} at {{companyName}}', selectedProject)
+
+            // Render the complex React Email template with project info and lead placeholders
+            const html = await renderCampaignEmail(formData.campaignType, selectedProject, leadPlaceholder)
+
+            setFormData(prev => ({
+                ...prev,
+                subject,
+                emailContent: html,
+                templateId: `react_${formData.campaignType}`
+            }))
+            setCurrentStep(5)
+            toast.success('Generated optimized layout!')
+        } catch (err) {
+            console.error('[CampaignCreate] generation error:', err)
+            toast.error('Failed to render email template.')
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     const steps = [
@@ -187,8 +214,9 @@ const CampaignCreate = () => {
                 return
             }
         }
-        if (currentStep === 3 && !formData.templateId) {
-            setSubmitError('Please select a template.')
+        if (currentStep === 3) {
+            // Template is auto-selected based on campaignType
+            setCurrentStep(currentStep + 1)
             return
         }
         if (currentStep === 5) {
@@ -239,12 +267,63 @@ const CampaignCreate = () => {
     }
 
     const handleLaunchCampaign = async () => {
-        toast.error('Direct launching is disabled (Email Service removed). Please save as draft instead.');
+        if (!currentUser || formData.selectedRows.length === 0) return
+        setLaunching(true)
+        setLaunchProgress({ total: formData.selectedRows.length, current: 0 })
+        setSubmitError('')
+
+        try {
+            // 1. Create the campaign and set audience
+            const leadIds = formData.selectedRows.map(row => row.id)
+            const campaignData = {
+                campaignName: formData.name,
+                name: formData.name,
+                templateId: formData.templateId,
+                subjectLine: formData.subject,
+                subject: formData.subject,
+                emailBodyHTML: formData.emailContent,
+                emailContent: formData.emailContent,
+                body: formData.emailContent,
+                selectedLeadIds: leadIds,
+                createdAt: Date.now(),
+                status: 'sending' 
+            }
+            const campaign = await createCampaign(currentUser.uid, formData.project, campaignData)
+            await setCampaignAudience(formData.project, campaign.id, leadIds)
+
+            // 2. Iterate and Record Sends
+            let count = 0
+            for (const lead of formData.selectedRows) {
+                // Perform lead-specific placeholder replacement (e.g. {{firstName}} -> John)
+                const personalizedHTML = replaceLeadPlaceholders(formData.emailContent, lead)
+                const personalizedSubject = replaceLeadPlaceholders(formData.subject, lead)
+
+                await recordEmailSend({
+                    campaignId: campaign.id,
+                    projectId: formData.project,
+                    leadId: lead.id,
+                    subject: personalizedSubject,
+                    body: personalizedHTML
+                })
+                count++
+                setLaunchProgress({ total: leadIds.length, current: count })
+            }
+
+            // 3. Mark as sent
+            await updateCampaign(campaign.id, { status: 'sent', updatedAt: Date.now() })
+
+            toast.success(`Successfully launched campaign to ${count} leads!`)
+            navigate(`/dashboard/campaigns/${campaign.id}`)
+        } catch (err) {
+            console.error('[CampaignCreate] launch error:', err)
+            toast.error('Launch failed during execution.')
+            setSubmitError(err.message || 'Launch failed.')
+        } finally {
+            setLaunching(false)
+        }
     }
 
-    const filteredTemplates = useMemo(() => {
-        return dbTemplates.filter(t => t.campaignType === formData.campaignType)
-    }, [dbTemplates, formData.campaignType])
+    // dbTemplates removed (using React Email Registry directly)
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-12">
@@ -366,27 +445,28 @@ const CampaignCreate = () => {
                     {currentStep === 3 && (
                         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 pt-4">
                             <div className="text-center">
-                                <h2 className="text-2xl font-bold text-slate-900">Choose Template</h2>
-                                <p className="text-slate-500 mt-2">Templates filtered by "{CAMPAIGN_TYPES.find(ct => ct.id === formData.campaignType)?.name}"</p>
+                                <h2 className="text-2xl font-bold text-slate-900">Confirm Outreach Template</h2>
+                                <p className="text-slate-500 mt-2">Personalizing the "{CAMPAIGN_TYPES.find(ct => ct.id === formData.campaignType)?.name}" React Email layout.</p>
                             </div>
-                            <div className="space-y-4">
-                                {filteredTemplates.length === 0 ? (
-                                    <div className="p-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                                        <i className="fas fa-file-invoice text-3xl text-slate-200 mb-4" />
-                                        <p className="text-slate-400 font-medium">No templates found for this category.</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {filteredTemplates.map(t => (
-                                            <button
-                                                key={t.id}
-                                                onClick={() => setFormData({ ...formData, templateId: t.id })}
-                                                className={`p-6 rounded-2xl border-2 text-left transition-all ${formData.templateId === t.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-100 bg-white hover:border-slate-200'}`}
-                                            >
-                                                <h4 className="font-bold text-slate-900">{t.name}</h4>
-                                                <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">{t.bodyTemplate.replace(/<[^>]*>/g, '')}</p>
-                                            </button>
-                                        ))}
+                            <div className="flex justify-center">
+                                {formData.campaignType && (
+                                    <div className="p-10 rounded-[32px] border-2 border-indigo-600 bg-indigo-50/30 max-w-lg w-full text-center shadow-xl shadow-indigo-100/50 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                                            <i className={`fas ${CAMPAIGN_TYPES.find(ct => ct.id === formData.campaignType)?.icon} text-6xl`} />
+                                        </div>
+                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm text-indigo-600">
+                                            <i className="fas fa-magic text-2xl" />
+                                        </div>
+                                        <h4 className="font-black text-slate-900 text-xl uppercase tracking-tight">
+                                            {CAMPAIGN_TYPES.find(ct => ct.id === formData.campaignType)?.name}
+                                        </h4>
+                                        <p className="text-sm text-slate-500 mt-3 leading-relaxed font-medium">
+                                            Our high-converting, responsive React layout including personalized company features, lead variables, and custom branding.
+                                        </p>
+                                        <div className="mt-8 pt-8 border-t border-indigo-100 flex justify-center gap-4">
+                                            <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest bg-white px-3 py-1 rounded-full shadow-sm">Variable Engine</span>
+                                            <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest bg-white px-3 py-1 rounded-full shadow-sm">Auto-Branding</span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -492,11 +572,15 @@ const CampaignCreate = () => {
                                 </Button>
                                 <Button
                                     variant="primary"
-                                    className="px-12 h-14 bg-slate-100 text-slate-400 font-bold border-slate-200 cursor-not-allowed"
+                                    className={`px-12 h-14 font-bold border-none transition-all ${launching ? 'bg-indigo-400' : 'bg-indigo-600 shadow-xl shadow-indigo-100'}`}
                                     onClick={handleLaunchCampaign}
-                                    disabled
+                                    disabled={launching || submitting}
                                 >
-                                    <i className="fas fa-ban mr-2" /> Sending Disabled
+                                    {launching ? (
+                                        <><i className="fas fa-spinner fa-spin mr-2" /> Sending {launchProgress.current}/{launchProgress.total}</>
+                                    ) : (
+                                        <><i className="fas fa-paper-plane mr-2" /> Launch Campaign</>
+                                    )}
                                 </Button>
                             </>
                         )}

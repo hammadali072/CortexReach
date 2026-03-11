@@ -5,8 +5,18 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import ABTestResults from '../components/ui/ABTestResults';
 import ScalingVisualization from '../components/ui/ScalingVisualization';
-import { getCampaign, getCampaignAudienceCount, getCampaignSends } from '../services/db';
+import {
+    getCampaign,
+    getCampaignAudienceCount,
+    getCampaignSends,
+    getProject,
+    getProjectLeads,
+    recordEmailSend,
+    updateCampaign
+} from '../services/db';
 import { useAuth } from '../context/AuthContext';
+import { renderCampaignEmail } from '../emails/renderEmails';
+import toast from 'react-hot-toast';
 
 const CampaignDetail = () => {
     const { id } = useParams();
@@ -55,7 +65,60 @@ const CampaignDetail = () => {
         loadData();
     }, [loadData]);
 
-    // handleLaunch removed (deprecated SendGrid)
+    const handleLaunch = async () => {
+        if (!campaign || !currentUser) return;
+        setActionLoading(true);
+        try {
+            const project = await getProject(campaign.projectId);
+            const leadIds = campaign.selectedLeadIds || [];
+            const leads = await getProjectLeads(campaign.projectId);
+            const targetLeads = leads.filter(l => leadIds.includes(l.id));
+
+            if (targetLeads.length === 0) {
+                toast.error('No leads found for this campaign.');
+                return;
+            }
+
+            // Mark as sending
+            await updateCampaign(id, { status: 'sending' });
+
+            // Helper for lead placeholders
+            const replaceLeadPlaceholders = (text, lead) => {
+                const replacements = {
+                    '{{firstName}}': lead.firstName || lead.first_name || lead.name?.split(' ')[0] || 'there',
+                    '{{lastName}}': lead.lastName || lead.last_name || lead.name?.split(' ').slice(1).join(' ') || '',
+                    '{{companyName}}': lead.company_name || lead.company || 'your company',
+                }
+                let res = text;
+                Object.keys(replacements).forEach(k => res = res.split(k).join(replacements[k]));
+                return res;
+            }
+
+            let count = 0;
+            for (const lead of targetLeads) {
+                const personalizedHTML = replaceLeadPlaceholders(campaign.emailBodyHTML || campaign.emailContent || '', lead);
+                const personalizedSubject = replaceLeadPlaceholders(campaign.subjectLine || campaign.subject || '', lead);
+
+                await recordEmailSend({
+                    campaignId: id,
+                    projectId: campaign.projectId,
+                    leadId: lead.id,
+                    subject: personalizedSubject,
+                    body: personalizedHTML
+                });
+                count++;
+            }
+
+            await updateCampaign(id, { status: 'sent', updatedAt: Date.now() });
+            toast.success(`Successfully launched campaign to ${count} leads!`);
+            loadData();
+        } catch (err) {
+            console.error('[CampaignDetail] launch error:', err);
+            toast.error('Failed to launch campaign.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -113,12 +176,18 @@ const CampaignDetail = () => {
                                         Edit Content
                                     </Button>
                                 </Link>
-                                <button
-                                    className="px-6 h-12 bg-slate-100 text-slate-400 font-bold rounded-[8px] cursor-not-allowed"
-                                    disabled
+                                <Button
+                                    variant="primary"
+                                    className="px-8 h-12 bg-indigo-600 font-bold border-none"
+                                    onClick={handleLaunch}
+                                    disabled={actionLoading}
                                 >
-                                    Launch Disabled
-                                </button>
+                                    {actionLoading ? (
+                                        <><i className="fas fa-spinner fa-spin mr-2" /> Launching...</>
+                                    ) : (
+                                        <><i className="fas fa-paper-plane mr-2" /> Launch Now</>
+                                    )}
+                                </Button>
                             </>
                         ) : (
                             <>
