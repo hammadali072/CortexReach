@@ -22,6 +22,7 @@
     "@tiptap/starter-kit": "^3.20.0",
     "clsx": "^2.1.1",
     "firebase": "^12.9.0",
+    "firebase-admin": "^13.7.0",
     "papaparse": "^5.5.3",
     "prop-types": "^15.8.1",
     "react": "^19.2.0",
@@ -30,7 +31,9 @@
     "react-email": "^5.2.9",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.13.0",
+    "resend": "^6.9.3",
     "styled-components": "^6.3.8",
+    "svix": "^1.87.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
