@@ -21,6 +21,7 @@ import {
 } from '../services/db'
 import { renderCampaignEmail } from '../emails/renderEmails'
 import { EMAIL_TEMPLATE_REGISTRY } from '../emails'
+import { launchCampaign } from '../services/emailService'
 
 const CAMPAIGN_TYPES = [
     { id: 'brand_introduction', name: 'Brand Introduction', icon: 'fa-bullhorn', color: 'bg-blue-50 text-blue-600' },
@@ -269,15 +270,15 @@ const CampaignCreate = () => {
     const handleLaunchCampaign = async () => {
         if (!currentUser || formData.selectedRows.length === 0) return
         setLaunching(true)
-        setLaunchProgress({ total: formData.selectedRows.length, current: 0 })
         setSubmitError('')
 
         try {
-            // 1. Create the campaign and set audience
+            // 1. Save campaign as draft first
             const leadIds = formData.selectedRows.map(row => row.id)
-            const campaignData = {
+            const campaign = await createCampaign(currentUser.uid, formData.project, {
                 campaignName: formData.name,
                 name: formData.name,
+                campaignType: formData.campaignType,   // ← needed by send-campaign.js
                 templateId: formData.templateId,
                 subjectLine: formData.subject,
                 subject: formData.subject,
@@ -286,44 +287,24 @@ const CampaignCreate = () => {
                 body: formData.emailContent,
                 selectedLeadIds: leadIds,
                 createdAt: Date.now(),
-                status: 'sending' 
-            }
-            const campaign = await createCampaign(currentUser.uid, formData.project, campaignData)
+                status: 'draft'                        // ← draft, not 'sending'
+            })
             await setCampaignAudience(formData.project, campaign.id, leadIds)
 
-            // 2. Iterate and Record Sends
-            let count = 0
-            for (const lead of formData.selectedRows) {
-                // Perform lead-specific placeholder replacement (e.g. {{firstName}} -> John)
-                const personalizedHTML = replaceLeadPlaceholders(formData.emailContent, lead)
-                const personalizedSubject = replaceLeadPlaceholders(formData.subject, lead)
+            // 2. NOW call Resend via the Vercel API — this is what actually sends emails
+            const result = await launchCampaign(campaign.id)
 
-                await recordEmailSend({
-                    campaignId: campaign.id,
-                    projectId: formData.project,
-                    leadId: lead.id,
-                    subject: personalizedSubject,
-                    body: personalizedHTML
-                })
-                count++
-                setLaunchProgress({ total: leadIds.length, current: count })
-            }
-
-            // 3. Mark as sent
-            await updateCampaign(campaign.id, { status: 'sent', updatedAt: Date.now() })
-
-            toast.success(`Successfully launched campaign to ${count} leads!`)
+            toast.success(`🚀 Sent to ${result.totalSent} leads!`)
             navigate(`/dashboard/campaigns/${campaign.id}`)
+
         } catch (err) {
             console.error('[CampaignCreate] launch error:', err)
-            toast.error('Launch failed during execution.')
+            toast.error(err.message || 'Launch failed.')
             setSubmitError(err.message || 'Launch failed.')
         } finally {
             setLaunching(false)
         }
     }
-
-    // dbTemplates removed (using React Email Registry directly)
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-12">
@@ -577,7 +558,7 @@ const CampaignCreate = () => {
                                     disabled={launching || submitting}
                                 >
                                     {launching ? (
-                                        <><i className="fas fa-spinner fa-spin mr-2" /> Sending {launchProgress.current}/{launchProgress.total}</>
+                                        <><i className="fas fa-spinner fa-spin mr-2" /> Sending...</>
                                     ) : (
                                         <><i className="fas fa-paper-plane mr-2" /> Launch Campaign</>
                                     )}

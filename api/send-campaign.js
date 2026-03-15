@@ -6,7 +6,7 @@
 import { Resend } from 'resend';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
-import { renderCampaignEmail } from '../src/emails/renderEmails.jsx';
+import { renderCampaignEmail } from '../src/emails/renderEmails.js';
 
 // ── Firebase Admin init ──────────────────────────────────────────────────────
 if (!getApps().length) {
@@ -29,6 +29,9 @@ const dbGet = async (path) => {
 };
 
 export default async function handler(req, res) {
+    const isDev = process.env.NODE_ENV !== 'production';
+    const devTestEmail = process.env.DEV_TEST_EMAIL;
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -40,7 +43,7 @@ export default async function handler(req, res) {
         // 1. Fetch Campaign
         const campaign = await dbGet(`campaigns/${campaignId}`);
         if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-        
+
         // Allow re-sending or draft sending
         if (campaign.status === 'sending') {
             return res.status(400).json({ error: 'Campaign is already in progress' });
@@ -77,10 +80,23 @@ export default async function handler(req, res) {
                         project,
                         lead
                     );
+
+                    const firstName = lead.first_name || lead.firstName || lead.name?.split(' ')[0] || 'there';
+                    const lastName = lead.last_name || lead.lastName || lead.name?.split(' ').slice(1).join(' ') || '';
+                    const companyName = lead.company_name || lead.company || 'your company';
+                    const email = lead.email || '';
+
+                    let personalizedSubject = campaign.subjectLine || campaign.subject || '';
+                    personalizedSubject = personalizedSubject
+                        .replace(/\{\{firstName\}\}/gi, firstName)
+                        .replace(/\{\{lastName\}\}/gi, lastName)
+                        .replace(/\{\{companyName\}\}/gi, companyName)
+                        .replace(/\{\{email\}\}/gi, email);
+
                     return {
-                        from: `${project.name} <outreach@${process.env.RESEND_FROM_DOMAIN || 'cortexreach.com'}>`,
-                        to: [lead.email],
-                        subject: campaign.subjectLine || campaign.subject,
+                        from: `${process.env.RESEND_FROM_NAME || 'CortexReach'} <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`,
+                        to: [isDev && devTestEmail ? devTestEmail : lead.email],
+                        subject: personalizedSubject,
                         html,
                         tags: [
                             { name: 'campaignId', value: campaignId },
@@ -92,7 +108,7 @@ export default async function handler(req, res) {
             );
 
             const { data, error } = await resend.batch.send(emailBatch);
-            
+
             if (error) {
                 console.error('[Resend] Batch Error:', error);
                 // We'll record what we can and continue

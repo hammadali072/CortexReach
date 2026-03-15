@@ -24,14 +24,24 @@ export const launchCampaign = async (campaignId) => {
         body: JSON.stringify({ campaignId }),
     });
 
-    const data = await response.json();
+    // ✅ Read as text first — then try to parse
+    const text = await response.text();
 
-    if (!response.ok) {
-        // Surface the server error message to the toast in CampaignDetail
-        throw new Error(data.error || `Server error ${response.status} — please try again.`);
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        // Server returned non-JSON (HTML error page, plain text crash message)
+        // This usually means vercel dev isn't running or the function crashed hard
+        console.error('[emailService] Non-JSON response from server:', text);
+        throw new Error(`Server returned unexpected response. Is "npx vercel dev" running? Details: ${text.slice(0, 100)}`);
     }
 
-    return data; // { success: true, totalSent: N, campaignId }
+    if (!response.ok) {
+        throw new Error(data?.error || `Server error ${response.status}`);
+    }
+
+    return data;
 };
 
 /**
