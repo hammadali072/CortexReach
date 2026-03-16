@@ -34,7 +34,6 @@
     "react-router-dom": "^7.13.0",
     "resend": "^6.9.3",
     "styled-components": "^6.3.8",
-    "svix": "^1.87.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
