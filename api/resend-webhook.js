@@ -25,7 +25,7 @@ const getRawBody = (req) => new Promise((resolve, reject) => {
     req.on('error', reject);
 });
 
-// ── Verify Resend webhook signature (no svix — pure Node crypto) ──────────────
+// ── Verify Resend webhook signature ──────────────────────────────────────────
 const verifySignature = (rawBody, headers, secret) => {
     if (!secret) return true; // skip in dev if not set
     try {
@@ -40,7 +40,6 @@ const verifySignature = (rawBody, headers, secret) => {
             .update(signedContent)
             .digest('base64');
 
-        // svix-signature format: "v1,<base64>"
         const signatures = svixSignature.split(' ');
         return signatures.some(sig => {
             const [, sigValue] = sig.split(',');
@@ -52,15 +51,69 @@ const verifySignature = (rawBody, headers, secret) => {
     }
 };
 
-// ── Find email_sends record ───────────────────────────────────────────────────
-const findSendRecord = async (leadId, campaignId) => {
-    const snap = await db.ref('email_sends')
-        .orderByChild('campaignId')
-        .equalTo(campaignId)
-        .get();
-    if (!snap.exists()) return null;
-    const sends = Object.values(snap.val());
-    return sends.find(s => s.leadId === leadId) || null;
+// ── Extract tags from Resend event (handles both array and object formats) ────
+const extractTags = (event) => {
+    const rawTags = event.data?.tags;
+    let campaignId, leadId, projectId, sendId;
+
+    if (Array.isArray(rawTags)) {
+        campaignId = rawTags.find(t => t.name === 'campaignId')?.value;
+        leadId = rawTags.find(t => t.name === 'leadId')?.value;
+        projectId = rawTags.find(t => t.name === 'projectId')?.value;
+        sendId = rawTags.find(t => t.name === 'sendId')?.value;
+    } else if (rawTags && typeof rawTags === 'object') {
+        campaignId = rawTags.campaignId;
+        leadId = rawTags.leadId;
+        projectId = rawTags.projectId;
+        sendId = rawTags.sendId;
+    } else {
+        // Fallback: top-level of event.data
+        campaignId = event.data?.campaignId;
+        leadId = event.data?.leadId;
+        projectId = event.data?.projectId;
+        sendId = event.data?.sendId;
+    }
+
+    return { campaignId, leadId, projectId, sendId };
+};
+
+// ── Look up a send record ─────────────────────────────────────────────────────
+// PRIMARY:   use sendId tag (direct, O(1) lookup)
+// FALLBACK:  scan email_sends by resendEmailId
+// LAST:      scan by campaignId + leadId (original slow path, kept as safety net)
+const findSendRecord = async (sendId, resendEmailId, campaignId, leadId) => {
+    // 1. Direct lookup by our own sendId (fastest)
+    if (sendId) {
+        const snap = await db.ref(`email_sends/${sendId}`).get();
+        if (snap.exists()) return snap.val();
+    }
+
+    // 2. Lookup by Resend's email ID (reliable if sendId tag was dropped)
+    if (resendEmailId) {
+        const snap = await db.ref('email_sends')
+            .orderByChild('resendEmailId')
+            .equalTo(resendEmailId)
+            .get();
+        if (snap.exists()) {
+            const vals = Object.values(snap.val());
+            if (vals.length > 0) return vals[0];
+        }
+    }
+
+    // 3. Slow fallback: scan by campaignId, filter by leadId client-side
+    if (campaignId && leadId) {
+        const snap = await db.ref('email_sends')
+            .orderByChild('campaignId')
+            .equalTo(campaignId)
+            .get();
+        if (snap.exists()) {
+            const sends = Object.values(snap.val());
+            const match = sends.find(s => s.leadId === leadId);
+            if (match) return match;
+        }
+    }
+
+    return null;
 };
 
 // ── Increment project stat ────────────────────────────────────────────────────
@@ -81,10 +134,8 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Read raw body
     const rawBody = await getRawBody(req);
 
-    // Verify signature
     const isValid = verifySignature(
         rawBody,
         req.headers,
@@ -102,43 +153,36 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid JSON body' });
     }
 
-    // ADD THIS LINE TEMPORARILY
-    console.log('[webhook] Full event:', JSON.stringify(event, null, 2));
+    console.log('[webhook] Event type:', event.type, '| email_id:', event.data?.email_id);
 
-    // Extract tags
-    const rawTags = event.data?.tags;
+    const { campaignId, leadId, projectId, sendId } = extractTags(event);
+    const resendEmailId = event.data?.email_id; // Resend's own ID for the email
 
-    let campaignId, leadId, projectId;
-
-    if (Array.isArray(rawTags)) {
-        // Shape: [{ name: 'campaignId', value: '...' }, ...]
-        campaignId = rawTags.find(t => t.name === 'campaignId')?.value;
-        leadId = rawTags.find(t => t.name === 'leadId')?.value;
-        projectId = rawTags.find(t => t.name === 'projectId')?.value;
-    } else if (rawTags && typeof rawTags === 'object') {
-        // Shape: { campaignId: '...', leadId: '...', projectId: '...' }
-        campaignId = rawTags.campaignId;
-        leadId = rawTags.leadId;
-        projectId = rawTags.projectId;
-    } else {
-        // Tags might be at the top level of event.data directly
-        campaignId = event.data?.campaignId;
-        leadId = event.data?.leadId;
-        projectId = event.data?.projectId;
-    }
     if (!campaignId || !leadId || !projectId) {
-        console.warn('[webhook] Missing tags, skipping:', event.type);
+        console.warn('[webhook] Missing required tags, skipping:', event.type);
         return res.status(200).json({ received: true, skipped: true });
     }
 
-    console.log(`[webhook] ${event.type} | campaign:${campaignId} | lead:${leadId}`);
+    console.log(`[webhook] ${event.type} | sendId:${sendId} | campaign:${campaignId} | lead:${leadId}`);
 
     try {
         switch (event.type) {
 
+            case 'email.sent': {
+                // Update our record with Resend's email_id if we don't have it yet
+                if (sendId && resendEmailId) {
+                    await db.ref(`email_sends/${sendId}`).update({
+                        deliveryStatus: 'sent',
+                        resendEmailId,
+                        sentConfirmedAt: Date.now(),
+                    });
+                }
+                break;
+            }
+
             case 'email.delivered': {
-                const rec = await findSendRecord(leadId, campaignId);
-                if (!rec) break;
+                const rec = await findSendRecord(sendId, resendEmailId, campaignId, leadId);
+                if (!rec) { console.warn('[webhook] No send record found for delivered event'); break; }
                 await db.ref(`email_sends/${rec.id}`).update({
                     deliveryStatus: 'delivered',
                     deliveredAt: Date.now(),
@@ -147,36 +191,42 @@ export default async function handler(req, res) {
             }
 
             case 'email.opened': {
-                const rec = await findSendRecord(leadId, campaignId);
-                if (!rec) break;
+                const rec = await findSendRecord(sendId, resendEmailId, campaignId, leadId);
+                if (!rec) { console.warn('[webhook] No send record found for opened event'); break; }
 
                 const now = Date.now();
 
-                // ── Ignore bot opens — real humans don't open within 5 seconds ──
+                // Ignore likely bot/scanner opens.
+                // Resend's delivery pipeline and email security scanners (Proofpoint,
+                // Barracuda, Mimecast etc.) fire pixels within 0–15 seconds of delivery.
+                // Real humans need at least 30 seconds between receiving and opening.
                 const timeSinceSent = now - (rec.sentAt || 0);
-                const isBotOpen = timeSinceSent < 5000; // 5 seconds
-
-                if (isBotOpen) {
-                    console.log(`[webhook] Ignoring bot open for lead ${leadId} (${timeSinceSent}ms after send)`);
+                if (timeSinceSent < 30_000) {
+                    console.log(
+                        `[webhook] Bot open filtered — lead: ${leadId} | ` +
+                        `${(timeSinceSent / 1000).toFixed(1)}s after send`
+                    );
                     break;
                 }
 
-                const isFirst = !rec.opened;
+                const isFirstOpen = !rec.opened;
                 await db.ref(`email_sends/${rec.id}`).update({
                     opened: true,
                     openCount: (rec.openCount || 0) + 1,
-                    firstOpenAt: isFirst ? now : rec.firstOpenAt,
+                    firstOpenAt: isFirstOpen ? now : rec.firstOpenAt,
                     lastOpenAt: now,
                 });
-                if (isFirst) {
+
+                if (isFirstOpen) {
                     await db.ref(`leads/${leadId}`).update({ status: 'opened' });
                     await incrementStat(projectId, 'totalOpened', 1);
+                    console.log(`[webhook] First open recorded for lead ${leadId}`);
                 }
                 break;
             }
 
             case 'email.clicked': {
-                const rec = await findSendRecord(leadId, campaignId);
+                const rec = await findSendRecord(sendId, resendEmailId, campaignId, leadId);
                 if (!rec) break;
                 await db.ref(`email_sends/${rec.id}`).update({
                     clicked: true,
@@ -189,7 +239,7 @@ export default async function handler(req, res) {
 
             case 'email.replied':
             case 'inbound.email': {
-                const rec = await findSendRecord(leadId, campaignId);
+                const rec = await findSendRecord(sendId, resendEmailId, campaignId, leadId);
                 if (!rec) break;
                 await db.ref(`email_sends/${rec.id}`).update({
                     replied: true,
@@ -201,7 +251,7 @@ export default async function handler(req, res) {
             }
 
             case 'email.bounced': {
-                const rec = await findSendRecord(leadId, campaignId);
+                const rec = await findSendRecord(sendId, resendEmailId, campaignId, leadId);
                 if (rec) {
                     await db.ref(`email_sends/${rec.id}`).update({
                         deliveryStatus: 'bounced',
@@ -213,7 +263,7 @@ export default async function handler(req, res) {
             }
 
             case 'email.complained': {
-                const rec = await findSendRecord(leadId, campaignId);
+                const rec = await findSendRecord(sendId, resendEmailId, campaignId, leadId);
                 if (rec) {
                     await db.ref(`email_sends/${rec.id}`).update({
                         deliveryStatus: 'complained',
@@ -221,15 +271,6 @@ export default async function handler(req, res) {
                     });
                 }
                 await db.ref(`leads/${leadId}`).update({ status: 'unsubscribed' });
-                break;
-            }
-            case 'email.sent': {
-                const rec = await findSendRecord(leadId, campaignId);
-                if (!rec) break;
-                await db.ref(`email_sends/${rec.id}`).update({
-                    deliveryStatus: 'sent',
-                    sentConfirmedAt: Date.now(),
-                });
                 break;
             }
 
@@ -240,12 +281,13 @@ export default async function handler(req, res) {
         return res.status(200).json({ received: true, type: event.type });
 
     } catch (err) {
-        console.error('[webhook] Error:', err);
+        console.error('[webhook] Error processing event:', err);
+        // Always return 200 to Resend so it doesn't retry endlessly
         return res.status(200).json({ received: true, error: err.message });
     }
 }
 
-// Disable body parser — needed to read raw bytes
+// Disable Next.js/Vercel body parser — we need the raw bytes for signature verification
 export const config = {
     api: { bodyParser: false },
 };

@@ -11,6 +11,9 @@
     },
     "api/resend-webhook.js": {
       "maxDuration": 30
+    },
+    "api/track-open.js": {
+      "maxDuration": 10
     }
   }
 }

@@ -1,65 +1,67 @@
 // src/emails/renderEmails.js
 // Pure JS — no JSX — safe to import from Node.js / Vercel serverless
 
-import { render } from '@react-email/render';
-
 /**
  * Builds the email HTML string for a given campaign type.
- * Uses plain JS string templates — no JSX, no React, no bundler needed.
+ * Accepts an optional sendId to embed an open-tracking pixel.
  */
-export const renderCampaignEmail = async (campaignType, project, lead) => {
-    const firstName = lead.first_name || lead.firstName ||
-        lead.name?.split(' ')[0] || 'there';
-    const company = lead.company_name || lead.company || 'your company';
-    const projName = project.name || 'our platform';
-    const benefit = project.description || 'streamline your workflow';
-    const website = project.website || '#';
-    const features = Array.isArray(project.features)
-        ? project.features
-        : (project.features?.split(',').map(f => f.trim()) ?? []);
-    const feat1 = features[0] || 'core efficiency';
-    const feat2 = features[1] || 'seamless integration';
+export const renderCampaignEmail = async (campaignType, project, lead, sendId = null) => {
+  const firstName = lead.first_name || lead.firstName ||
+    lead.name?.split(' ')[0] || 'there';
+  const company = lead.company_name || lead.company || 'your company';
+  const projName = project.name || 'our platform';
+  const benefit = project.description || 'streamline your workflow';
+  const website = project.website || '#';
+  const features = Array.isArray(project.features)
+    ? project.features
+    : (project.features?.split(',').map(f => f.trim()) ?? []);
+  const feat1 = features[0] || 'core efficiency';
+  const feat2 = features[1] || 'seamless integration';
 
-    const unsubscribeUrl = `https://cortexreach.vercel.app/unsubscribe?lead=${lead.id}`;
+  const unsubscribeUrl = `https://cortexreach.vercel.app/unsubscribe?lead=${lead.id}`;
 
-    // Subject + opening line vary by campaign type
-    const typeConfig = {
-        brand_introduction: {
-            heading: `Introducing ${projName}`,
-            intro: `I wanted to introduce you to ${projName} — built specifically for companies like ${company}.`,
-            cta: 'Learn More',
-        },
-        product_pitch: {
-            heading: `${projName} can help ${company}`,
-            intro: `I'm reaching out because ${projName} helps teams ${benefit}.`,
-            cta: 'See How It Works',
-        },
-        problem_solution: {
-            heading: `A solution for ${company}`,
-            intro: `Many teams in your space struggle with this exact problem. ${projName} was built to fix it.`,
-            cta: 'See the Solution',
-        },
-        demo_request: {
-            heading: `Quick demo for ${company}?`,
-            intro: `I'd love to show you how ${projName} can help your team — would a 15-min call work?`,
-            cta: 'Book a Demo',
-        },
-        follow_up: {
-            heading: `Following up, ${firstName}`,
-            intro: `I wanted to follow up on my previous email about ${projName}. Did you get a chance to take a look?`,
-            cta: 'Take Another Look',
-        },
-        partnership: {
-            heading: `Partnership opportunity`,
-            intro: `I believe there's a strong synergy between ${company} and ${projName}. Would love to explore a partnership.`,
-            cta: 'Explore Partnership',
-        },
-    };
+  // Build tracking pixel URL — only injected when a real sendId exists
+  const trackingPixel = sendId
+    ? `<img src="https://cortexreach.vercel.app/api/track-open?sendId=${sendId}" width="1" height="1" style="display:block;width:1px;height:1px;border:0;opacity:0;" alt="" />`
+    : '';
 
-    const cfg = typeConfig[campaignType] || typeConfig.brand_introduction;
+  // Subject + opening line vary by campaign type
+  const typeConfig = {
+    brand_introduction: {
+      heading: `Introducing ${projName}`,
+      intro: `I wanted to introduce you to ${projName} — built specifically for companies like ${company}.`,
+      cta: 'Learn More',
+    },
+    product_pitch: {
+      heading: `${projName} can help ${company}`,
+      intro: `I'm reaching out because ${projName} helps teams ${benefit}.`,
+      cta: 'See How It Works',
+    },
+    problem_solution: {
+      heading: `A solution for ${company}`,
+      intro: `Many teams in your space struggle with this exact problem. ${projName} was built to fix it.`,
+      cta: 'See the Solution',
+    },
+    demo_request: {
+      heading: `Quick demo for ${company}?`,
+      intro: `I'd love to show you how ${projName} can help your team — would a 15-min call work?`,
+      cta: 'Book a Demo',
+    },
+    follow_up: {
+      heading: `Following up, ${firstName}`,
+      intro: `I wanted to follow up on my previous email about ${projName}. Did you get a chance to take a look?`,
+      cta: 'Take Another Look',
+    },
+    partnership: {
+      heading: `Partnership opportunity`,
+      intro: `I believe there's a strong synergy between ${company} and ${projName}. Would love to explore a partnership.`,
+      cta: 'Explore Partnership',
+    },
+  };
 
-    // Plain HTML string — no JSX needed
-    const html = `
+  const cfg = typeConfig[campaignType] || typeConfig.brand_introduction;
+
+  const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -121,6 +123,13 @@ export const renderCampaignEmail = async (campaignType, project, lead) => {
             </td>
           </tr>
 
+          <!-- Tracking pixel (1x1 invisible image) -->
+          <tr>
+            <td style="padding:0;line-height:0;font-size:0;">
+              ${trackingPixel}
+            </td>
+          </tr>
+
         </table>
       </td>
     </tr>
@@ -128,5 +137,5 @@ export const renderCampaignEmail = async (campaignType, project, lead) => {
 </body>
 </html>`;
 
-    return html;
+  return html;
 };

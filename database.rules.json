@@ -35,7 +35,7 @@
     },
 
     "email_sends": {
-      ".indexOn": ["projectId", "leadId", "campaignId"],
+      ".indexOn": ["campaignId", "leadId", "projectId", "resendEmailId"],
       "$sendId": {
         ".read":  "auth != null",
         ".write": "auth != null"

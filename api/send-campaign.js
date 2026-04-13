@@ -30,7 +30,6 @@ const dbGet = async (path) => {
 
 export default async function handler(req, res) {
     const isDev = process.env.NODE_ENV !== 'production';
-    const devTestEmail = process.env.DEV_TEST_EMAIL;
 
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -44,7 +43,6 @@ export default async function handler(req, res) {
         const campaign = await dbGet(`campaigns/${campaignId}`);
         if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
 
-        // Allow re-sending or draft sending
         if (campaign.status === 'sending') {
             return res.status(400).json({ error: 'Campaign is already in progress' });
         }
@@ -73,12 +71,41 @@ export default async function handler(req, res) {
         for (let i = 0; i < validLeads.length; i += BATCH_SIZE) {
             const batch = validLeads.slice(i, i + BATCH_SIZE);
 
-            const emailBatch = await Promise.all(
+            // ── STEP 1: Pre-create send records so we have IDs for tracking pixels ──
+            const sendRecords = await Promise.all(
                 batch.map(async (lead) => {
+                    const sendRef = db.ref('email_sends').push();
+                    const sendId = sendRef.key;
+                    const now = Date.now();
+
+                    // Write a "pending" record immediately so the ID exists
+                    await sendRef.set({
+                        id: sendId,
+                        campaignId,
+                        projectId: campaign.projectId,
+                        leadId: lead.id,
+                        subject: campaign.subjectLine || campaign.subject || '',
+                        sentAt: now,
+                        deliveryStatus: 'pending',
+                        opened: false,
+                        replied: false,
+                        openCount: 0,
+                        resendEmailId: null,
+                    });
+
+                    return { lead, sendId, sendRef };
+                })
+            );
+
+            // ── STEP 2: Render emails with tracking pixel now that sendIds exist ──
+            const emailBatch = await Promise.all(
+                sendRecords.map(async ({ lead, sendId }) => {
+                    // Pass sendId so the tracking pixel is embedded
                     const html = await renderCampaignEmail(
                         campaign.campaignType,
                         project,
-                        lead
+                        lead,
+                        sendId   // <-- KEY: enables open tracking pixel
                     );
 
                     const firstName = lead.first_name || lead.firstName || lead.name?.split(' ')[0] || 'there';
@@ -95,50 +122,42 @@ export default async function handler(req, res) {
 
                     return {
                         from: `${process.env.RESEND_FROM_NAME || 'CortexReach'} <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`,
-                        to: [isDev && devTestEmail ? devTestEmail : lead.email],
+                        to: [lead.email],
                         subject: personalizedSubject,
                         html,
                         tags: [
                             { name: 'campaignId', value: campaignId },
                             { name: 'leadId', value: lead.id },
                             { name: 'projectId', value: campaign.projectId },
+                            // Include our internal sendId so webhook can find the record directly
+                            { name: 'sendId', value: sendId },
                         ],
                     };
                 })
             );
 
+            // ── STEP 3: Send the batch via Resend ──
             const { data, error } = await resend.batch.send(emailBatch);
 
             if (error) {
                 console.error('[Resend] Batch Error:', error);
-                // We'll record what we can and continue
             }
 
-            // Record Sends in Firebase
+            // ── STEP 4: Update send records with Resend's email IDs ──
             await Promise.all(
-                batch.map(async (lead, idx) => {
-                    const resendId = data?.data?.[idx]?.id || null;
-                    const sendRef = db.ref('email_sends').push();
-                    const now = Date.now();
+                sendRecords.map(async ({ lead, sendId, sendRef }, idx) => {
+                    const resendEmailId = data?.data?.[idx]?.id || null;
+                    const sent = !!resendEmailId;
 
-                    await sendRef.set({
-                        id: sendRef.key,
-                        campaignId,
-                        projectId: campaign.projectId,
-                        leadId: lead.id,
-                        subject: campaign.subjectLine || campaign.subject,
-                        sentAt: now,
-                        deliveryStatus: resendId ? 'sent' : 'failed',
-                        opened: false,
-                        replied: false,
-                        openCount: 0,
-                        resendEmailId: resendId,
+                    await sendRef.update({
+                        deliveryStatus: sent ? 'sent' : 'failed',
+                        resendEmailId: resendEmailId,
                     });
 
-                    if (resendId) {
+                    if (sent) {
                         await db.ref(`leads/${lead.id}`).update({
                             status: 'email_sent',
-                            lastEmailSentAt: now
+                            lastEmailSentAt: Date.now(),
                         });
                         totalSent++;
                     }
@@ -151,7 +170,7 @@ export default async function handler(req, res) {
             status: 'sent',
             sentAt: Date.now(),
             updatedAt: Date.now(),
-            totalSent: totalSent,
+            totalSent,
         });
 
         // Update project totalSent stat
@@ -162,7 +181,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
             success: true,
-            totalSent: totalSent,
+            totalSent,
             campaignId,
         });
 

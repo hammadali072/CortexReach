@@ -18,11 +18,19 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
  * @throws {Error} with a user-readable message on failure
  */
 export const launchCampaign = async (campaignId) => {
-    const response = await fetch(`${API_BASE}/api/send-campaign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campaignId }),
-    });
+    let response;
+    try {
+        response = await fetch(`${API_BASE}/api/send-campaign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campaignId }),
+        });
+    } catch (err) {
+        if (err.message.includes('Failed to fetch')) {
+            throw new Error('Server connection failed. If you are developing locally, please ensure "npx vercel dev" is running and has not crashed.');
+        }
+        throw err;
+    }
 
     // ✅ Read as text first — then try to parse
     const text = await response.text();
