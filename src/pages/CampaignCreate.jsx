@@ -20,7 +20,7 @@ import {
     updateCampaign
 } from '../services/db'
 import { renderCampaignEmail } from '../emails/renderEmails'
-import { EMAIL_TEMPLATE_REGISTRY } from '../emails'
+import { hasEmailTemplate } from '../emails'
 import { launchCampaign } from '../services/emailService'
 
 const CAMPAIGN_TYPES = [
@@ -158,8 +158,7 @@ const CampaignCreate = () => {
 
         try {
             setSubmitting(true)
-            const template = EMAIL_TEMPLATE_REGISTRY[formData.campaignType]
-            if (!template) throw new Error('Template not found for this category')
+            if (!hasEmailTemplate(formData.campaignType)) throw new Error('Template not found for this category')
 
             // Use placeholders for lead data so they can be replaced at send time
             const leadPlaceholder = {

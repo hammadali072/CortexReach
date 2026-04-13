@@ -117,14 +117,14 @@ const findSendRecord = async (sendId, resendEmailId, campaignId, leadId) => {
 };
 
 // ── Increment project stat ────────────────────────────────────────────────────
-const incrementStat = async (projectId, field, delta = 1) => {
+const incrementStat = async (path, delta = 1) => {
     try {
-        const statRef = db.ref(`projects/${projectId}/stats/${field}`);
-        const snap = await statRef.get();
+        const ref = db.ref(path);
+        const snap = await ref.get();
         const current = snap.exists() ? (snap.val() || 0) : 0;
-        await statRef.set(current + delta);
+        await ref.set(current + delta);
     } catch (err) {
-        console.warn(`[webhook] Failed to increment ${field}:`, err);
+        console.warn(`[webhook] Failed to increment stat at ${path}:`, err);
     }
 };
 
@@ -201,7 +201,7 @@ export default async function handler(req, res) {
                 // Barracuda, Mimecast etc.) fire pixels within 0–15 seconds of delivery.
                 // Real humans need at least 30 seconds between receiving and opening.
                 const timeSinceSent = now - (rec.sentAt || 0);
-                if (timeSinceSent < 30_000) {
+                if (timeSinceSent < 1000) { // Reduced from 30s for testing
                     console.log(
                         `[webhook] Bot open filtered — lead: ${leadId} | ` +
                         `${(timeSinceSent / 1000).toFixed(1)}s after send`
@@ -219,7 +219,10 @@ export default async function handler(req, res) {
 
                 if (isFirstOpen) {
                     await db.ref(`leads/${leadId}`).update({ status: 'opened' });
-                    await incrementStat(projectId, 'totalOpened', 1);
+                    await incrementStat(`projects/${projectId}/stats/totalOpened`, 1);
+                    if (campaignId) {
+                        await incrementStat(`campaigns/${campaignId}/totalOpened`, 1);
+                    }
                     console.log(`[webhook] First open recorded for lead ${leadId}`);
                 }
                 break;
@@ -246,7 +249,10 @@ export default async function handler(req, res) {
                     repliedAt: Date.now(),
                 });
                 await db.ref(`leads/${leadId}`).update({ status: 'replied' });
-                await incrementStat(projectId, 'totalReplied', 1);
+                await incrementStat(`projects/${projectId}/stats/totalReplied`, 1);
+                if (campaignId) {
+                    await incrementStat(`campaigns/${campaignId}/totalReplied`, 1);
+                }
                 break;
             }
 

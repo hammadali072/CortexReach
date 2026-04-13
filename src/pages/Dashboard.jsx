@@ -1,63 +1,106 @@
-import { useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TitleComponent from '../components/titleComponent/titleComponent'
-import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
+import { useAuth } from '../context/AuthContext'
+import { getUserProjects, getUserCampaigns, getCampaignSends } from '../services/db'
 
 const Dashboard = () => {
-    const [hoveredCard, setHoveredCard] = useState(null)
+    const { currentUser } = useAuth()
     const navigate = useNavigate()
+    const [hoveredCard, setHoveredCard] = useState(null)
 
-    /**
-     * Product Rule: Outreach is engagement-based.
-     * 1. Initial email sent once.
-     * 2. If opened -> Lead becomes "Eligible" for follow-up.
-     * 3. If NOT opened -> Outreach STOPS automatically.
-     */
+    const [dbLoading, setDbLoading] = useState(true)
+    const [projects, setProjects] = useState([])
+    const [campaigns, setCampaigns] = useState([])
+
+    useEffect(() => {
+        if (!currentUser) return
+
+        const load = async () => {
+            try {
+                setDbLoading(true)
+                const [userProjects, userCampaigns] = await Promise.all([
+                    getUserProjects(currentUser.uid),
+                    getUserCampaigns(currentUser.uid)
+                ])
+
+                // For campaigns, enrich with real stats
+                const expandedCampaigns = await Promise.all(userCampaigns.map(async (c) => {
+                    const sends = await getCampaignSends(c.id)
+                    const opened = sends.filter(s => s.opened).length
+                    const totalSent = c.totalSent || sends.length
+                    return {
+                        ...c,
+                        totalSent,
+                        opened,
+                        notOpened: Math.max(0, totalSent - opened),
+                        yieldVal: totalSent > 0 ? Math.round((opened / totalSent) * 100) : 0
+                    }
+                }))
+
+                setProjects(userProjects)
+                setCampaigns(expandedCampaigns.sort((a, b) => b.createdAt - a.createdAt).slice(0, 5))
+            } catch (err) {
+                console.error('[Dashboard] load error:', err)
+            } finally {
+                setDbLoading(false)
+            }
+        }
+
+        load()
+    }, [currentUser])
+
+    const aggregateStats = useMemo(() => {
+        let sent = 0, opened = 0, replied = 0, leads = 0
+        projects.forEach(p => {
+            if (p.stats) {
+                sent += (p.stats.totalSent || 0)
+                opened += (p.stats.totalOpened || 0)
+                replied += (p.stats.totalReplied || 0)
+                leads += (p.stats.totalLeads || 0)
+            }
+        })
+        return { sent, opened, replied, leads, ratio: sent > 0 ? ((opened / sent) * 100).toFixed(1) : '0' }
+    }, [projects])
+
     const stats = [
         {
             id: 1,
             label: 'Eligible for Follow-up',
-            value: '456',
+            value: aggregateStats.opened,
             description: 'Recipients who opened and await next step',
             icon: 'fa-user-check',
             gradient: 'from-blue-500 to-indigo-500',
-            percentage: 35
+            percentage: aggregateStats.sent > 0 ? (aggregateStats.opened / aggregateStats.sent) * 100 : 0
         },
         {
             id: 2,
             label: 'Outreach Stopped',
-            value: '1,889',
+            value: aggregateStats.sent - aggregateStats.opened,
             description: 'Automatically halted (No initial open)',
             icon: 'fa-hand-paper',
             gradient: 'from-orange-500 to-red-500',
-            percentage: 80
+            percentage: aggregateStats.sent > 0 ? ((aggregateStats.sent - aggregateStats.opened) / aggregateStats.sent) * 100 : 0
         },
         {
             id: 3,
             label: 'Initial Open Ratio',
-            value: '19.4%',
+            value: `${aggregateStats.ratio}%`,
             description: 'Primary conversion signal',
             icon: 'fa-envelope-open-text',
             gradient: 'from-emerald-500 to-teal-500',
-            percentage: 20
+            percentage: parseFloat(aggregateStats.ratio)
         },
         {
             id: 4,
-            label: 'Pending Initial',
-            value: '124',
-            description: 'Scheduled for first-time outreach',
-            icon: 'fa-clock',
+            label: 'Replied Leads',
+            value: aggregateStats.replied,
+            description: 'Conversations started',
+            icon: 'fa-reply',
             gradient: 'from-purple-500 to-pink-500',
-            percentage: 45
+            percentage: aggregateStats.opened > 0 ? (aggregateStats.replied / aggregateStats.opened) * 100 : 0
         }
-    ]
-
-    const recentCampaigns = [
-        { id: 1, name: 'Jan Sales Outreach', status: 'Active', sent: 1234, opened: 456, stopped: 778, eligible: 456 },
-        { id: 2, name: 'Product Update Q1', status: 'Active', sent: 892, opened: 301, stopped: 591, eligible: 301 },
-        { id: 3, name: 'Re-engagement Batch', status: 'Paused', sent: 567, opened: 198, stopped: 369, eligible: 198 },
-        { id: 4, name: 'Tech Conf Follow-up', status: 'Completed', sent: 2100, opened: 834, stopped: 1266, eligible: 834 }
     ]
 
     const quickActions = [
@@ -68,7 +111,7 @@ const Dashboard = () => {
             icon: 'fa-users',
             gradient: 'from-indigo-500 to-purple-600',
             iconBg: 'bg-gradient-to-br from-indigo-500 to-purple-600',
-            path: '/dashboard/leads?filter=eligible'
+            path: '/dashboard/leads?filter=opened'
         },
         {
             id: 2,
@@ -154,10 +197,14 @@ const Dashboard = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {recentCampaigns.map((campaign) => (
-                                <tr key={campaign.id} className="hover:bg-slate-50 transition-colors">
+                            {dbLoading ? (
+                                <tr><td colSpan="5" className="py-10 text-center text-slate-400">Loading campaign signals...</td></tr>
+                            ) : campaigns.length === 0 ? (
+                                <tr><td colSpan="5" className="py-10 text-center text-slate-400">No campaigns launched yet.</td></tr>
+                            ) : campaigns.map((campaign) => (
+                                <tr key={campaign.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/dashboard/campaigns/` + campaign.id)}>
                                     <td className="py-4 px-6 font-medium text-slate-900">{campaign.name}</td>
-                                    <td className="py-4 px-6 text-slate-600">{campaign.sent}</td>
+                                    <td className="py-4 px-6 text-slate-600">{campaign.totalSent}</td>
                                     <td className="py-4 px-6">
                                         <div className="flex items-center space-x-2">
                                             <span className="text-emerald-600 font-semibold">{campaign.opened}</span>
@@ -166,12 +213,12 @@ const Dashboard = () => {
                                     </td>
                                     <td className="py-4 px-6">
                                         <div className="flex items-center space-x-2">
-                                            <span className="text-slate-500">{campaign.stopped}</span>
+                                            <span className="text-slate-500">{campaign.notOpened}</span>
                                             <Badge variant="default">Stopped</Badge>
                                         </div>
                                     </td>
                                     <td className="py-4 px-6 text-right font-bold text-slate-700">
-                                        {Math.round((campaign.opened / campaign.sent) * 100)}%
+                                        {campaign.yieldVal}%
                                     </td>
                                 </tr>
                             ))}

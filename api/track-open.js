@@ -54,16 +54,16 @@ const isBot = (userAgent) => {
 
 // Resend's delivery pipeline and security scanners fire within 0–15 seconds.
 // Real humans take at least 30 seconds between receiving and opening an email.
-const MIN_OPEN_DELAY_MS = 30_000;
+const MIN_OPEN_DELAY_MS = 1000; // 1 second for testing, normally 30s+ for production
 
-const incrementStat = async (projectId, field, delta = 1) => {
+const incrementStat = async (path, delta = 1) => {
     try {
-        const statRef = db.ref(`projects/${projectId}/stats/${field}`);
-        const snap = await statRef.get();
+        const ref = db.ref(path);
+        const snap = await ref.get();
         const current = snap.exists() ? (snap.val() || 0) : 0;
-        await statRef.set(current + delta);
+        await ref.set(current + delta);
     } catch (err) {
-        console.warn(`[track-open] Failed to increment stat ${field}:`, err);
+        console.warn(`[track-open] Failed to increment stat at ${path}:`, err);
     }
 };
 
@@ -122,7 +122,10 @@ export default async function handler(req, res) {
 
         if (isFirstOpen) {
             await db.ref(`leads/${rec.leadId}`).update({ status: 'opened' });
-            await incrementStat(rec.projectId, 'totalOpened', 1);
+            await incrementStat(`projects/${rec.projectId}/stats/totalOpened`, 1);
+            if (rec.campaignId) {
+                await incrementStat(`campaigns/${rec.campaignId}/totalOpened`, 1);
+            }
             console.log(
                 `[track-open] ✓ First open — sendId: ${sendId} | ` +
                 `lead: ${rec.leadId} | ${(timeSinceSent / 1000).toFixed(0)}s after send`

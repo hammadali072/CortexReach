@@ -18,11 +18,11 @@ export const renderCampaignEmail = async (campaignType, project, lead, sendId = 
   const feat1 = features[0] || 'core efficiency';
   const feat2 = features[1] || 'seamless integration';
 
-  const unsubscribeUrl = `https://cortexreach.vercel.app/unsubscribe?lead=${lead.id}`;
+  const unsubscribeUrl = `https://durzaar.com/unsubscribe?lead=${lead.id}`;
 
   // Build tracking pixel URL — only injected when a real sendId exists
   const trackingPixel = sendId
-    ? `<img src="https://cortexreach.vercel.app/api/track-open?sendId=${sendId}" width="1" height="1" style="display:block;width:1px;height:1px;border:0;opacity:0;" alt="" />`
+    ? `<img src="https://durzaar.com/api/track-open?sendId=${sendId}" width="1" height="1" style="display:block;width:1px;height:1px;border:0;opacity:0;" alt="" />`
     : '';
 
   // Subject + opening line vary by campaign type

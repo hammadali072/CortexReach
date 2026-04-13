@@ -97,21 +97,39 @@ export default async function handler(req, res) {
                 })
             );
 
-            // ── STEP 2: Render emails with tracking pixel now that sendIds exist ──
+            // ── STEP 2: Build personalised emails using saved HTML from editor ──
             const emailBatch = await Promise.all(
                 sendRecords.map(async ({ lead, sendId }) => {
-                    // Pass sendId so the tracking pixel is embedded
-                    const html = await renderCampaignEmail(
-                        campaign.campaignType,
-                        project,
-                        lead,
-                        sendId   // <-- KEY: enables open tracking pixel
-                    );
 
                     const firstName = lead.first_name || lead.firstName || lead.name?.split(' ')[0] || 'there';
-                    const lastName = lead.last_name || lead.lastName || lead.name?.split(' ').slice(1).join(' ') || '';
+                    const lastName  = lead.last_name  || lead.lastName  || lead.name?.split(' ').slice(1).join(' ') || '';
                     const companyName = lead.company_name || lead.company || 'your company';
                     const email = lead.email || '';
+
+                    // ── Use the user-edited HTML saved in Firebase ──────────────
+                    // Fall back to renderCampaignEmail only if no saved body exists.
+                    const savedHtml = campaign.emailBodyHTML || campaign.emailContent || campaign.body || '';
+
+                    let html;
+                    if (savedHtml && savedHtml.trim().length > 20) {
+                        // Replace {{placeholders}} with real lead data
+                        html = savedHtml
+                            .replace(/\{\{firstName\}\}/gi, firstName)
+                            .replace(/\{\{lastName\}\}/gi, lastName)
+                            .replace(/\{\{companyName\}\}/gi, companyName)
+                            .replace(/\{\{email\}\}/gi, email);
+
+                        // Inject tracking pixel before </body> (or append at end)
+                        const trackingPixel = `<img src="https://durzaar.com/api/track-open?sendId=${sendId}" width="1" height="1" style="display:block;width:1px;height:1px;border:0;opacity:0;" alt="" />`;
+                        if (html.includes('</body>')) {
+                            html = html.replace('</body>', `${trackingPixel}</body>`);
+                        } else {
+                            html += trackingPixel;
+                        }
+                    } else {
+                        // Fallback: generate from default template
+                        html = await renderCampaignEmail(campaign.campaignType, project, lead, sendId);
+                    }
 
                     let personalizedSubject = campaign.subjectLine || campaign.subject || '';
                     personalizedSubject = personalizedSubject
@@ -127,10 +145,9 @@ export default async function handler(req, res) {
                         html,
                         tags: [
                             { name: 'campaignId', value: campaignId },
-                            { name: 'leadId', value: lead.id },
-                            { name: 'projectId', value: campaign.projectId },
-                            // Include our internal sendId so webhook can find the record directly
-                            { name: 'sendId', value: sendId },
+                            { name: 'leadId',     value: lead.id },
+                            { name: 'projectId',  value: campaign.projectId },
+                            { name: 'sendId',     value: sendId },
                         ],
                     };
                 })
