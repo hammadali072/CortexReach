@@ -325,6 +325,8 @@ export const createCampaign = async (userId, projectId, data) => {
         body: data.body || '', // Keep for compatibility
         selectedLeadIds: data.selectedLeadIds || [],
         templateId: data.templateId || '',
+        templateStyle: data.templateStyle || 'clean_minimal',
+        accentColor: data.accentColor || '#4f46e5',
         status: 'draft',
         totalLeads: data.selectedLeadIds ? data.selectedLeadIds.length : 0,
         createdAt: timestamp,

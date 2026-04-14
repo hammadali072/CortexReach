@@ -128,7 +128,11 @@ export default async function handler(req, res) {
                         }
                     } else {
                         // Fallback: generate from default template
-                        html = await renderCampaignEmail(campaign.campaignType, project, lead, sendId);
+                        html = await renderCampaignEmail(
+                            campaign.campaignType, project, lead, sendId,
+                            campaign.templateStyle || 'clean_minimal',
+                            campaign.accentColor   || '#4f46e5'
+                        );
                     }
 
                     let personalizedSubject = campaign.subjectLine || campaign.subject || '';

@@ -7,6 +7,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Badge from '../components/ui/Badge'
 import RichTextEditor from '../components/ui/RichTextEditor'
+import TemplateStylePicker from '../components/ui/TemplateStylePicker'
 import { useAuth } from '../context/AuthContext'
 import {
     getUserProjects,
@@ -60,8 +61,12 @@ const CampaignCreate = () => {
         templateId: '',
         subject: '',
         emailContent: '',
-        selectedRows: []
+        selectedRows: [],
+        templateStyle: 'clean_minimal',
+        accentColor: '#4f46e5'
     })
+
+    const [showPreviewModal, setShowPreviewModal] = useState(false)
 
     // Load initial data
     useEffect(() => {
@@ -169,8 +174,15 @@ const CampaignCreate = () => {
 
             const subject = replaceProjectPlaceholders('Quick question for {{firstName}} at {{companyName}}', selectedProject)
 
-            // Render the complex React Email template with project info and lead placeholders
-            const html = await renderCampaignEmail(formData.campaignType, selectedProject, leadPlaceholder)
+            // Render the email template with project info, lead placeholders, style + accent
+            const html = await renderCampaignEmail(
+                formData.campaignType,
+                selectedProject,
+                leadPlaceholder,
+                null,
+                formData.templateStyle,
+                formData.accentColor
+            )
 
             setFormData(prev => ({
                 ...prev,
@@ -183,6 +195,33 @@ const CampaignCreate = () => {
         } catch (err) {
             console.error('[CampaignCreate] generation error:', err)
             toast.error('Failed to render email template.')
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const handleApplyStyle = async () => {
+        if (!selectedProject || !formData.campaignType) return
+        try {
+            setSubmitting(true)
+            const leadPlaceholder = {
+                firstName: '{{firstName}}',
+                lastName: '{{lastName}}',
+                company_name: '{{companyName}}'
+            }
+            const html = await renderCampaignEmail(
+                formData.campaignType,
+                selectedProject,
+                leadPlaceholder,
+                null,
+                formData.templateStyle,
+                formData.accentColor
+            )
+            setFormData(prev => ({ ...prev, emailContent: html }))
+            toast.success('Style applied!')
+        } catch (err) {
+            console.error('[CampaignCreate] apply style error:', err)
+            toast.error('Failed to apply style.')
         } finally {
             setSubmitting(false)
         }
@@ -252,6 +291,8 @@ const CampaignCreate = () => {
                 emailContent: formData.emailContent,
                 body: formData.emailContent,
                 selectedLeadIds: leadIds,
+                templateStyle: formData.templateStyle,
+                accentColor: formData.accentColor,
                 createdAt: Date.now(),
                 status: 'draft'
             })
@@ -285,6 +326,8 @@ const CampaignCreate = () => {
                 emailContent: formData.emailContent,
                 body: formData.emailContent,
                 selectedLeadIds: leadIds,
+                templateStyle: formData.templateStyle,
+                accentColor: formData.accentColor,
                 createdAt: Date.now(),
                 status: 'draft'                        // ← draft, not 'sending'
             })
@@ -468,8 +511,99 @@ const CampaignCreate = () => {
 
                     {currentStep === 5 && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                            <Input label="Subject Line" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} required className="bg-slate-50 border-slate-100 font-bold" />
-                            <RichTextEditor label="Email Body" value={formData.emailContent} onChange={content => setFormData({ ...formData, emailContent: content })} />
+
+                            {/* Template style + accent color picker */}
+                            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                                <TemplateStylePicker
+                                    selectedStyle={formData.templateStyle}
+                                    onStyleChange={style => setFormData(prev => ({ ...prev, templateStyle: style }))}
+                                    accentColor={formData.accentColor}
+                                    onAccentColorChange={color => setFormData(prev => ({ ...prev, accentColor: color }))}
+                                />
+                                {/* Apply Style button */}
+                                <div className="mt-5 pt-5 border-t border-slate-100 flex items-center gap-3">
+                                    <Button
+                                        variant="primary"
+                                        className="h-10 px-6 bg-indigo-600 font-bold text-sm"
+                                        onClick={handleApplyStyle}
+                                        disabled={submitting}
+                                    >
+                                        {submitting
+                                            ? <><i className="fas fa-spinner fa-spin mr-2" />Applying...</>
+                                            : <><i className="fas fa-paint-brush mr-2" />Apply Style</>}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="h-10 px-6 text-sm font-bold"
+                                        onClick={() => setShowPreviewModal(true)}
+                                    >
+                                        <i className="fas fa-eye mr-2" />Preview Email
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Subject line */}
+                            <Input
+                                label="Subject Line"
+                                value={formData.subject}
+                                onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                                required
+                                className="bg-slate-50 border-slate-100 font-bold"
+                            />
+
+                            {/* Rich text editor for manual edits */}
+                            <RichTextEditor
+                                label="Email Body"
+                                value={formData.emailContent}
+                                onChange={content => setFormData({ ...formData, emailContent: content })}
+                            />
+                        </div>
+                    )}
+
+                    {/* Email preview modal */}
+                    {showPreviewModal && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                            {/* Backdrop */}
+                            <div
+                                className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+                                onClick={() => setShowPreviewModal(false)}
+                            />
+                            {/* Modal */}
+                            <div className="relative bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+                                {/* Header */}
+                                <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
+                                    <div>
+                                        <h3 className="text-lg font-black text-slate-900">Email Preview</h3>
+                                        <p className="text-xs text-slate-400 mt-0.5">{formData.subject || 'No subject set'}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowPreviewModal(false)}
+                                        className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-all"
+                                    >
+                                        <i className="fas fa-times" />
+                                    </button>
+                                </div>
+                                {/* iFrame preview */}
+                                <div className="p-4 bg-slate-50">
+                                    <iframe
+                                        srcDoc={formData.emailContent}
+                                        title="Email preview"
+                                        className="w-full rounded-xl border border-slate-200 bg-white shadow-inner"
+                                        style={{ height: '60vh', minHeight: 400 }}
+                                        sandbox="allow-same-origin"
+                                    />
+                                </div>
+                                {/* Footer */}
+                                <div className="px-8 py-4 border-t border-slate-100 flex justify-end">
+                                    <Button
+                                        variant="outline"
+                                        className="h-9 px-6 text-sm"
+                                        onClick={() => setShowPreviewModal(false)}
+                                    >
+                                        Close Preview
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
                     )}
 
