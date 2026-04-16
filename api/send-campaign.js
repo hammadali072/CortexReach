@@ -91,6 +91,7 @@ export default async function handler(req, res) {
                         replied: false,
                         openCount: 0,
                         resendEmailId: null,
+                        type: 'initial',
                     });
 
                     return { lead, sendId, sendRef };
@@ -142,9 +143,9 @@ export default async function handler(req, res) {
                         .replace(/\{\{companyName\}\}/gi, companyName)
                         .replace(/\{\{email\}\}/gi, email);
 
-                    return {
+                    const payload = {
                         from: `${process.env.RESEND_FROM_NAME || 'CortexReach'} <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`,
-                        to: [lead.email],
+                        to: [isDev && process.env.DEV_TEST_EMAIL ? process.env.DEV_TEST_EMAIL : lead.email],
                         subject: personalizedSubject,
                         html,
                         tags: [
@@ -154,6 +155,13 @@ export default async function handler(req, res) {
                             { name: 'sendId',     value: sendId },
                         ],
                     };
+
+                    const replyEmail = process.env.RESEND_REPLY_TO_EMAIL || process.env.RESEND_FROM_EMAIL;
+                    if (replyEmail) {
+                        payload.reply_to = replyEmail;
+                    }
+
+                    return payload;
                 })
             );
 
@@ -192,6 +200,14 @@ export default async function handler(req, res) {
             sentAt: Date.now(),
             updatedAt: Date.now(),
             totalSent,
+            stats: {
+                sent: totalSent,
+                delivered: 0,
+                opened: 0,
+                replied: 0,
+                bounced: 0,
+                followUpSent: 0
+            }
         });
 
         // Update project totalSent stat

@@ -718,3 +718,88 @@ export const getProjectStats = async (projectId) => {
         ? snapshot.val()
         : { totalLeads: 0, totalCampaigns: 0, totalSent: 0, totalOpened: 0, totalReplied: 0 };
 };
+
+export const getCampaignStats = async (campaignId) => {
+    const snapshot = await get(ref(db, `campaigns/${campaignId}/stats`));
+    return snapshot.exists()
+        ? snapshot.val()
+        : { sent: 0, delivered: 0, opened: 0, replied: 0, bounced: 0, followUpSent: 0 };
+};
+
+export const getCampaignSendsStats = async (campaignId) => {
+    const sends = await getCampaignSends(campaignId);
+    return sends.reduce(
+        (acc, send) => {
+            acc.total++;
+            if (send.deliveryStatus === 'delivered') acc.delivered++;
+            if (send.opened) acc.opened++;
+            if (send.replied) acc.replied++;
+            if (send.deliveryStatus === 'bounced') acc.bounced++;
+            if (send.type === 'follow_up') acc.followUpSent++;
+            return acc;
+        },
+        { total: 0, delivered: 0, opened: 0, replied: 0, bounced: 0, followUpSent: 0 }
+    );
+};
+
+export const getEligibleFollowUpLeads = async (campaignId) => {
+    const sends = await getCampaignSends(campaignId);
+    // Exclude leads that already received a follow-up
+    const hasFollowUp = new Set(sends.filter((s) => s.type === 'follow_up').map((s) => s.leadId));
+    const eligibleSends = sends.filter((s) => s.replied === true && s.type !== 'follow_up' && !hasFollowUp.has(s.leadId));
+
+    if (eligibleSends.length === 0) return [];
+
+    const leadsRef = ref(db, 'leads');
+    const leadsSnapshot = await get(leadsRef);
+    if (!leadsSnapshot.exists()) return [];
+    
+    const allLeads = leadsSnapshot.val();
+    return eligibleSends.map((s) => allLeads[s.leadId]).filter(Boolean);
+};
+
+export const createFollowUp = async (userId, campaignId, projectId, data) => {
+    const followUpsRef = ref(db, 'follow_ups');
+    const newRef = push(followUpsRef);
+
+    const followUpData = {
+        id: newRef.key,
+        campaignId,
+        projectId,
+        userId,
+        subject: data.subject,
+        body: data.body,
+        status: data.status || 'sent',
+        createdAt: data.createdAt || Date.now(),
+        sentAt: data.sentAt || Date.now(),
+        totalSent: data.totalSent || 0,
+    };
+
+    await set(newRef, followUpData);
+    return followUpData;
+};
+
+export const getCampaignFollowUps = async (campaignId) => {
+    const q = query(ref(db, 'follow_ups'), orderByChild('campaignId'), equalTo(campaignId));
+    const snapshot = await get(q);
+    if (!snapshot.exists()) return [];
+
+    return Object.values(snapshot.val()).sort((a, b) => b.createdAt - a.createdAt);
+};
+
+export const getOpenedLeads = async (campaignId) => {
+    const sends = await getCampaignSends(campaignId);
+    const openedSends = sends.filter((s) => s.opened === true);
+
+    if (openedSends.length === 0) return [];
+
+    const leadsRef = ref(db, 'leads');
+    const leadsSnapshot = await get(leadsRef);
+    if (!leadsSnapshot.exists()) return [];
+    
+    const allLeads = leadsSnapshot.val();
+    return openedSends.map((s) => {
+        const lead = allLeads[s.leadId];
+        return lead ? { ...lead, sendRecord: s } : null;
+    }).filter(Boolean);
+};

@@ -155,11 +155,24 @@ export default async function handler(req, res) {
 
     console.log('[webhook] Event type:', event.type, '| email_id:', event.data?.email_id);
 
-    const { campaignId, leadId, projectId, sendId } = extractTags(event);
+    let { campaignId, leadId, projectId, sendId } = extractTags(event);
     const resendEmailId = event.data?.email_id; // Resend's own ID for the email
 
+    // In some cases (like email.opened), Resend might strip tags if pixel/links are wrapped
+    // If tags are missing but we have an email_id, let's try to look it up first
+    let sendRecord = null;
+    if ((!sendId || !campaignId || !leadId) && resendEmailId) {
+        sendRecord = await findSendRecord(null, resendEmailId, null, null);
+        if (sendRecord) {
+            campaignId = sendRecord.campaignId;
+            leadId = sendRecord.leadId;
+            projectId = sendRecord.projectId;
+            sendId = sendRecord.id;
+        }
+    }
+
     if (!campaignId || !leadId || !projectId) {
-        console.warn('[webhook] Missing required tags, skipping:', event.type);
+        console.warn('[webhook] Missing required tags and lookup failed, skipping:', event.type);
         return res.status(200).json({ received: true, skipped: true });
     }
 
@@ -187,6 +200,9 @@ export default async function handler(req, res) {
                     deliveryStatus: 'delivered',
                     deliveredAt: Date.now(),
                 });
+                if (campaignId) {
+                    await incrementStat(`campaigns/${campaignId}/stats/delivered`, 1);
+                }
                 break;
             }
 
@@ -213,7 +229,7 @@ export default async function handler(req, res) {
                 await db.ref(`email_sends/${rec.id}`).update({
                     opened: true,
                     openCount: (rec.openCount || 0) + 1,
-                    firstOpenAt: isFirstOpen ? now : rec.firstOpenAt,
+                    firstOpenAt: isFirstOpen ? now : (rec.firstOpenAt || now),
                     lastOpenAt: now,
                 });
 
@@ -222,6 +238,7 @@ export default async function handler(req, res) {
                     await incrementStat(`projects/${projectId}/stats/totalOpened`, 1);
                     if (campaignId) {
                         await incrementStat(`campaigns/${campaignId}/totalOpened`, 1);
+                        await incrementStat(`campaigns/${campaignId}/stats/opened`, 1);
                     }
                     console.log(`[webhook] First open recorded for lead ${leadId}`);
                 }
@@ -240,8 +257,7 @@ export default async function handler(req, res) {
                 break;
             }
 
-            case 'email.replied':
-            case 'inbound.email': {
+            case 'email.replied': {
                 const rec = await findSendRecord(sendId, resendEmailId, campaignId, leadId);
                 if (!rec) break;
                 await db.ref(`email_sends/${rec.id}`).update({
@@ -252,7 +268,47 @@ export default async function handler(req, res) {
                 await incrementStat(`projects/${projectId}/stats/totalReplied`, 1);
                 if (campaignId) {
                     await incrementStat(`campaigns/${campaignId}/totalReplied`, 1);
+                    await incrementStat(`campaigns/${campaignId}/stats/replied`, 1);
                 }
+                break;
+            }
+
+            case 'inbound.email': {
+                // Parse the event: get the In-Reply-To header from event.data.headers
+                const headers = event.data?.headers || [];
+                let inReplyTo = '';
+                if (Array.isArray(headers)) {
+                    const header = headers.find(h => h.name && h.name.toLowerCase() === 'in-reply-to');
+                    if (header) inReplyTo = header.value;
+                } else if (typeof headers === 'object') {
+                    inReplyTo = headers['In-Reply-To'] || headers['in-reply-to'];
+                }
+
+                if (!inReplyTo) {
+                    console.warn('[webhook] inbound.email missing In-Reply-To header');
+                    break;
+                }
+
+                inReplyTo = inReplyTo.replace(/[<>]/g, ''); // Clean the ID
+
+                // Find the email_sends record by resendEmailId matching the In-Reply-To value
+                const rec = await findSendRecord(null, inReplyTo, null, null);
+                if (!rec) {
+                    console.warn('[webhook] No send record found for In-Reply-To value:', inReplyTo);
+                    break;
+                }
+
+                await db.ref(`email_sends/${rec.id}`).update({
+                    replied: true,
+                    repliedAt: Date.now(),
+                });
+                await db.ref(`leads/${rec.leadId}`).update({ status: 'replied' });
+                await incrementStat(`projects/${rec.projectId}/stats/totalReplied`, 1);
+                if (rec.campaignId) {
+                    await incrementStat(`campaigns/${rec.campaignId}/totalReplied`, 1);
+                    await incrementStat(`campaigns/${rec.campaignId}/stats/replied`, 1);
+                }
+                console.log(`[webhook] Reply recorded — leadId: ${rec.leadId}, campaignId: ${rec.campaignId}`);
                 break;
             }
 
@@ -265,6 +321,9 @@ export default async function handler(req, res) {
                     });
                 }
                 await db.ref(`leads/${leadId}`).update({ status: 'bounced' });
+                if (campaignId) {
+                    await incrementStat(`campaigns/${campaignId}/stats/bounced`, 1);
+                }
                 break;
             }
 

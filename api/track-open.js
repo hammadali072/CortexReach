@@ -114,7 +114,7 @@ export default async function handler(req, res) {
         await sendRef.update({
             opened: true,
             openCount: (rec.openCount || 0) + 1,
-            firstOpenAt: isFirstOpen ? now : rec.firstOpenAt,
+            firstOpenAt: isFirstOpen ? now : (rec.firstOpenAt || now),
             lastOpenAt: now,
             lastOpenUA: userAgent.slice(0, 120),
             lastOpenIP: ip.split(',')[0].trim(),
@@ -125,6 +125,7 @@ export default async function handler(req, res) {
             await incrementStat(`projects/${rec.projectId}/stats/totalOpened`, 1);
             if (rec.campaignId) {
                 await incrementStat(`campaigns/${rec.campaignId}/totalOpened`, 1);
+                await incrementStat(`campaigns/${rec.campaignId}/stats/opened`, 1);
             }
             console.log(
                 `[track-open] ✓ First open — sendId: ${sendId} | ` +

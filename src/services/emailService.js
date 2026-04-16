@@ -77,3 +77,53 @@ export const sendTestEmail = async (campaignId, toEmail) => {
 
     return data;
 };
+
+/**
+ * Fetch all emails from Resend via the backend API.
+ * Useful for syncing and showing raw provider logs.
+ */
+export const fetchResendEmails = async () => {
+    const response = await fetch(`${API_BASE}/api/get-resend-emails`);
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || `Server error ${response.status}`);
+    }
+
+    return data.emails || [];
+};
+
+/**
+ * Fetch a single email from Resend via the backend API by its Resend ID.
+ * Useful for getting fully rendered body and subject.
+ */
+export const fetchResendEmail = async (resendId) => {
+    const response = await fetch(`${API_BASE}/api/get-resend-email?id=${resendId}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || `Server error ${response.status}`);
+    }
+
+    return data.email;
+};
+
+/**
+ * Sync the status of all emails in a campaign from Resend.
+ * Useful if webhooks were missed.
+ */
+export const syncCampaignStatus = async (campaignId) => {
+    const response = await fetch(`${API_BASE}/api/sync-campaign-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || `Server error ${response.status}`);
+    }
+
+    return data;
+};

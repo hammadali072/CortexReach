@@ -35,8 +35,16 @@
     },
 
     "email_sends": {
-      ".indexOn": ["campaignId", "leadId", "projectId", "resendEmailId"],
+      ".indexOn": ["campaignId", "leadId", "projectId", "resendEmailId", "type"],
       "$sendId": {
+        ".read":  "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
+    "follow_ups": {
+      ".indexOn": ["campaignId", "userId"],
+      "$followUpId": {
         ".read":  "auth != null",
         ".write": "auth != null"
       }
