@@ -127,7 +127,7 @@ const RichTextEditor = ({ value, onChange, label }) => {
                     {label}
                 </label>
             )}
-            <div className="border border-slate-100 rounded-[8px] focus-within:ring-2 focus-within:ring-indigo-500 transition-all overflow-hidden bg-white shadow-sm">
+            <div className="border border-slate-100 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 transition-all overflow-hidden bg-white shadow-sm">
                 <Toolbar editor={editor} />
                 <EditorContent editor={editor} />
             </div>

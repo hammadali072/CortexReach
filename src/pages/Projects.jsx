@@ -1,4 +1,3 @@
-// src/pages/Projects.jsx — Phase 2: Persists projects to Firebase Realtime DB
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import DataTable from 'react-data-table-component'
@@ -10,7 +9,6 @@ import Input from '../components/ui/Input'
 import { useAuth } from '../context/AuthContext'
 import {
     getUserProjects,
-    createProject,
     updateProject,
     deleteProject,
 } from '../services/db'
@@ -34,7 +32,6 @@ const Projects = () => {
     const [saving, setSaving] = useState(false)
     const [formError, setFormError] = useState('')
 
-    // ── Fetch projects from DB ────────────────────────────────────────────
     const loadProjects = useCallback(async () => {
         if (!currentUser) return
         try {
@@ -53,7 +50,6 @@ const Projects = () => {
 
     useEffect(() => { loadProjects() }, [loadProjects])
 
-    // ── Edit handler ──────────────────────────────────────────────────────
     const handleEditClick = (project) => {
         setCurrentProject(project)
         setFormData({
@@ -90,7 +86,6 @@ const Projects = () => {
         }
     }
 
-    // ── Delete handler ────────────────────────────────────────────────────
     const handleDeleteClick = (project) => {
         setCurrentProject(project)
         setIsDeleteModalOpen(true)
@@ -107,7 +102,6 @@ const Projects = () => {
         }
     }
 
-    // ── Table columns ─────────────────────────────────────────────────────
     const columns = useMemo(() => [
         {
             name: 'Project Name',
@@ -156,21 +150,20 @@ const Projects = () => {
             cell: row => (
                 <div className="flex gap-2">
                     <button
-                        onClick={() => navigate(`/dashboard/projects/${row.id}`)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
-                        title="View Project"
-                    >
-                        <i className="fas fa-eye" />
-                    </button>
-                    <button
-                        onClick={() => handleEditClick(row)}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            handleEditClick(row)
+                        }}
                         className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
                         title="Edit Project"
                     >
                         <i className="fas fa-edit" />
                     </button>
                     <button
-                        onClick={() => handleDeleteClick(row)}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteClick(row)
+                        }}
                         className="p-2 text-slate-400 hover:text-red-500 transition-colors"
                         title="Delete Project"
                     >
@@ -179,16 +172,15 @@ const Projects = () => {
                 </div>
             )
         }
-    ], [navigate])
+    ], [])
 
     const customStyles = {
         table: { style: { backgroundColor: 'transparent' } },
         headRow: { style: { backgroundColor: '#f8fafc', borderBottomWidth: '1px', borderBottomColor: '#f1f5f9', minHeight: '64px' } },
         headCells: { style: { color: '#64748b', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' } },
-        rows: { style: { minHeight: '72px', '&:not(:last-child)': { borderBottomWidth: '1px', borderBottomColor: '#f8fafc' }, '&:hover': { backgroundColor: '#f8fafc', transitionDuration: '0.15s', transitionProperty: 'background-color' } } },
+        rows: { style: { cursor: 'pointer', minHeight: '72px', '&:not(:last-child)': { borderBottomWidth: '1px', borderBottomColor: '#f8fafc' }, '&:hover': { backgroundColor: '#f8fafc', transitionDuration: '0.15s', transitionProperty: 'background-color' } } },
     }
 
-    // ── Render ────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen space-y-8 pb-12">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -210,7 +202,7 @@ const Projects = () => {
 
             {/* Error banner */}
             {dbError && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-[8px] text-red-700 text-sm font-medium flex items-center gap-3">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium flex items-center gap-3">
                     <i className="fas fa-exclamation-circle" />
                     {dbError}
                     <button onClick={loadProjects} className="ml-auto text-xs font-bold underline">Retry</button>
@@ -218,10 +210,10 @@ const Projects = () => {
             )}
 
             {/* Table */}
-            <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
                 {dbLoading ? (
                     <div className="py-20 flex flex-col items-center gap-4">
-                        <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-[8px] animate-spin" />
+                        <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-lg animate-spin" />
                         <p className="text-slate-400 text-sm font-medium">Loading projects...</p>
                     </div>
                 ) : (
@@ -231,15 +223,15 @@ const Projects = () => {
                         customStyles={customStyles}
                         highlightOnHover
                         pointerOnHover
-                        responsive
                         noHeader
+                        onRowClicked={(row) => navigate(`/dashboard/projects/${row.id}`)}
                     />
                 )}
             </div>
 
             {/* Empty state */}
             {!dbLoading && projects.length === 0 && !dbError && (
-                <div className="text-center py-20 bg-white rounded-[8px] border-2 border-dashed border-slate-200">
+                <div className="text-center py-20 bg-white rounded-lg border-2 border-dashed border-slate-200">
                     <i className="fas fa-folder-open text-slate-200 text-6xl mb-4" />
                     <h3 className="text-xl font-bold text-slate-900">No projects yet</h3>
                     <p className="text-slate-500 mb-6">Create your first project to start outreach.</p>
@@ -266,7 +258,7 @@ const Projects = () => {
             >
                 <form className="space-y-6" onSubmit={saveEdit}>
                     {formError && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-[8px] text-red-700 text-sm">
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                             {formError}
                         </div>
                     )}
@@ -275,7 +267,7 @@ const Projects = () => {
                         <div className="space-y-2">
                             <label className="block text-xs font-black text-slate-400 uppercase tracking-widest px-1">Project Type</label>
                             <select
-                                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700"
+                                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700"
                                 value={formData.type}
                                 onChange={e => setFormData({ ...formData, type: e.target.value })}
                             >
@@ -305,7 +297,7 @@ const Projects = () => {
                                         </div>
                                         <input
                                             type="text"
-                                            className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700 text-sm"
+                                            className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700 text-sm"
                                             placeholder="Enter audience segment..."
                                             value={audience}
                                             onChange={(e) => {
@@ -322,7 +314,7 @@ const Projects = () => {
                                                 const newAudiences = formData.audiences.filter((_, i) => i !== index)
                                                 setFormData({ ...formData, audiences: newAudiences })
                                             }}
-                                            className="w-10 h-10 flex items-center justify-center rounded-[8px] bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                                            className="w-10 h-10 flex items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                                         >
                                             <i className="fas fa-minus" />
                                         </button>
@@ -353,7 +345,7 @@ const Projects = () => {
                                         </div>
                                         <input
                                             type="text"
-                                            className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700 text-sm"
+                                            className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-700 text-sm"
                                             placeholder="Enter feature..."
                                             value={feature}
                                             onChange={(e) => {
@@ -370,7 +362,7 @@ const Projects = () => {
                                                 const newFeatures = formData.features.filter((_, i) => i !== index)
                                                 setFormData({ ...formData, features: newFeatures })
                                             }}
-                                            className="w-10 h-10 flex items-center justify-center rounded-[8px] bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                                            className="w-10 h-10 flex items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                                         >
                                             <i className="fas fa-minus" />
                                         </button>
@@ -396,7 +388,7 @@ const Projects = () => {
                 }
             >
                 <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-red-50 text-red-500 rounded-[8px] flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-red-50 text-red-500 rounded-lg flex items-center justify-center mx-auto mb-4">
                         <i className="fas fa-exclamation-triangle text-2xl" />
                     </div>
                     <p className="text-slate-600 font-medium">

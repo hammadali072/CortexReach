@@ -1,8 +1,5 @@
-// src/components/ui/TemplateStylePicker.jsx
 import PropTypes from 'prop-types'
 import clsx from 'clsx'
-
-// ─── Style definitions ────────────────────────────────────────────────────────
 
 const STYLES = [
   {

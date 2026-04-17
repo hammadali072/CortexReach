@@ -1,18 +1,13 @@
 import PropTypes from 'prop-types';
 
-/**
- * ImportSuccessToast
- * A fixed bottom-right toast that appears after leads are added to a project.
- * Auto-dismisses via a parent-managed timer; shows count + Google Maps branding.
- */
 const ImportSuccessToast = ({ count, onClose }) => (
     <div
-        className="fixed bottom-6 right-6 z-[9999] flex items-start gap-4 px-5 py-4 bg-white rounded-[8px] shadow-2xl shadow-slate-900/10 border border-slate-100 max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500"
+        className="fixed bottom-6 right-6 z-[9999] flex items-start gap-4 px-5 py-4 bg-white rounded-lg shadow-2xl shadow-slate-900/10 border border-slate-100 max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500"
         role="status"
         aria-live="polite"
     >
         {/* Icon */}
-        <div className="w-10 h-10 bg-emerald-500 rounded-[8px] flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-200">
+        <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-200">
             <i className="fas fa-check text-white text-sm" />
         </div>
 
@@ -31,9 +26,9 @@ const ImportSuccessToast = ({ count, onClose }) => (
             </p>
 
             {/* Progress bar — visual auto-dismiss indicator */}
-            <div className="mt-3 h-1 w-full bg-slate-100 rounded-[8px] overflow-hidden">
+            <div className="mt-3 h-1 w-full bg-slate-100 rounded-lg overflow-hidden">
                 <div
-                    className="h-full bg-emerald-400 rounded-[8px]"
+                    className="h-full bg-emerald-400 rounded-lg"
                     style={{ animation: 'toastProgress 4s linear forwards' }}
                 />
             </div>
@@ -43,7 +38,7 @@ const ImportSuccessToast = ({ count, onClose }) => (
         <button
             onClick={onClose}
             aria-label="Dismiss notification"
-            className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-[8px] text-slate-300 hover:text-slate-500 hover:bg-slate-50 transition-all"
+            className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-50 transition-all"
         >
             <i className="fas fa-times text-[10px]" />
         </button>

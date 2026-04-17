@@ -1,13 +1,4 @@
-/**
- * LeadsImport.jsx
- * ─────────────────────────────────────────────────────────────────────────────
- * /dashboard/leads/import
- *
- * CSV/XLSX Lead Import page. 
- * Replaces the old Google Maps search with a file-based ingestion system.
- */
-
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -17,7 +8,7 @@ import { bulkCreateLeads, getUserProjects } from '../services/db';
 
 const cls = (...p) => p.filter(Boolean).join(' ');
 
-const selectCls = 'w-full px-5 py-4 bg-white border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700 shadow-sm cursor-pointer';
+const selectCls = 'w-full px-5 py-4 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-slate-700 shadow-sm cursor-pointer';
 
 const slugify = (text) => {
     if (!text) return '';
@@ -113,7 +104,7 @@ const LeadRow = ({ lead, selected, onToggle }) => {
                 ) : <span className="text-[11px] text-slate-300">—</span>}
             </td>
             <td className="px-4 py-3">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-[8px] bg-slate-100 text-slate-600 text-[10px] font-bold">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold">
                     {findField(['category', 'industry', 'type']) || 'Imported'}
                 </span>
             </td>
@@ -206,7 +197,7 @@ const LeadsImport = () => {
         }
 
         // Simple mapping heuristic
-        const formatted = data.map((item, idx) => {
+        const formatted = data.map((item) => {
             // Slugify all original keys and store their values
             const record = {};
             Object.keys(item).forEach(key => {
@@ -215,18 +206,6 @@ const LeadsImport = () => {
                     record[cleanKey] = item[key];
                 }
             });
-
-            // Helper to find core field values from the slugified record
-            const getFieldVal = (options) => {
-                const foundKey = Object.keys(record).find(k =>
-                    options.some(opt => k.includes(opt.toLowerCase()))
-                );
-                return foundKey ? record[foundKey] : null;
-            };
-
-            const name = getFieldVal(['full_name', 'name', 'contact', 'person', 'business']);
-            const company = getFieldVal(['company', 'business', 'firm', 'organization']);
-            const email = getFieldVal(['email', 'mail', 'contact']);
 
             return {
                 ...record,
@@ -278,15 +257,14 @@ const LeadsImport = () => {
 
     const selectedLeadsCount = selectedIds.length;
 
-    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen space-y-8 pb-16">
 
             {/* ── Page Header ── */}
-            <div className="relative overflow-hidden rounded-[8px] bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-10 shadow-xl border border-slate-800">
+            <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-10 shadow-xl border border-slate-800">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute -top-20 -right-20 w-80 h-80 bg-indigo-600/10 rounded-[8px] blur-3xl" />
-                    <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-emerald-600/10 rounded-[8px] blur-3xl" />
+                    <div className="absolute -top-20 -right-20 w-80 h-80 bg-indigo-600/10 rounded-lg blur-3xl" />
+                    <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-emerald-600/10 rounded-lg blur-3xl" />
                 </div>
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
@@ -311,7 +289,7 @@ const LeadsImport = () => {
 
                 {/* ── LEFT: Upload area ── */}
                 <div className="space-y-6 sticky top-6">
-                    <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-8 space-y-6">
+                    <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-8 space-y-6">
                         <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
                             <i className="fas fa-cloud-upload-alt text-indigo-500" />
                             Upload File
@@ -325,8 +303,8 @@ const LeadsImport = () => {
                                     onChange={handleFileSelect}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                 />
-                                <div className="border-2 border-dashed border-slate-200 group-hover:border-indigo-400 group-hover:bg-indigo-50/30 rounded-[8px] p-10 text-center transition-all">
-                                    <div className="w-16 h-16 bg-slate-50 group-hover:bg-white rounded-[8px] flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100 transition-all">
+                                <div className="border-2 border-dashed border-slate-200 group-hover:border-indigo-400 group-hover:bg-indigo-50/30 rounded-lg p-10 text-center transition-all">
+                                    <div className="w-16 h-16 bg-slate-50 group-hover:bg-white rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100 transition-all">
                                         <i className="fas fa-file-excel text-2xl text-slate-300 group-hover:text-indigo-500" />
                                     </div>
                                     <p className="text-sm font-bold text-slate-700 mb-1">Select CSV or Excel</p>
@@ -334,7 +312,7 @@ const LeadsImport = () => {
                                 </div>
                             </div>
 
-                            <div className="p-4 bg-slate-50 rounded-[8px] border border-slate-100">
+                            <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Instructions</p>
                                 <ul className="text-xs text-slate-500 space-y-2">
                                     <li className="flex gap-2">
@@ -356,7 +334,7 @@ const LeadsImport = () => {
 
                     {/* ── Save to Project card ── */}
                     {(phase === 'results' || phase === 'saved') && leads.length > 0 && (
-                        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
                             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
                                 <i className="fas fa-database text-indigo-500" /> Target Project
                             </h3>
@@ -379,7 +357,7 @@ const LeadsImport = () => {
                                     </select>
 
                                     {saveResult && (
-                                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-[8px]">
+                                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                                             <p className="text-sm font-black text-emerald-800">
                                                 <i className="fas fa-check-circle mr-1" /> {saveResult.inserted} leads saved!
                                             </p>
@@ -393,7 +371,7 @@ const LeadsImport = () => {
                                         onClick={handleSave}
                                         disabled={selectedLeadsCount === 0 || phase === 'saving' || phase === 'saved'}
                                         className={cls(
-                                            'w-full py-3 rounded-[8px] font-black text-sm transition-all flex items-center justify-center gap-2',
+                                            'w-full py-3 rounded-lg font-black text-sm transition-all flex items-center justify-center gap-2',
                                             selectedLeadsCount > 0 && phase !== 'saved'
                                                 ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100'
                                                 : 'bg-slate-100 text-slate-400 cursor-not-allowed'
@@ -417,8 +395,8 @@ const LeadsImport = () => {
                 <div className="space-y-6">
 
                     {phase === 'idle' && (
-                        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-16 text-center">
-                            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-slate-100 to-slate-50 rounded-[8px] flex items-center justify-center">
+                        <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-16 text-center">
+                            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg flex items-center justify-center">
                                 <i className="fas fa-file-import text-slate-300 text-4xl" />
                             </div>
                             <p className="text-xl font-black text-slate-700 mb-2">Waiting for Data</p>
@@ -429,7 +407,7 @@ const LeadsImport = () => {
                     )}
 
                     {phase === 'parsing' && (
-                        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-20 text-center animate-pulse">
+                        <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-20 text-center animate-pulse">
                             <i className="fas fa-spinner fa-spin text-4xl text-indigo-500 mb-4" />
                             <p className="text-lg font-black text-slate-800">Reading File...</p>
                             <p className="text-sm text-slate-400 mt-1">Extracting lead data and mapping columns.</p>
@@ -437,9 +415,9 @@ const LeadsImport = () => {
                     )}
 
                     {phase === 'error' && (
-                        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-10 space-y-5">
-                            <div className="p-5 bg-red-50 border border-red-100 rounded-[8px] flex items-start gap-4">
-                                <div className="w-12 h-12 bg-red-500 rounded-[8px] flex items-center justify-center flex-shrink-0">
+                        <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-10 space-y-5">
+                            <div className="p-5 bg-red-50 border border-red-100 rounded-lg flex items-start gap-4">
+                                <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <i className="fas fa-exclamation-triangle text-white" />
                                 </div>
                                 <div className="flex-1">
@@ -447,7 +425,7 @@ const LeadsImport = () => {
                                     <p className="text-sm text-red-700 leading-relaxed">{error}</p>
                                     <button
                                         onClick={() => setPhase('idle')}
-                                        className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-black rounded-[8px] transition-all"
+                                        className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-black rounded-lg transition-all"
                                     >
                                         Try Another File
                                     </button>
@@ -457,14 +435,14 @@ const LeadsImport = () => {
                     )}
 
                     {(phase === 'results' || phase === 'saved' || phase === 'saving') && (
-                        <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
 
                             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-[8px] border border-emerald-100">
+                                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-lg border border-emerald-100">
                                         <i className="fas fa-check text-[9px]" />{leads.length} leads found
                                     </span>
-                                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-[8px] border border-indigo-100">
+                                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-lg border border-indigo-100">
                                         <i className="fas fa-check-square text-[9px]" />{selectedLeadsCount} to import
                                     </span>
                                 </div>

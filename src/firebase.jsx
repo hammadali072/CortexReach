@@ -1,4 +1,3 @@
-// firebase.jsx — CortexReach Firebase SDK Initialisation
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";

@@ -3,6 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import TitleComponent from '../components/titleComponent/titleComponent';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
+import {
+    ArrowLeft, Send, Pencil, Loader2, RefreshCw, Reply,
+    Users, Target, Database, Terminal, AlertTriangle,
+    ExternalLink, Mail, User, Building2, Clock, Inbox,
+    FileText, Code
+} from 'lucide-react';
 import { launchCampaign, fetchResendEmails, fetchResendEmail, syncCampaignStatus } from '../services/emailService';
 import {
     getCampaign,
@@ -23,8 +29,8 @@ import toast from 'react-hot-toast';
 const customStyles = {
     headRow: {
         style: {
-            backgroundColor: '#f8fafc',
-            borderBottomColor: '#e2e8f0',
+            backgroundColor: '#f5f6fc',
+            borderBottomColor: '#e2e5f5',
         },
     },
     headCells: {
@@ -32,8 +38,8 @@ const customStyles = {
             fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
-            color: '#64748b',
-            fontWeight: 800,
+            color: '#6b7280',
+            fontWeight: 500,
             paddingLeft: '16px',
             paddingRight: '16px',
         },
@@ -42,16 +48,17 @@ const customStyles = {
         style: {
             paddingLeft: '16px',
             paddingRight: '16px',
-            color: '#334155',
+            color: '#1a1d3a',
             fontSize: '14px',
-            fontWeight: 500,
+            fontWeight: 400,
         },
     },
     rows: {
         style: {
-            minHeight: '60px',
+            minHeight: '56px',
+            borderBottomColor: '#f0f2fb',
             '&:hover': {
-                backgroundColor: '#f8fafc',
+                backgroundColor: '#f5f6fc',
             },
         },
     },
@@ -119,8 +126,6 @@ const CampaignDetail = () => {
             // If sent, load detailed audience
             if (data.status === 'sent') {
                 const rawSends = await getCampaignSends(id);
-                // We'd ideally fetch all leads via getOpenedLeads, etc., 
-                // but doing it manually via filtering is easier since it's already an array
                 setAudienceSends(rawSends);
 
                 const leads = await getProjectLeads(data.projectId);
@@ -149,7 +154,8 @@ const CampaignDetail = () => {
                 try {
                     const emails = await fetchResendEmails();
                     setResendEmails(emails);
-                } catch (error) {
+                } catch (err) {
+                    console.error('Resend fetch error:', err);
                     toast.error('Failed to fetch Resend logs');
                 } finally {
                     setFetchingLogs(false);
@@ -164,7 +170,7 @@ const CampaignDetail = () => {
         setActionLoading(true);
         try {
             const result = await launchCampaign(id);
-            toast.success(`🚀 Campaign sent to ${result.totalSent} leads!`);
+            toast.success(`Campaign sent to ${result.totalSent} leads!`);
             await loadData();
         } catch (err) {
             console.error('[CampaignDetail] launch error:', err);
@@ -226,10 +232,10 @@ const CampaignDetail = () => {
     const audienceColumns = useMemo(() => {
         if (activeTab === 'resend_logs') {
             return [
-                { name: 'Email ID', selector: row => row.id, cell: row => <span className="text-xs font-mono text-slate-400">{row.id.substring(0, 8)}</span>, width: '120px' },
+                { name: 'Email ID', selector: row => row.id, cell: row => <span className="text-xs font-mono text-subtle">{row.id.substring(0, 8)}</span>, width: '120px' },
                 { name: 'To', selector: row => Array.isArray(row.to) ? row.to.join(', ') : row.to },
                 { name: 'Subject', selector: row => row.subject, wrap: true },
-                { name: 'Status', selector: row => row.last_event, cell: row => <Badge variant={row.last_event === 'delivered' ? 'success' : row.last_event === 'bounced' ? 'danger' : 'default'} className="uppercase">{row.last_event || 'sent'}</Badge> },
+                { name: 'Status', selector: row => row.last_event, cell: row => <Badge variant={row.last_event === 'delivered' ? 'success' : row.last_event === 'bounced' ? 'danger' : 'default'}>{row.last_event || 'sent'}</Badge> },
                 { name: 'Created At', selector: row => row.created_at, cell: row => formatTimeAgo(new Date(row.created_at).getTime()), sortable: true },
             ];
         }
@@ -243,8 +249,8 @@ const CampaignDetail = () => {
                     const leadData = projectLeadsMap[row.leadId];
                     return (
                         <div className="flex flex-col py-2">
-                            <span className="font-semibold text-slate-800">{leadData?.email || 'Unknown Email'}</span>
-                            <span className="text-[10px] text-slate-400 font-mono">ID: {row.leadId.substring(1, 8)}</span>
+                            <span className="text-sm font-medium text-dark">{leadData?.email || 'Unknown Email'}</span>
+                            <span className="text-xs text-subtle font-mono">ID: {row.leadId.substring(1, 8)}</span>
                         </div>
                     );
                 }
@@ -253,7 +259,7 @@ const CampaignDetail = () => {
 
         if (activeTab === 'sent') {
             cols.push(
-                { name: 'Status', selector: row => row.deliveryStatus, sortable: true, cell: row => <Badge variant={row.deliveryStatus === 'delivered' ? 'success' : 'default'} className="uppercase">{row.deliveryStatus}</Badge> },
+                { name: 'Status', selector: row => row.deliveryStatus, sortable: true, cell: row => <Badge variant={row.deliveryStatus === 'delivered' ? 'success' : 'default'}>{row.deliveryStatus}</Badge> },
                 { name: 'Sent At', selector: row => row.sentAt, cell: row => formatTimeAgo(row.sentAt), sortable: true }
             );
         } else if (activeTab === 'opened') {
@@ -266,7 +272,7 @@ const CampaignDetail = () => {
                 { name: 'Replied At', selector: row => row.repliedAt, cell: row => formatTimeAgo(row.repliedAt), sortable: true },
                 { 
                     name: 'Action',
-                    cell: row => (
+                    cell: () => (
                         <Button variant="outline" size="sm" className="h-8 shadow-none" onClick={() => openFollowUpModal(campaign.id, 1)}>
                             Follow-up
                         </Button>
@@ -281,7 +287,7 @@ const CampaignDetail = () => {
             );
         }
         return cols;
-    }, [activeTab, projectLeadsMap]);
+    }, [activeTab, projectLeadsMap, campaign?.id, openFollowUpModal]);
 
     const ExpandedComponent = ({ data }) => {
         const [realEmail, setRealEmail] = useState(null);
@@ -306,42 +312,42 @@ const CampaignDetail = () => {
 
         if (activeTab === 'resend_logs') {
             return (
-                <div className="p-8 bg-slate-50/50 border-y border-slate-100 flex flex-col gap-6 animate-in slide-in-from-top-2 duration-300">
-                    <div className="flex items-center justify-between">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Provider Metadata</h4>
-                        <Badge variant="default" className="text-[10px] bg-white border-slate-200">Resend API v1</Badge>
+                <div className="p-6 bg-background border-y border-border">
+                    <div className="flex items-center justify-between mb-5">
+                        <p className="text-xs font-medium tracking-wide text-muted uppercase">Provider details</p>
+                        <Badge variant="default">Resend API</Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                         <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email ID</p>
-                            <p className="font-mono text-[11px] text-slate-600 bg-white p-2 rounded-lg border border-slate-100">{data.id}</p>
+                            <p className="text-xs font-medium tracking-wide text-muted uppercase">Email ID</p>
+                            <p className="font-mono text-xs text-dark bg-surface p-2 rounded-lg border border-border">{data.id}</p>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Subject</p>
-                            <p className="text-sm font-bold text-slate-800 truncate">{data.subject}</p>
+                            <p className="text-xs font-medium tracking-wide text-muted uppercase">Subject</p>
+                            <p className="text-sm font-medium text-dark truncate">{data.subject}</p>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">To</p>
-                            <p className="text-sm font-medium text-slate-600 truncate">{Array.isArray(data.to) ? data.to.join(', ') : data.to}</p>
+                            <p className="text-xs font-medium tracking-wide text-muted uppercase">To</p>
+                            <p className="text-sm text-muted truncate">{Array.isArray(data.to) ? data.to.join(', ') : data.to}</p>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Last Event</p>
+                            <p className="text-xs font-medium tracking-wide text-muted uppercase">Last Event</p>
                             <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${data.last_event === 'delivered' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                                <span className="text-sm font-black text-slate-700 uppercase tracking-tight">{data.last_event || 'Processing'}</span>
+                                <div className={`w-2 h-2 rounded-full ${data.last_event === 'delivered' ? 'bg-emerald-500' : data.last_event === 'bounced' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                                <span className="text-sm font-medium text-dark">{data.last_event || 'Processing'}</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex justify-end pt-4 border-t border-slate-100">
+                    <div className="flex justify-end pt-5 mt-5 border-t border-border">
                         <a 
                             href={`https://resend.com/emails/${data.id}`} 
                             target="_blank" 
                             rel="noreferrer" 
-                            className="bg-white px-4 py-2 border border-slate-200 rounded-xl text-xs font-black text-indigo-600 hover:bg-indigo-50 transition-all flex items-center gap-2 shadow-sm shadow-indigo-100/50"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 border border-border rounded-lg text-xs font-medium text-primary hover:bg-white-tint transition-colors"
                         >
-                            View Raw Logs <i className="fas fa-external-link-alt text-[10px]" />
+                            View in Resend <ExternalLink size={12} />
                         </a>
                     </div>
                 </div>
@@ -349,82 +355,78 @@ const CampaignDetail = () => {
         }
         const leadData = projectLeadsMap[data.leadId];
         return (
-            <div className="p-10 bg-white border-y border-slate-100 text-sm text-slate-600 space-y-10 animate-in slide-in-from-top-4 duration-500 overflow-hidden relative">
-                {/* Visual Accent */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/30 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10">
-                    <div className="space-y-6">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Journey Identity</h4>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center group/id">
-                                <span className="text-xs font-bold text-slate-500">Event ID</span>
-                                <span className="font-mono text-[10px] bg-slate-50 px-2 py-1 rounded border border-slate-100 group-hover/id:border-indigo-200 transition-colors uppercase tracking-widest">{data.id}</span>
+            <div className="p-6 bg-background border-y border-border text-sm">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <p className="text-xs font-medium tracking-wide text-muted uppercase mb-3">Send details</p>
+                        <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs text-muted">Send ID</span>
+                                <span className="font-mono text-xs text-dark bg-background px-2 py-0.5 rounded border border-border">{data.id}</span>
                             </div>
-                            <div className="flex justify-between items-center group/id">
-                                <span className="text-xs font-bold text-slate-500">Lead Registry</span>
-                                <span className="font-mono text-[10px] bg-slate-50 px-2 py-1 rounded border border-slate-100 group-hover/id:border-indigo-200 transition-colors uppercase tracking-widest">{data.leadId}</span>
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs text-muted">Lead ID</span>
+                                <span className="font-mono text-xs text-dark bg-background px-2 py-0.5 rounded border border-border">{data.leadId}</span>
                             </div>
-                            <div className="flex justify-between items-center group/id">
-                                <span className="text-xs font-bold text-slate-500">Delivery Hash</span>
-                                <span className="font-mono text-[10px] bg-indigo-50/50 text-indigo-600 px-2 py-1 rounded border border-indigo-100 group-hover/id:border-indigo-300 transition-colors uppercase tracking-widest">{data.resendEmailId || 'NONE'}</span>
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs text-muted">Status</span>
+                                <Badge variant={data.deliveryStatus === 'delivered' ? 'success' : 'default'}>{data.deliveryStatus}</Badge>
                             </div>
+                            {data.resendEmailId && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-muted">Resend ID</span>
+                                    <span className="font-mono text-xs text-primary bg-white-tint px-2 py-0.5 rounded border border-gray-tint">{data.resendEmailId}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    <div className="space-y-6">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Engagement Status</h4>
-                        <div className="space-y-4 bg-slate-50/50 p-6 rounded-2xl border border-dashed border-slate-200">
-                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm ring-1 ring-slate-100">
-                                    <i className="fas fa-user text-indigo-500" />
+                    <div>
+                        <p className="text-xs font-medium tracking-wide text-muted uppercase mb-3">Recipient</p>
+                        <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-lg bg-gradient-brand flex items-center justify-center">
+                                    <User size={16} className="text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{leadData?.email || 'Unknown Lead'}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase">{leadData ? `${leadData.firstName || ''} ${leadData.lastName || ''}`.trim() : 'Anonymous'}</p>
+                                    <p className="text-sm font-medium text-dark">{leadData?.email || 'Unknown'}</p>
+                                    <p className="text-xs text-subtle">{leadData ? `${leadData.firstName || ''} ${leadData.lastName || ''}`.trim() || leadData.name : 'Unknown'}</p>
                                 </div>
-                             </div>
-                             <div className="pt-4 mt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
+                            </div>
+                            <div className="pt-3 border-t border-border grid grid-cols-2 gap-3">
                                 <div>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Last Activity</p>
-                                    <p className="text-xs font-bold text-indigo-600 mt-1">{data.sentAt ? new Date(data.sentAt).toLocaleTimeString() : '--:--'}</p>
+                                    <p className="text-xs text-subtle">Company</p>
+                                    <p className="text-sm text-dark mt-0.5">{leadData?.companyName || 'N/A'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Organization</p>
-                                    <p className="text-xs font-bold text-slate-700 mt-1 truncate">{leadData?.companyName || 'N/A'}</p>
+                                    <p className="text-xs text-subtle">Sent at</p>
+                                    <p className="text-sm text-dark mt-0.5">{data.sentAt ? new Date(data.sentAt).toLocaleString() : 'Unknown'}</p>
                                 </div>
-                             </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div className="pt-10 border-t border-slate-100 space-y-6">
-                    <div className="flex items-center justify-between">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Transmission Content</h4>
-                        <Badge variant="success" className="bg-emerald-50 text-emerald-600 border-emerald-100 px-3 uppercase tracking-widest text-[9px] font-black">Verified Delivered</Badge>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div className="p-5 bg-slate-900 rounded-2xl text-white shadow-2xl shadow-indigo-200/20 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-150 transition-transform duration-1000" />
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 font-mono">Subject_Primary</p>
-                            <p className="font-black text-lg tracking-tight leading-tight">
-                                {realEmail ? realEmail.subject : (loadingEmail ? 'Fetching...' : (data.subject || 'UNTITLED'))}
+                <div className="mt-6 space-y-4">
+                    <p className="text-xs font-medium tracking-wide text-muted uppercase">Email content</p>
+                    <div className="bg-surface rounded-xl border border-border overflow-hidden">
+                        <div className="px-4 py-3 border-b border-border bg-background">
+                            <p className="text-sm font-medium text-dark">
+                                {realEmail ? realEmail.subject : (loadingEmail ? 'Loading subject...' : (data.subject || 'No subject'))}
                             </p>
                         </div>
-
-                        <div className="p-1 w-full bg-slate-100 rounded-[24px] relative group overflow-hidden">
-                             {loadingEmail && (
-                                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center font-black text-indigo-600 rounded-[24px] z-20 space-y-2">
-                                    <div className="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-lg animate-spin" />
-                                    <span className="text-[10px] uppercase tracking-widest">Reconstructing Assets</span>
+                        <div className="p-6 relative min-h-[200px]">
+                            {loadingEmail && (
+                                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-b-xl">
+                                    <div className="flex items-center gap-2 text-primary">
+                                        <Loader2 size={16} className="animate-spin" />
+                                        <span className="text-sm font-medium">Loading content...</span>
+                                    </div>
                                 </div>
                             )}
-                            <div className="p-8 md:p-12 bg-white rounded-[20px] shadow-sm-inner relative z-10 min-h-[400px]">
-                                <article className="prose prose-sm prose-slate max-w-none text-slate-700" dangerouslySetInnerHTML={{ 
-                                    __html: realEmail?.html ? realEmail.html : (data.body || '<div class="text-center text-slate-300 font-bold py-20 flex flex-col items-center gap-3"><i class="fas fa-ghost text-4xl"></i> No transmission content found</div>') 
-                                }} />
-                            </div>
+                            <div className="prose prose-sm max-w-none text-muted" dangerouslySetInnerHTML={{ 
+                                __html: realEmail?.html ? realEmail.html : (data.body || '<p class="text-center text-subtle">No content available</p>') 
+                            }} />
                         </div>
                     </div>
                 </div>
@@ -434,9 +436,9 @@ const CampaignDetail = () => {
 
     if (loading) {
         return (
-            <div className="py-20 flex flex-col items-center gap-4">
-                <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-[8px] animate-spin" />
-                <p className="text-slate-400 text-sm font-medium">Loading campaign analysis...</p>
+            <div className="py-20 flex flex-col items-center gap-3">
+                <Loader2 size={24} className="animate-spin text-purple-tint" />
+                <p className="text-sm text-muted">Loading campaign data...</p>
             </div>
         );
     }
@@ -444,7 +446,7 @@ const CampaignDetail = () => {
     if (!campaign) {
         return (
             <div className="py-20 text-center">
-                <p className="text-slate-500">Campaign not found.</p>
+                <p className="text-sm text-muted">Campaign not found.</p>
                 <Link to="/dashboard/campaigns">
                     <Button variant="outline" className="mt-4">Back to Campaigns</Button>
                 </Link>
@@ -453,43 +455,45 @@ const CampaignDetail = () => {
     }
 
     return (
-        <div className="min-h-screen space-y-10 pb-12">
+        <div className="space-y-8 pb-12">
             {/* ── Launch Confirmation Modal ─────────────────────────────────── */}
             {showConfirm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 space-y-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center">
-                                <i className="fas fa-paper-plane text-indigo-600 text-xl" />
+                    <div className="bg-surface rounded-xl shadow-xl border border-border max-w-md w-full mx-4">
+                        <div className="px-6 py-4 border-b border-border flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-brand flex items-center justify-center">
+                                <Send size={18} className="text-white" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-slate-900">Launch Campaign?</h3>
-                                <p className="text-sm text-slate-500">This will send emails to all assigned leads.</p>
+                                <h3 className="text-base font-semibold text-dark">Launch Campaign?</h3>
+                                <p className="text-xs text-muted">This will send emails to all assigned leads.</p>
                             </div>
                         </div>
-                        <div className="p-4 bg-slate-50 rounded-xl space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-slate-500 font-medium">Campaign</span>
-                                <span className="font-bold text-slate-900">{campaign.name}</span>
+                        <div className="px-6 py-5 space-y-4">
+                            <div className="p-4 bg-background rounded-lg space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted">Campaign</span>
+                                    <span className="font-medium text-dark">{campaign.name}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted">Recipients</span>
+                                    <span className="font-medium text-primary">{stats.totalLeads} leads</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted">Subject</span>
+                                    <span className="font-medium text-dark text-right max-w-[60%] truncate">
+                                        {campaign.subjectLine || campaign.subject}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-slate-500 font-medium">Recipients</span>
-                                <span className="font-bold text-indigo-600">{stats.totalLeads} leads</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-slate-500 font-medium">Subject</span>
-                                <span className="font-bold text-slate-700 text-right max-w-[60%] truncate">
-                                    {campaign.subjectLine || campaign.subject}
-                                </span>
+                            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg p-3 font-medium">
+                                This action cannot be undone. Once sent, emails cannot be recalled.
                             </div>
                         </div>
-                        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3 font-medium">
-                            ⚠️ This action cannot be undone. Once sent, emails cannot be recalled.
-                        </p>
-                        <div className="flex gap-3">
-                            <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(false)} disabled={actionLoading}>Cancel</Button>
-                            <Button variant="primary" className="flex-1 bg-indigo-600" onClick={handleLaunchCampaign} disabled={actionLoading}>
-                                {actionLoading ? <><i className="fas fa-spinner fa-spin mr-2" />Sending...</> : <><i className="fas fa-paper-plane mr-2" />Confirm & Send</>}
+                        <div className="px-6 py-4 border-t border-border bg-background/50 flex justify-end gap-3 rounded-b-xl">
+                            <Button variant="outline" onClick={() => setShowConfirm(false)} disabled={actionLoading}>Cancel</Button>
+                            <Button variant="primary" className="bg-primary hover:bg-primary-hover shadow-primary" onClick={handleLaunchCampaign} disabled={actionLoading}>
+                                {actionLoading ? <><Loader2 size={14} className="animate-spin mr-2" />Sending...</> : <><Send size={14} className="mr-2" />Confirm & Send</>}
                             </Button>
                         </div>
                     </div>
@@ -503,18 +507,18 @@ const CampaignDetail = () => {
                 title={`Send Follow-up to ${eligibleCount} Replied Leads`}
                 size="xl"
             >
-                <div className="p-6 space-y-6">
+                <div className="px-6 py-5 space-y-5">
                     <div>
-                        <label className="block text-sm font-black text-slate-700 uppercase tracking-widest mb-2">Subject Line</label>
+                        <label className="block text-xs font-medium tracking-wide text-muted uppercase mb-2">Subject Line</label>
                         <Input
                             placeholder="Following up: {{firstName}}"
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
                         />
-                        <p className="text-xs text-slate-500 mt-2 font-medium">Use {'{{firstName}}'}, {'{{lastName}}'}, {'{{companyName}}'}</p>
+                        <p className="text-xs text-subtle mt-2">Use {'{{firstName}}'}, {'{{lastName}}'}, {'{{companyName}}'}</p>
                     </div>
                     <div>
-                        <label className="block text-sm font-black text-slate-700 uppercase tracking-widest mb-2">Email Body</label>
+                        <label className="block text-xs font-medium tracking-wide text-muted uppercase mb-2">Email Body</label>
                         <RichTextEditor
                             value={body}
                             onChange={setBody}
@@ -522,86 +526,81 @@ const CampaignDetail = () => {
                         />
                     </div>
                 </div>
-                <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl">
+                <div className="px-6 py-4 border-t border-border bg-background/50 flex justify-end gap-3 rounded-b-xl">
                     <Button variant="outline" onClick={closeFollowUpModal} disabled={isSending}>
                         Cancel
                     </Button>
                     <Button
                         variant="primary"
-                        className="bg-indigo-600 font-bold"
+                        className="bg-primary hover:bg-primary-hover shadow-primary"
                         onClick={() => handleSendFollowUp(loadData)}
                         disabled={isSending || !subject || !body}
                     >
-                        {isSending ? <><i className="fas fa-spinner fa-spin mr-2" /> Sending...</> : <><i className="fas fa-paper-plane mr-2" /> Send Follow-up</>}
+                        {isSending ? <><Loader2 size={14} className="animate-spin mr-2" /> Sending...</> : <><Send size={14} className="mr-2" /> Send Follow-up</>}
                     </Button>
                 </div>
             </Modal>
 
-            {/* ── Breadcrumbs + Header ──────────────────────────────────────── */}
-            <div className="space-y-8 animate-in slide-in-from-top-4 duration-500">
-                <div className="flex items-center gap-3">
-                    <Link to="/dashboard/campaigns" className="text-slate-400 hover:text-indigo-600 transition-all font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
-                        <i className="fas fa-arrow-left text-[8px]" />
-                        Campaigns
+            {/* ── Header ──────────────────────────────────────── */}
+            <div className="space-y-5">
+                <div className="flex items-center gap-2 text-sm">
+                    <Link to="/dashboard/campaigns" className="text-muted hover:text-primary transition-colors flex items-center gap-1.5">
+                        <ArrowLeft size={14} />
+                        <span>Campaigns</span>
                     </Link>
-                    <span className="text-slate-200 font-thin">/</span>
-                    <Badge variant={statusVariant(campaign.status)} className="uppercase tracking-[0.2em] text-[10px] py-1 px-3 shadow-sm font-black">
-                        {campaign.status}
-                    </Badge>
+                    <span className="text-gray-tint">/</span>
+                    <Badge variant={statusVariant(campaign.status)}>{campaign.status}</Badge>
                 </div>
 
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
-                    <div className="space-y-2">
-                        <TitleComponent type="h1" className="text-slate-900 text-5xl md:text-6xl font-black font-idGrotesk tracking-tighter leading-none">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <TitleComponent type="h1" className="text-2xl font-semibold text-dark">
                             {campaign.name}
                         </TitleComponent>
-                        <div className="flex items-center gap-3">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">
-                                {campaign.status === 'draft' ? 'Initialized on ' : 'Operational since '}
-                                <span className="text-slate-900">{new Date(campaign.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                            </p>
-                        </div>
+                        <p className="text-sm text-muted mt-1">
+                            {campaign.status === 'draft' ? 'Created on ' : 'Launched on '}
+                            {new Date(campaign.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                        </p>
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="flex gap-3">
                         {campaign.status === 'draft' ? (
                             <>
                                 <Link to={`/dashboard/campaigns/${id}/edit`}>
-                                    <Button variant="outline" className="border-slate-200 h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50">
-                                        <i className="fas fa-edit mr-3" />Edit Model
+                                    <Button variant="outline" className="border-border text-primary hover:bg-white-tint">
+                                        <Pencil size={14} className="mr-2" />Edit Content
                                     </Button>
                                 </Link>
                                 <Button
                                     variant="primary"
-                                    className="px-10 h-14 rounded-2xl bg-indigo-600 font-black text-xs uppercase tracking-[0.1em] border-none shadow-xl shadow-indigo-200 hover:scale-105 active:scale-95 transform transition-all"
+                                    className="bg-primary hover:bg-primary-hover shadow-primary"
                                     onClick={() => setShowConfirm(true)}
                                     disabled={actionLoading || stats.totalLeads === 0}
                                 >
-                                    {actionLoading ? <><i className="fas fa-spinner fa-spin mr-3" />Deploying...</> : <><i className="fas fa-paper-plane mr-3" />Launch Network</>}
+                                    {actionLoading ? <><Loader2 size={14} className="animate-spin mr-2" />Launching...</> : <><Send size={14} className="mr-2" />Launch Campaign</>}
                                 </Button>
                             </>
                         ) : campaign.status === 'sent' ? (
                             <>
                                 <Button 
                                     variant="outline" 
-                                    className="border-slate-200 h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-50 hover:text-indigo-600 transition-all shadow-sm"
+                                    className="border-border text-primary hover:bg-white-tint"
                                     onClick={handleSyncStats}
                                     disabled={actionLoading}
                                 >
                                     {actionLoading ? (
-                                        <><i className="fas fa-spinner fa-spin mr-3" />Syncing Resonance...</>
+                                        <><Loader2 size={14} className="animate-spin mr-2" />Syncing...</>
                                     ) : (
-                                        <><i className="fas fa-sync-alt mr-3 text-indigo-500" />Deep Status Sync</>
+                                        <><RefreshCw size={14} className="mr-2" />Sync Stats</>
                                     )}
                                 </Button>
                                 {stats.replied > 0 && (
                                     <Button 
                                         variant="primary" 
-                                        className="bg-indigo-600 h-14 px-10 rounded-2xl font-black text-xs uppercase tracking-[0.1em] border-none shadow-xl shadow-indigo-200 hover:scale-105 active:scale-95 transform transition-all"
+                                        className="bg-primary hover:bg-primary-hover shadow-primary"
                                         onClick={() => openFollowUpModal(id, stats.replied)}
                                     >
-                                        <i className="fas fa-reply mr-3" />Initiate Follow-up
+                                        <Reply size={14} className="mr-2" />Send Follow-up
                                     </Button>
                                 )}
                             </>
@@ -612,65 +611,60 @@ const CampaignDetail = () => {
 
             {/* ── Stats Overview ────────────────────────────────────────────── */}
             {campaign.status === 'sent' ? (
-                <div className="animate-in fade-in slide-in-from-bottom-6 duration-1000">
-                    <CampaignProgressCard stats={stats} />
-                </div>
+                <CampaignProgressCard stats={stats} />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-in slide-in-from-bottom-10 duration-1000">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {[
-                        { label: 'Initial Audience', value: stats.totalLeads, icon: 'fa-users', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                        { label: 'Projected Reach', value: '100%', icon: 'fa-bullseye', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                        { label: 'Lead Sources', value: '1', icon: 'fa-database', color: 'text-amber-600', bg: 'bg-amber-50' },
-                        { label: 'Status', value: 'READY', icon: 'fa-terminal', color: 'text-slate-600', bg: 'bg-slate-100' },
+                        { label: 'Total Audience', value: stats.totalLeads, Icon: Users },
+                        { label: 'Projected Reach', value: '100%', Icon: Target },
+                        { label: 'Lead Sources', value: '1', Icon: Database },
+                        { label: 'Status', value: 'Ready', Icon: Terminal },
                     ].map((stat, i) => (
-                        <div key={i} className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50/50 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700" />
-                            <div className="flex justify-between items-start mb-6 relative z-10">
-                                <div className={`w-12 h-12 rounded-2xl ${stat.bg} flex items-center justify-center ${stat.color} shadow-sm ring-1 ring-inset ring-black/5`}>
-                                    <i className={`fas ${stat.icon} text-lg`} />
+                        <div key={i} className="bg-surface p-6 rounded-xl border border-border shadow-sm">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="w-10 h-10 rounded-lg bg-gradient-brand flex items-center justify-center">
+                                    <stat.Icon size={18} className="text-white" />
                                 </div>
-                                <Badge variant="default" className="text-[9px] uppercase tracking-widest bg-slate-50 border-slate-100 py-1 font-black">Blueprint</Badge>
                             </div>
-                            <p className="text-4xl font-black text-slate-900 tracking-tight relative z-10">{stat.value}</p>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2 relative z-10">{stat.label}</p>
+                            <p className="text-2xl font-semibold text-dark">{stat.value}</p>
+                            <p className="text-xs font-medium tracking-wide text-muted uppercase mt-1">{stat.label}</p>
                         </div>
                     ))}
                 </div>
             )}
 
             {campaign.status === 'draft' && stats.totalLeads === 0 && (
-                <div className="p-8 bg-amber-50 border border-amber-200/50 rounded-3xl flex items-center gap-6 animate-in zoom-in-95 duration-500">
-                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-200/20">
-                        <i className="fas fa-exclamation-triangle text-amber-500 text-2xl" />
+                <div className="p-5 bg-amber-50 border border-amber-100 rounded-xl flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-amber-100 flex items-center justify-center">
+                        <AlertTriangle size={18} className="text-amber-500" />
                     </div>
                     <div>
-                        <p className="font-black text-amber-900 text-lg uppercase tracking-tight tracking-tight">Lead Registry Empty</p>
-                        <p className="text-amber-700/80 text-sm font-medium">Assign a target audience before protocol deployment.</p>
+                        <p className="text-sm font-semibold text-amber-900">No leads assigned</p>
+                        <p className="text-xs text-amber-700 mt-0.5">Add an audience before launching this campaign.</p>
                     </div>
                     <Link to={`/dashboard/campaigns/${id}/edit`} className="ml-auto">
-                        <Button variant="outline" className="bg-white border-amber-200 text-amber-900 h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-amber-100/50 transition-all shadow-sm">
-                            Add Leads
-                        </Button>
+                        <Button variant="outline" className="border-amber-200 text-amber-800 hover:bg-amber-100 text-xs">Add Audience</Button>
                     </Link>
                 </div>
             )}
 
             {/* ── Audience Tabs ────────────────────────────────────────────── */}
             {campaign.status === 'sent' && (
-                <div className="bg-white rounded-3xl shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-12 duration-1000">
-                    <div className="flex border-b border-slate-50 bg-slate-50/30 p-3 gap-2 overflow-x-auto scrollbar-hide">
+                <div className="bg-surface rounded-xl shadow-sm border border-border overflow-hidden">
+                    <div className="flex border-b border-border bg-background p-1.5 gap-1 overflow-x-auto">
                         {['sent', 'opened', 'replied', 'bounced', 'resend_logs'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-8 py-4 whitespace-nowrap rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${
+                                className={`px-4 py-2 whitespace-nowrap rounded-lg text-xs font-medium transition-colors ${
                                     activeTab === tab 
-                                    ? 'bg-white text-indigo-600 shadow-sm shadow-indigo-100 ring-1 ring-slate-100' 
-                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100/50'
+                                    ? 'bg-white-tint text-primary' 
+                                    : 'text-muted hover:bg-background hover:text-dark'
                                 }`}
                             >
-                                {tab.replace('_', ' ')} <span className={`ml-2 px-2 py-0.5 rounded-full text-[9px] ${activeTab === tab ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
-                                    {tab === 'resend_logs' ? (fetchingLogs ? '...' : resendEmails.length) :
+                                {tab.replace('_', ' ')}
+                                <span className={`ml-1.5 px-1.5 py-0.5 rounded text-[10px] ${activeTab === tab ? 'bg-primary/10 text-primary' : 'bg-border text-subtle'}`}>
+                                    {tab === 'resend_logs' ? (fetchingLogs ? '…' : resendEmails.length) :
                                      tab === 'sent' ? stats.total :
                                      tab === 'opened' ? stats.opened : 
                                      tab === 'replied' ? stats.replied : 
@@ -679,7 +673,7 @@ const CampaignDetail = () => {
                             </button>
                         ))}
                     </div>
-                    <div className="p-4 md:p-8">
+                    <div className="p-4">
                         <DataTable
                             columns={audienceColumns}
                             data={getFilteredSends()}
@@ -690,11 +684,11 @@ const CampaignDetail = () => {
                             expandableRows
                             expandableRowsComponent={ExpandedComponent}
                             noDataComponent={(
-                                <div className="py-32 text-center space-y-4">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-200 border border-slate-100 border-dashed">
-                                        <i className="fas fa-inbox text-2xl" />
+                                <div className="py-16 text-center space-y-3">
+                                    <div className="w-12 h-12 rounded-xl bg-white-tint mx-auto flex items-center justify-center">
+                                        <Inbox size={24} className="text-purple-tint" />
                                     </div>
-                                    <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Registry Empty in this Node</p>
+                                    <p className="text-sm text-muted">No records in this category</p>
                                 </div>
                             )}
                         />
@@ -703,43 +697,30 @@ const CampaignDetail = () => {
             )}
 
             {/* ── Content Preview ─────────────────────────────────── */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 md:p-12 space-y-10 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-150">
-                <div className="flex items-center justify-between border-b border-slate-50 pb-8">
+            <div className="bg-surface rounded-xl shadow-sm border border-border p-6 space-y-5">
+                <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Content Blueprint</h3>
-                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Operational configuration for this outreach model</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <div className="w-3 h-3 rounded-sm bg-slate-100" />
-                        <div className="w-3 h-3 rounded-sm bg-slate-200" />
-                        <div className="w-3 h-3 rounded-sm bg-slate-300" />
+                        <h3 className="text-lg font-semibold text-dark">Content Preview</h3>
+                        <p className="text-sm text-muted mt-0.5">Email template configuration</p>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-10">
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                            <i className="fas fa-heading text-[8px]" /> Subject Line Allocation
+                <div className="space-y-5">
+                    <div className="space-y-2">
+                        <label className="text-xs font-medium tracking-wide text-muted uppercase flex items-center gap-1.5">
+                            <FileText size={12} /> Subject Line
                         </label>
-                        <div className="p-6 bg-slate-900 text-white rounded-2xl font-black text-lg tracking-tight shadow-xl shadow-indigo-200/20 border border-white/5 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:scale-150 transition-transform duration-1000" />
-                            {campaign.subjectLine || campaign.subject || 'UNTITLED_BLUEPRINT'}
+                        <div className="p-4 bg-background rounded-lg border border-border text-sm font-medium text-dark">
+                            {campaign.subjectLine || campaign.subject || 'No subject set'}
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                            <i className="fas fa-code text-[8px]" /> Deployed HTML Matrix
+                    <div className="space-y-2">
+                        <label className="text-xs font-medium tracking-wide text-muted uppercase flex items-center gap-1.5">
+                            <Code size={12} /> Email Body
                         </label>
-                        <div className="p-1 bg-slate-100 rounded-[32px] overflow-hidden group">
-                             <div className="bg-white rounded-[28px] p-8 md:p-16 border border-slate-200 shadow-inner min-h-[500px] relative overflow-hidden">
-                                 {/* Background Pattern */}
-                                 <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#4f46e5 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
-                                 
-                                 <div className="prose prose-slate max-w-none text-slate-600 font-medium leading-relaxed relative z-10">
-                                    <div dangerouslySetInnerHTML={{ __html: campaign.emailBodyHTML || campaign.emailContent || campaign.body || '<div class="text-center font-bold text-slate-300">SYSTEM_ERROR: NULL_CONTENT</div>' }} />
-                                 </div>
-                             </div>
+                        <div className="p-6 bg-surface rounded-lg border border-border prose prose-sm max-w-none text-muted">
+                            <div dangerouslySetInnerHTML={{ __html: campaign.emailBodyHTML || campaign.emailContent || campaign.body || '<p class="text-subtle">No content set.</p>' }} />
                         </div>
                     </div>
                 </div>

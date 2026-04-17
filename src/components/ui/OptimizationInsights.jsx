@@ -59,8 +59,8 @@ const OptimizationInsights = () => {
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-600 rounded-[8px] flex items-center justify-center shadow-lg shadow-indigo-100">
-                    <i className="fas fa-wand-magic-sparkles text-white"></i>
+                <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-100">
+                    <i className="fas fa-wand-magic-sparkles text-white" />
                 </div>
                 <div>
                     <h3 className="text-xl font-bold text-slate-900">AI Optimization Suggestions</h3>
@@ -70,10 +70,10 @@ const OptimizationInsights = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {insights.map((insight) => (
-                    <div key={insight.id} className="bg-white p-6 rounded-[8px] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+                    <div key={insight.id} className="bg-white p-6 rounded-lg border border-slate-100 shadow-sm hover:shadow-md transition-all group">
                         <div className="flex justify-between items-start mb-4">
-                            <div className={`w-12 h-12 rounded-[8px] flex items-center justify-center transition-transform group-hover:scale-110 ${getIconColor(insight.variant)}`}>
-                                <i className={`fas ${insight.icon} text-lg`}></i>
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 ${getIconColor(insight.variant)}`}>
+                                <i className={`fas ${insight.icon} text-lg`} />
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Confidence</p>
@@ -89,7 +89,7 @@ const OptimizationInsights = () => {
                         <div className="mt-6 pt-4 border-t border-slate-50 flex justify-end">
                             <button className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-700 flex items-center gap-2">
                                 Apply Optimization
-                                <i className="fas fa-arrow-right"></i>
+                                <i className="fas fa-arrow-right" />
                             </button>
                         </div>
                     </div>

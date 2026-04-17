@@ -15,8 +15,7 @@ import {
     orderByChild,
     equalTo,
 } from 'firebase/database';
-import { db, functions } from '../firebase';
-import { httpsCallable } from 'firebase/functions';
+import { db } from '../firebase';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PHASE 2 — PROJECTS

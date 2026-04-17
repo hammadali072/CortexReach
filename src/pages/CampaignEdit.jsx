@@ -151,7 +151,7 @@ const CampaignEdit = () => {
     if (loading) {
         return (
             <div className="py-20 flex flex-col items-center gap-4">
-                <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-[8px] animate-spin" />
+                <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-lg animate-spin" />
                 <p className="text-slate-400 text-sm font-medium">Loading campaign...</p>
             </div>
         )
@@ -172,7 +172,7 @@ const CampaignEdit = () => {
             </div>
 
             {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-[8px] text-red-700 text-sm font-medium flex items-center gap-3 animate-in shake">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium flex items-center gap-3 animate-in shake">
                     <i className="fas fa-exclamation-circle" />
                     {error}
                 </div>
@@ -180,7 +180,7 @@ const CampaignEdit = () => {
 
             {formData.status === 'draft' ? (
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-10 space-y-8">
+                    <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-10 space-y-8">
                         <TitleComponent type="h3" className="text-slate-900 font-bold text-xl mb-4 border-l-4 border-indigo-600 pl-4">Campaign Details</TitleComponent>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <Input
@@ -206,12 +206,12 @@ const CampaignEdit = () => {
                         />
                     </div>
 
-                    <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-10 space-y-6">
+                    <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-10 space-y-6">
                         <div className="flex justify-between items-center">
                             <TitleComponent type="h3" className="text-slate-900 font-bold text-xl border-l-4 border-emerald-500 pl-4">Manage Audience</TitleComponent>
                             <Badge variant="success">{formData.selectedRows.length} Leads Selected</Badge>
                         </div>
-                        <div className="border border-slate-100 rounded-[8px] overflow-hidden">
+                        <div className="border border-slate-100 rounded-lg overflow-hidden">
                             <DataTable
                                 columns={columns}
                                 data={dbLeads}
@@ -236,7 +236,7 @@ const CampaignEdit = () => {
                     </div>
                 </form>
             ) : (
-                <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-20 text-center">
+                <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-20 text-center">
                     <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
                         <i className="fas fa-lock text-3xl text-slate-300" />
                     </div>

@@ -1,5 +1,6 @@
 // src/App.jsx
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { Toaster } from 'react-hot-toast'
 
@@ -15,12 +16,22 @@ import CampaignCreate from './pages/CampaignCreate'
 import CampaignDetail from './pages/CampaignDetail'
 import CampaignEdit from './pages/CampaignEdit'
 import FollowUps from './pages/Sequences'
-import Analytics from './pages/Analytics'
 import Templates from './pages/Templates'
 import Settings from './pages/Settings'
 import SignIn from './pages/SignIn'
 
-// ─── Guards ──────────────────────────────────────────────────────────────────
+// ─── Guards & Utilities ──────────────────────────────────────────────────────
+
+// Automatically scroll back to top of page on route change.
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 // While Firebase resolves the auth state, show a full-screen spinner.
 const AuthGate = ({ children }) => {
@@ -29,7 +40,7 @@ const AuthGate = ({ children }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0f172a]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-600/30 border-t-indigo-600 rounded-[8px] animate-spin" />
+          <div className="w-12 h-12 border-4 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
           <p className="text-slate-500 text-sm font-medium">Loading CortexReach...</p>
         </div>
       </div>
@@ -50,20 +61,18 @@ const ProtectedRoute = ({ children }) => {
   return currentUser ? children : <Navigate to="/" replace />
 }
 
-// ─── App ─────────────────────────────────────────────────────────────────────
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <AuthGate>
           <Toaster position="top-right" toastOptions={{ duration: 4000, style: { background: '#1e293b', color: '#fff', borderRadius: '16px' } }} />
           <Routes>
-            {/* Public */}
             <Route path="/" element={
               <PublicRoute><SignIn /></PublicRoute>
             } />
 
-            {/* Protected dashboard shell */}
             <Route path="/dashboard" element={
               <ProtectedRoute><AppLayout /></ProtectedRoute>
             }>
@@ -78,7 +87,6 @@ function App() {
               <Route path="campaigns/:id/edit" element={<CampaignEdit />} />
               <Route path="campaigns/create" element={<CampaignCreate />} />
               <Route path="sequences" element={<FollowUps />} />
-              <Route path="analytics" element={<Analytics />} />
               <Route path="templates" element={<Templates />} />
               <Route path="settings" element={<Settings />} />
             </Route>

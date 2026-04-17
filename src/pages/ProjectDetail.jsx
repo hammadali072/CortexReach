@@ -1,4 +1,3 @@
-// src/pages/ProjectDetail.jsx — Phase 2 + 3: Loads project + leads from Firebase Realtime DB
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import DataTable from 'react-data-table-component'
@@ -14,7 +13,6 @@ import {
     getProject,
     getProjectLeads,
     getProjectCampaigns,
-    bulkCreateLeads,
 } from '../services/db'
 
 const ProjectDetail = () => {
@@ -36,7 +34,6 @@ const ProjectDetail = () => {
     const [aiLeads, setAiLeads] = useState([])
     const [relevanceFilter, setRelevanceFilter] = useState(0)
     const [personaFilter, setPersonaFilter] = useState('')
-    const [importing, setImporting] = useState(false)
 
     // ── Mock AI leads (unchanged from original) ─────────────────────────────
     const mockGeneratedLeads = [
@@ -95,17 +92,17 @@ const ProjectDetail = () => {
     // ── Source label helper ─────────────────────────────────────────────────
     const SourceBadge = ({ source }) => {
         if (source === 'csv_import') return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-100">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-100">
                 <i className="fas fa-file-csv text-[9px]" /> CSV Import
             </span>
         )
         if (source === 'ai') return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] bg-indigo-50 text-indigo-700 text-[11px] font-black border border-indigo-100">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-[11px] font-black border border-indigo-100">
                 <i className="fas fa-brain text-[9px]" /> AI
             </span>
         )
         return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] bg-slate-100 text-slate-500 text-[11px] font-black">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-black">
                 <i className="fas fa-user text-[9px]" /> Manual
             </span>
         )
@@ -205,8 +202,8 @@ const ProjectDetail = () => {
                     <div className="flex justify-between items-center mb-1">
                         <span className="text-[10px] font-bold text-indigo-600">{row.relevance}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-slate-100 rounded-[8px] overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[8px]" style={{ width: `${row.relevance}%` }} />
+                    <div className="h-1.5 w-full bg-slate-100 rounded-lg overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg" style={{ width: `${row.relevance}%` }} />
                     </div>
                 </div>
             )
@@ -225,7 +222,7 @@ const ProjectDetail = () => {
     if (dbLoading) {
         return (
             <div className="flex flex-col items-center justify-center py-32 gap-4">
-                <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-[8px] animate-spin" />
+                <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-lg animate-spin" />
                 <p className="text-slate-400 font-medium">Loading project...</p>
             </div>
         )
@@ -270,19 +267,19 @@ const ProjectDetail = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 p-1 bg-slate-100 rounded-[8px] w-fit">
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
                 {['overview', 'leads', 'campaigns'].map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`px-8 py-3 rounded-[8px] font-bold text-sm transition-all ${activeTab === tab
+                        className={`px-8 py-3 rounded-lg font-bold text-sm transition-all ${activeTab === tab
                             ? 'bg-white text-indigo-600 shadow-sm'
                             : 'text-slate-500 hover:text-slate-700'
                             }`}
                     >
                         {tab.charAt(0).toUpperCase() + tab.slice(1)}
                         {tab === 'leads' && !dbLoading && (
-                            <span className={`ml-2 text-xs px-2 py-0.5 rounded-[8px] ${activeTab === 'leads' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-500'}`}>
+                            <span className={`ml-2 text-xs px-2 py-0.5 rounded-lg ${activeTab === 'leads' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-500'}`}>
                                 {projectLeads.length}
                             </span>
                         )}
@@ -291,7 +288,7 @@ const ProjectDetail = () => {
             </div>
 
             {/* Tab Content */}
-            <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-10">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-10">
 
                 {/* OVERVIEW TAB */}
                 {activeTab === 'overview' && (
@@ -311,7 +308,7 @@ const ProjectDetail = () => {
                                     </p>
                                 </div>
                                 <div className="pt-4">
-                                    <div className="p-8 bg-slate-50 rounded-[8px] border border-slate-100">
+                                    <div className="p-8 bg-slate-50 rounded-lg border border-slate-100">
                                         <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Targeted Audience Segments</h5>
                                         <div className="flex flex-wrap gap-3">
                                             {project.targetAudience ? project.targetAudience.split(', ').map((aud, i) => (
@@ -324,7 +321,7 @@ const ProjectDetail = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[8px] flex flex-col justify-between">
+                            <div className="p-8 bg-slate-900 text-white rounded-lg flex flex-col justify-between">
                                 <div>
                                     <h4 className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-4">Strategic Enforcement</h4>
                                     <p className="text-slate-300 leading-relaxed font-medium">
@@ -378,13 +375,13 @@ const ProjectDetail = () => {
                         {/* Stats row */}
                         <div className="grid grid-cols-3 gap-4">
                             {[
-                                { label: 'Total Leads', value: projectLeads.length, icon: 'fa-users', color: 'indigo' },
-                                { label: 'CSV/XLSX', value: projectLeads.filter(l => l.source === 'csv_import').length, icon: 'fa-file-import', color: 'emerald' },
-                                { label: 'Emails Sent', value: project.stats?.totalSent || 0, icon: 'fa-paper-plane', color: 'purple' },
+                                { label: 'Total Leads', value: projectLeads.length, icon: 'fa-users', bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-700', subtext: 'text-indigo-500' },
+                                { label: 'CSV/XLSX', value: projectLeads.filter(l => l.source === 'csv_import').length, icon: 'fa-file-import', bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-700', subtext: 'text-emerald-500' },
+                                { label: 'Emails Sent', value: project.stats?.totalSent || 0, icon: 'fa-paper-plane', bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-700', subtext: 'text-purple-500' },
                             ].map(stat => (
-                                <div key={stat.label} className={`p-4 bg-${stat.color}-50 border border-${stat.color}-100 rounded-[8px]`}>
-                                    <p className={`text-2xl font-black text-${stat.color}-700`}>{stat.value}</p>
-                                    <p className={`text-[10px] font-bold text-${stat.color}-500 uppercase tracking-widest`}>{stat.label}</p>
+                                <div key={stat.label} className={`p-4 ${stat.bg} border ${stat.border} rounded-lg`}>
+                                    <p className={`text-2xl font-black ${stat.text}`}>{stat.value}</p>
+                                    <p className={`text-[10px] font-bold ${stat.subtext} uppercase tracking-widest`}>{stat.label}</p>
                                 </div>
                             ))}
                         </div>
@@ -397,7 +394,7 @@ const ProjectDetail = () => {
                                 </TitleComponent>
                                 <span className="text-[11px] font-bold text-slate-400">{projectLeads.length} total</span>
                             </div>
-                            <div className="border border-slate-100 rounded-[8px] overflow-hidden shadow-sm">
+                            <div className="border border-slate-100 rounded-lg overflow-hidden shadow-sm">
                                 <DataTable
                                     columns={leadColumns}
                                     data={projectLeads}
@@ -420,8 +417,8 @@ const ProjectDetail = () => {
 
                         {/* Google Maps flash notice */}
                         {projectLeads.some(l => l.source === 'csv_import') && (
-                            <div className="flex items-center gap-3 px-5 py-3.5 bg-emerald-50 border border-emerald-100 rounded-[8px] animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                <div className="w-8 h-8 bg-emerald-500 rounded-[8px] flex items-center justify-center flex-shrink-0">
+                            <div className="flex items-center gap-3 px-5 py-3.5 bg-emerald-50 border border-emerald-100 rounded-lg animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <i className="fas fa-file-csv text-white text-sm" />
                                 </div>
                                 <div className="flex-1">
@@ -452,7 +449,7 @@ const ProjectDetail = () => {
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Persona Filter</label>
                                             <select value={personaFilter} onChange={e => setPersonaFilter(e.target.value)}
-                                                className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-[8px] text-xs font-bold text-slate-600 outline-none"
+                                                className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-xs font-bold text-slate-600 outline-none"
                                             >
                                                 <option value="">All Personas</option>
                                                 <option value="The Visionary CTO">The Visionary CTO</option>
@@ -462,7 +459,7 @@ const ProjectDetail = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="border border-indigo-100 rounded-[8px] overflow-hidden shadow-2xl shadow-indigo-50/50 bg-white">
+                                <div className="border border-indigo-100 rounded-lg overflow-hidden shadow-2xl shadow-indigo-50/50 bg-white">
                                     <DataTable
                                         columns={aiColumns}
                                         data={filteredAiLeads}
@@ -487,7 +484,7 @@ const ProjectDetail = () => {
                                 <p className="text-sm text-slate-500 font-medium">Outreach sequences established for this project scope.</p>
                             </div>
                         </div>
-                        <div className="border border-slate-100 rounded-[8px] overflow-hidden shadow-sm">
+                        <div className="border border-slate-100 rounded-lg overflow-hidden shadow-sm">
                             <DataTable
                                 columns={campaignColumns}
                                 data={projectCampaigns}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TitleComponent from '../components/titleComponent/titleComponent';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -27,13 +27,13 @@ const FollowUps = () => {
         handleSendFollowUp
     } = useFollowUp();
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         if (!currentUser) return;
         setLoading(true);
         try {
             const allCampaigns = await getUserCampaigns(currentUser.uid);
             const sentCampaigns = allCampaigns.filter(c => c.status === 'sent');
-            
+
             const campaignsWithStats = await Promise.all(
                 sentCampaigns.map(async (camp) => {
                     const stats = await getCampaignSendsStats(camp.id);
@@ -51,11 +51,11 @@ const FollowUps = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUser]);
 
     useEffect(() => {
         loadData();
-    }, [currentUser]);
+    }, [loadData]);
 
     const handleSuccess = () => {
         loadData();
@@ -76,8 +76,8 @@ const FollowUps = () => {
             </div>
 
             {/* Logical Rule Indicator */}
-            <div className="p-6 bg-slate-900 rounded-[8px] text-white flex items-center gap-6 shadow-xl border border-slate-700">
-                <div className="w-16 h-16 bg-indigo-600 rounded-[8px] flex items-center justify-center">
+            <div className="p-6 bg-slate-900 rounded-lg text-white flex items-center gap-6 shadow-xl border border-slate-700">
+                <div className="w-16 h-16 bg-indigo-600 rounded-lg flex items-center justify-center">
                     <i className="fas fa-microchip text-2xl" />
                 </div>
                 <div>
@@ -89,22 +89,22 @@ const FollowUps = () => {
             {/* Follow-Ups List */}
             {loading ? (
                 <div className="py-12 flex justify-center">
-                    <div className="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <div className="w-8 h-8 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
                 </div>
             ) : campaigns.length === 0 ? (
-                <div className="bg-white p-12 text-center rounded-[8px] border border-slate-200">
+                <div className="bg-white p-12 text-center rounded-lg border border-slate-200">
                     <p className="text-slate-500 font-medium">No eligible follow-up campaigns found yet.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {campaigns.map((item) => {
                         const status = item.stats.followUpSent > 0 ? 'Sent' : 'Pending';
-                        const conversion = item.stats.replied > 0 
+                        const conversion = item.stats.replied > 0
                             ? ((item.stats.followUpSent / item.stats.replied) * 100).toFixed(0) + '%'
                             : '0%';
-                        
+
                         return (
-                            <div key={item.id} className="bg-white p-8 rounded-[8px] border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                            <div key={item.id} className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-2">
@@ -133,8 +133,8 @@ const FollowUps = () => {
 
                                     <div className="flex items-center gap-3">
                                         {status === 'Pending' && item.stats.replied > 0 && (
-                                            <Button 
-                                                variant="primary" 
+                                            <Button
+                                                variant="primary"
                                                 className="bg-indigo-600"
                                                 onClick={() => openFollowUpModal(item.id, item.stats.replied)}
                                             >
@@ -149,7 +149,7 @@ const FollowUps = () => {
                 </div>
             )}
 
-            <div className="p-8 bg-indigo-50 rounded-[8px] border border-indigo-100">
+            <div className="p-8 bg-indigo-50 rounded-lg border border-indigo-100">
                 <div className="flex gap-6">
                     <i className="fas fa-info-circle text-indigo-600 text-2xl mt-1" />
                     <div>

@@ -42,7 +42,7 @@ const Header = ({ onMenuClick }) => {
                         <input
                             type="text"
                             placeholder="Search outreach signals..."
-                            className="pl-10 pr-4 py-2 w-64 lg:w-96 bg-gray-50 border border-gray-100 rounded-[8px] text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
+                            className="pl-10 pr-4 py-2 w-64 lg:w-96 bg-gray-50 border border-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all"
                         />
                     </div>
                 </div>
@@ -53,17 +53,17 @@ const Header = ({ onMenuClick }) => {
                     <div className="relative" ref={notificationRef}>
                         <button
                             onClick={() => setShowNotifications(!showNotifications)}
-                            className={`relative text-gray-500 hover:text-indigo-600 transition-all duration-300 focus:outline-none p-2 rounded-[8px] ${showNotifications ? 'bg-indigo-50 text-indigo-600' : ''}`}
+                            className={`relative text-gray-500 hover:text-indigo-600 transition-all duration-300 focus:outline-none p-2 rounded-lg ${showNotifications ? 'bg-indigo-50 text-indigo-600' : ''}`}
                         >
                             <i className="fas fa-bell text-lg" />
-                            <span className="absolute top-1 right-1 w-4 h-4 bg-indigo-600 rounded-[8px] text-[10px] text-white flex items-center justify-center border-2 border-white">
+                            <span className="absolute top-1 right-1 w-4 h-4 bg-indigo-600 rounded-lg text-[10px] text-white flex items-center justify-center border-2 border-white">
                                 {notifications.length}
                             </span>
                         </button>
 
                         {/* Notifications Dropdown */}
                         {showNotifications && (
-                            <div className="absolute right-0 mt-3 w-80 bg-white rounded-[8px] shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            <div className="absolute right-0 mt-3 w-80 bg-white rounded-lg shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                 <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
                                     <h3 className="text-sm font-bold text-gray-900">Notifications</h3>
                                     <button className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-widest">Mark all as read</button>
@@ -72,7 +72,7 @@ const Header = ({ onMenuClick }) => {
                                     {notifications.map((notif) => (
                                         <div key={notif.id} className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer group">
                                             <div className="flex items-start space-x-3">
-                                                <div className={`w-8 h-8 rounded-[8px] ${notif.bg} ${notif.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                                                <div className={`w-8 h-8 rounded-lg ${notif.bg} ${notif.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
                                                     <i className={`fas ${notif.icon} text-sm`}></i>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
@@ -98,7 +98,7 @@ const Header = ({ onMenuClick }) => {
                             <p className="text-[10px] font-medium text-gray-500 uppercase tracking-tighter mt-1">{userProfile?.role || 'Member'}</p>
                         </div>
                         <div className="relative group cursor-pointer">
-                            <div className="w-10 h-10 rounded-[8px] overflow-hidden ring-2 ring-gray-100 group-hover:ring-indigo-500 transition-all duration-300 bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                            <div className="w-10 h-10 rounded-lg overflow-hidden ring-2 ring-gray-100 group-hover:ring-indigo-500 transition-all duration-300 bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
                                 {userProfile?.photoURL ? (
                                     <img
                                         src={userProfile.photoURL}
@@ -109,7 +109,7 @@ const Header = ({ onMenuClick }) => {
                                     <span>{userProfile?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'CR'}</span>
                                 )}
                             </div>
-                            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-[8px]"></div>
+                            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-md" />
                         </div>
                     </div>
                 </div>

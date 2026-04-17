@@ -120,7 +120,7 @@ const Leads = () => {
                 const grad = gradients[name.charCodeAt(0) % gradients.length]
                 return (
                     <div className="flex items-center space-x-3 py-2">
-                        <div className={`w-8 h-8 rounded-[8px] bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-[10px] shadow-sm flex-shrink-0`}>
+                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-[10px] shadow-sm flex-shrink-0`}>
                             {initials}
                         </div>
                         <span className="font-bold text-slate-900 truncate">{name}</span>
@@ -184,14 +184,14 @@ const Leads = () => {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => handleEditClick(row)}
-                        className="w-8 h-8 rounded-[8px] bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center justify-center border border-slate-100"
+                        className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center justify-center border border-slate-100"
                         title="Edit Lead"
                     >
                         <i className="fas fa-edit text-xs" />
                     </button>
                     <button
                         onClick={() => handleDeleteClick(row)}
-                        className="w-8 h-8 rounded-[8px] bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-center border border-slate-100"
+                        className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-center border border-slate-100"
                         title="Delete Lead"
                     >
                         <i className="fas fa-trash-alt text-xs" />
@@ -200,6 +200,7 @@ const Leads = () => {
             ),
             width: '100px'
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     ], [projects, projectFilter]);
 
     const filteredLeads = useMemo(() => {
@@ -277,23 +278,7 @@ const Leads = () => {
         setSelectedLeads(selectedRows.map(row => row.id))
     }
 
-    // ── CRUD Handlers
-    const handleAddClick = () => {
-        if (projectFilter === 'all') {
-            toast.error('Please select a project first')
-            return
-        }
-        setCurrentLead({
-            name: '',
-            company: '',
-            email: '',
-            phone: '',
-            website: '',
-            category: 'Manual Entry',
-            projectId: projectFilter
-        })
-        setIsModalOpen(true)
-    }
+
 
     const handleEditClick = (lead) => {
         setCurrentLead(lead)
@@ -307,6 +292,7 @@ const Leads = () => {
             toast.success('Lead deleted')
             loadData()
         } catch (err) {
+            console.error('Delete error:', err)
             toast.error('Failed to delete lead')
         }
     }
@@ -324,6 +310,7 @@ const Leads = () => {
             setSelectedLeads([])
             loadData()
         } catch (err) {
+            console.error('Bulk delete error:', err)
             toast.error('Failed to delete leads')
         }
     }
@@ -353,10 +340,10 @@ const Leads = () => {
     return (
         <div className="min-h-screen space-y-8 pb-12">
             {/* Page Header */}
-            <div className="relative overflow-hidden rounded-[8px] bg-slate-900 p-12 shadow-2xl border border-slate-800">
+            <div className="relative overflow-hidden rounded-lg bg-slate-900 p-12 shadow-2xl border border-slate-800">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500 rounded-[8px] blur-[120px] -mr-48 -mt-48" />
-                    <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500 rounded-[8px] blur-[120px] -ml-48 -mb-48" />
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500 rounded-lg blur-[120px] -mr-48 -mt-48" />
+                    <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500 rounded-lg blur-[120px] -ml-48 -mb-48" />
                 </div>
 
                 <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-10">
@@ -376,7 +363,7 @@ const Leads = () => {
                     <div className="flex flex-col sm:flex-row gap-4">
                         <Link
                             to={projectFilter !== 'all' ? `/dashboard/leads/import?projectId=${projectFilter}` : '/dashboard/leads/import'}
-                            className={`inline-flex items-center justify-center gap-3 px-10 py-5 rounded-[8px] font-black text-sm transition-all transform hover:-translate-y-1 shadow-2xl ${projectFilter === 'all'
+                            className={`inline-flex items-center justify-center gap-3 px-10 py-5 rounded-lg font-black text-sm transition-all transform hover:-translate-y-1 shadow-2xl ${projectFilter === 'all'
                                 ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
                                 : 'bg-emerald-500 text-white shadow-emerald-500/20 hover:bg-emerald-600'
                                 }`}
@@ -390,7 +377,7 @@ const Leads = () => {
 
             {/* Project Selection Area */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className={`p-8 rounded-[8px] border-2 transition-all cursor-pointer flex flex-col justify-between ${projectFilter === 'all'
+                <div className={`p-8 rounded-lg border-2 transition-all cursor-pointer flex flex-col justify-between ${projectFilter === 'all'
                     ? 'bg-slate-900 border-slate-900 shadow-xl text-white'
                     : 'bg-white border-slate-100 text-slate-900 hover:border-indigo-200'
                     }`}
@@ -405,7 +392,7 @@ const Leads = () => {
                 </div>
 
                 {projects.map(proj => (
-                    <div key={proj.id} className={`p-8 rounded-[8px] border-2 transition-all cursor-pointer flex flex-col justify-between ${projectFilter === proj.id
+                    <div key={proj.id} className={`p-8 rounded-lg border-2 transition-all cursor-pointer flex flex-col justify-between ${projectFilter === proj.id
                         ? 'bg-indigo-600 border-indigo-600 shadow-xl shadow-indigo-100 text-white'
                         : 'bg-white border-slate-100 text-slate-900 hover:border-indigo-200'
                         }`}
@@ -424,8 +411,8 @@ const Leads = () => {
             {/* Stats row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {leadStats.map((stat, idx) => (
-                    <div key={idx} className="bg-white rounded-[8px] p-8 shadow-sm border border-slate-100 flex items-center space-x-6">
-                        <div className={`w-16 h-16 rounded-[8px] bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
+                    <div key={idx} className="bg-white rounded-lg p-8 shadow-sm border border-slate-100 flex items-center space-x-6">
+                        <div className={`w-16 h-16 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
                             <i className={`fas ${stat.icon} text-white text-2xl`} />
                         </div>
                         <div>
@@ -437,14 +424,14 @@ const Leads = () => {
             </div>
 
             {/* Controls & Bulk Actions */}
-            <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 p-8">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-8">
                 <div className="flex flex-col xl:flex-row gap-8 items-center">
                     <div className="flex-1 w-full relative group">
                         <i className="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                         <input
                             type="text"
                             placeholder="Filter by lead name, email or company..."
-                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-600"
+                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-medium text-slate-600"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -453,7 +440,7 @@ const Leads = () => {
                     <div className="relative min-w-[280px]">
                         <i className="fas fa-filter absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                         <select
-                            className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-sm text-slate-600 appearance-none cursor-pointer"
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-sm text-slate-600 appearance-none cursor-pointer"
                             value={projectFilter}
                             onChange={(e) => setProjectFilter(e.target.value)}
                         >
@@ -465,7 +452,7 @@ const Leads = () => {
                     </div>
 
                     {selectedLeads.length > 0 && (
-                        <div className="flex items-center gap-6 bg-indigo-50 px-6 py-3 rounded-[8px] border border-indigo-100 animate-in fade-in slide-in-from-top-4">
+                        <div className="flex items-center gap-6 bg-indigo-50 px-6 py-3 rounded-lg border border-indigo-100 animate-in fade-in slide-in-from-top-4">
                             <span className="text-sm font-black text-indigo-700 uppercase tracking-wider">{selectedLeads.length} Selected</span>
                             <div className="h-6 w-px bg-indigo-100" />
                             <div className="flex gap-4">
@@ -486,15 +473,15 @@ const Leads = () => {
 
             {/* Data Table */}
             {dbError && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-[8px] text-red-700 text-sm font-medium flex items-center gap-3">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium flex items-center gap-3">
                     <i className="fas fa-exclamation-circle" />{dbError}
                     <button onClick={loadData} className="ml-auto text-xs font-bold underline">Retry</button>
                 </div>
             )}
-            <div className="bg-white rounded-[8px] shadow-sm border border-slate-100 overflow-x-auto px-2">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-x-auto px-2">
                 {dbLoading ? (
                     <div className="py-20 flex flex-col items-center gap-4">
-                        <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-[8px] animate-spin" />
+                        <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-lg animate-spin" />
                         <p className="text-slate-400 text-sm font-medium">Loading leads from database...</p>
                     </div>
                 ) : leads.length === 0 ? (
@@ -506,7 +493,7 @@ const Leads = () => {
                         </p>
                         <Link
                             to={projectFilter !== 'all' ? `/dashboard/leads/import?projectId=${projectFilter}` : '/dashboard/leads/import'}
-                            className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 text-white rounded-[8px] font-black text-sm shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all transform hover:-translate-y-1"
+                            className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 text-white rounded-lg font-black text-sm shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all transform hover:-translate-y-1"
                         >
                             <i className="fas fa-file-import" />
                             Import CSV/XLSX File
@@ -531,7 +518,7 @@ const Leads = () => {
             {isModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-                    <div className="relative bg-white w-full max-w-2xl rounded-[8px] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="relative bg-white w-full max-w-2xl rounded-lg shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {/* Modal Header */}
                         <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <div>
@@ -544,7 +531,7 @@ const Leads = () => {
                             </div>
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="w-12 h-12 rounded-[8px] bg-white border border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-400 transition-all flex items-center justify-center shadow-sm"
+                                className="w-12 h-12 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-400 transition-all flex items-center justify-center shadow-sm"
                             >
                                 <i className="fas fa-times text-lg" />
                             </button>
@@ -562,7 +549,7 @@ const Leads = () => {
                                             required
                                             value={currentLead?.name || ''}
                                             onChange={e => setCurrentLead({ ...currentLead, name: e.target.value })}
-                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
                                             placeholder="Lead name"
                                         />
                                     </div>
@@ -575,7 +562,7 @@ const Leads = () => {
                                             type="text"
                                             value={currentLead?.company || ''}
                                             onChange={e => setCurrentLead({ ...currentLead, company: e.target.value })}
-                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
                                             placeholder="Business Name"
                                         />
                                     </div>
@@ -589,7 +576,7 @@ const Leads = () => {
                                             required
                                             value={currentLead?.email || ''}
                                             onChange={e => setCurrentLead({ ...currentLead, email: e.target.value })}
-                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
                                             placeholder="email@example.com"
                                         />
                                     </div>
@@ -602,7 +589,7 @@ const Leads = () => {
                                             type="text"
                                             value={currentLead?.phone || ''}
                                             onChange={e => setCurrentLead({ ...currentLead, phone: e.target.value })}
-                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
                                             placeholder="+1 (555) 000-0000"
                                         />
                                     </div>
@@ -615,7 +602,7 @@ const Leads = () => {
                                             type="text"
                                             value={currentLead?.website || ''}
                                             onChange={e => setCurrentLead({ ...currentLead, website: e.target.value })}
-                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
                                             placeholder="https://example.com"
                                         />
                                     </div>
@@ -628,7 +615,7 @@ const Leads = () => {
                                             type="text"
                                             value={currentLead?.category || ''}
                                             onChange={e => setCurrentLead({ ...currentLead, category: e.target.value })}
-                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[8px] focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+                                            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
                                             placeholder="e.g. Agency, Client, VIP"
                                         />
                                     </div>
@@ -639,14 +626,14 @@ const Leads = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="px-10 py-4 bg-white border border-slate-200 rounded-[8px] text-slate-500 font-black text-sm hover:bg-slate-50 transition-all shadow-sm"
+                                    className="px-10 py-4 bg-white border border-slate-200 rounded-lg text-slate-500 font-black text-sm hover:bg-slate-50 transition-all shadow-sm"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSaving}
-                                    className="px-12 py-4 bg-indigo-600 text-white rounded-[8px] font-black text-sm hover:bg-indigo-700 transition-all flex items-center gap-3 shadow-xl shadow-indigo-100 disabled:opacity-50"
+                                    className="px-12 py-4 bg-indigo-600 text-white rounded-lg font-black text-sm hover:bg-indigo-700 transition-all flex items-center gap-3 shadow-xl shadow-indigo-100 disabled:opacity-50"
                                 >
                                     {isSaving ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-check-circle" />}
                                     {currentLead?.id ? 'Update Lead' : 'Create Lead'}

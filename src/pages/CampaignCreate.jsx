@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import DataTable from 'react-data-table-component'
@@ -13,12 +13,8 @@ import {
     getUserProjects,
     getProjectLeads,
     createCampaign,
-    getProjectCampaigns,
     setCampaignAudience,
-    getProject,
-    getUserTemplates,
-    recordEmailSend,
-    updateCampaign
+    getProject
 } from '../services/db'
 import { renderCampaignEmail } from '../emails/renderEmails'
 import { hasEmailTemplate } from '../emails'
@@ -44,13 +40,11 @@ const CampaignCreate = () => {
     const [dbProjects, setDbProjects] = useState([])
     const [projectsLoading, setProjectsLoading] = useState(true)
     const [dbLeads, setDbLeads] = useState([])
-    const [dbTemplates, setDbTemplates] = useState([])
     const [leadsLoading, setLeadsLoading] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const [projectsError, setProjectsError] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [launching, setLaunching] = useState(false)
-    const [launchProgress, setLaunchProgress] = useState({ total: 0, current: 0 })
     const [selectedProject, setSelectedProject] = useState(null)
 
     // Form state
@@ -134,22 +128,6 @@ const CampaignCreate = () => {
             '{{keyFeature1}}': features[0] || 'core efficiency',
             '{{keyFeature2}}': features[1] || 'seamless workflow',
             '{{website}}': project.website || 'our platform'
-        }
-
-        Object.keys(replacements).forEach(key => {
-            result = result.split(key).join(replacements[key])
-        })
-        return result
-    }
-
-    const replaceLeadPlaceholders = (text, lead) => {
-        if (!text || !lead) return text
-        let result = text
-        const replacements = {
-            '{{firstName}}': lead.firstName || lead.first_name || lead.name?.split(' ')[0] || 'there',
-            '{{lastName}}': lead.lastName || lead.last_name || lead.name?.split(' ').slice(1).join(' ') || '',
-            '{{companyName}}': lead.company_name || lead.company || 'your company',
-            '{{email}}': lead.email || ''
         }
 
         Object.keys(replacements).forEach(key => {

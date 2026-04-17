@@ -1,10 +1,3 @@
-// src/emails/renderEmails.js
-// Pure JS — no JSX — safe to import from Node.js / Vercel serverless
-
-/**
- * Darken a hex color by a given percentage (0–1).
- * Used by bold_gradient template to compute header gradient stops.
- */
 function darkenHex(hex, amount = 0.25) {
   const h = hex.replace('#', '');
   const r = Math.max(0, Math.round(parseInt(h.slice(0, 2), 16) * (1 - amount)));
