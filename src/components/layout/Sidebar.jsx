@@ -97,7 +97,13 @@ const Sidebar = ({ isOpen, onClose }) => {
                                     </button>
                                 </div>
                                 <div className="p-2 border-t border-gray-50 bg-gray-50/50">
-                                    <button className="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-white hover:shadow-sm duration-200">
+                                    <button 
+                                        onClick={() => {
+                                            navigate('/dashboard/settings');
+                                            setShowAccountDropdown(false);
+                                        }}
+                                        className="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-white hover:shadow-sm duration-200"
+                                    >
                                         <div className="size-8 rounded-lg flex items-center justify-center">
                                             <i className="fas fa-user-gear text-sm"></i>
                                         </div>

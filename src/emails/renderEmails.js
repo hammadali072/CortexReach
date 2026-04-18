@@ -409,35 +409,45 @@ export const renderCampaignEmail = async (
   const feat2 = features[1] || 'seamless integration';
 
   const unsubscribeUrl = `https://durzaar.com/unsubscribe?lead=${lead.id}`;
-
-  // Build tracking pixel URL — only injected when a real sendId exists
   const trackingPixel = sendId
     ? `<img src="https://durzaar.com/api/track-open?sendId=${sendId}" width="1" height="1" style="display:block;width:1px;height:1px;border:0;opacity:0;" alt="" />`
     : '';
 
-  // Subject + opening line vary by campaign type
+  const tone = project.aiTone || 'professional';
+
   const typeConfig = {
     brand_introduction: {
       heading: `Introducing ${projName}`,
-      intro: `I wanted to introduce you to ${projName} — built specifically for companies like ${company}.`,
+      intro: tone === 'friendly' 
+        ? `Hey! I'm reaching out because I think ${projName} would be a great fit for ${company}.`
+        : tone === 'direct'
+        ? `${projName} is a new platform for ${company} that simplifies outreach.`
+        : `I wanted to introduce you to ${projName} — built specifically for companies like ${company}.`,
       cta: 'Learn More',
     },
     product_pitch: {
       heading: `${projName} can help ${company}`,
-      intro: `I'm reaching out because ${projName} helps teams ${benefit}.`,
+      intro: tone === 'friendly'
+        ? `I'd love to show you how ${projName} can make life easier for the team at ${company}.`
+        : tone === 'direct'
+        ? `We built ${projName} to help teams like yours ${benefit}.`
+        : `I'm reaching out because ${projName} helps teams ${benefit}.`,
       cta: 'See How It Works',
     },
     problem_solution: {
       heading: `A solution for ${company}`,
-      intro: `Many teams in your space struggle with this exact problem. ${projName} was built to fix it.`,
+      intro: tone === 'direct'
+        ? `Most teams struggle with growth. ${projName} solves this.`
+        : `Many teams in your space struggle with manual outreach. ${projName} was built to fix it.`,
       cta: 'See the Solution',
     },
     demo_request: {
       heading: `Quick demo for ${company}?`,
-      intro: `I'd love to show you how ${projName} can help your team — would a 15-min call work?`,
+      intro: tone === 'friendly'
+        ? `Could we hop on a quick 15-min chat? I'd love to show you ${projName} in action.`
+        : `I'd love to show you how ${projName} can help your team — would a 15-min call work?`,
       cta: 'Book a Demo',
     },
-
     partnership: {
       heading: `Partnership opportunity`,
       intro: `I believe there's a strong synergy between ${company} and ${projName}. Would love to explore a partnership.`,
@@ -446,8 +456,6 @@ export const renderCampaignEmail = async (
   };
 
   const cfg = typeConfig[campaignType] || typeConfig.brand_introduction;
-
-  // Resolve renderer — fallback to clean_minimal
   const renderer = TEMPLATE_RENDERERS[templateStyle] || TEMPLATE_RENDERERS.clean_minimal;
 
   return renderer({

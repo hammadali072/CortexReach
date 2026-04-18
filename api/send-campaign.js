@@ -52,9 +52,10 @@ export default async function handler(req, res) {
         if (!project) return res.status(404).json({ error: 'Project not found' });
 
         // 3. Fetch Audience
-        const audienceMap = await dbGet(`campaign_audience/${campaignId}`);
-        if (!audienceMap) return res.status(400).json({ error: 'No audience assigned' });
-        const leadIds = Object.keys(audienceMap);
+        const leadIds = await dbGet(`campaign_audiences/${campaignId}`);
+        if (!leadIds || !Array.isArray(leadIds) || leadIds.length === 0) {
+            return res.status(400).json({ error: 'No audience assigned' });
+        }
 
         // 4. Fetch Leads
         const leads = await Promise.all(leadIds.map(id => dbGet(`leads/${id}`)));
@@ -103,7 +104,7 @@ export default async function handler(req, res) {
                 sendRecords.map(async ({ lead, sendId }) => {
 
                     const firstName = lead.first_name || lead.firstName || lead.name?.split(' ')[0] || 'there';
-                    const lastName  = lead.last_name  || lead.lastName  || lead.name?.split(' ').slice(1).join(' ') || '';
+                    const lastName = lead.last_name || lead.lastName || lead.name?.split(' ').slice(1).join(' ') || '';
                     const companyName = lead.company_name || lead.company || 'your company';
                     const email = lead.email || '';
 
@@ -132,7 +133,7 @@ export default async function handler(req, res) {
                         html = await renderCampaignEmail(
                             campaign.campaignType, project, lead, sendId,
                             campaign.templateStyle || 'clean_minimal',
-                            campaign.accentColor   || '#4f46e5'
+                            campaign.accentColor || '#4f46e5'
                         );
                     }
 
@@ -150,9 +151,9 @@ export default async function handler(req, res) {
                         html,
                         tags: [
                             { name: 'campaignId', value: campaignId },
-                            { name: 'leadId',     value: lead.id },
-                            { name: 'projectId',  value: campaign.projectId },
-                            { name: 'sendId',     value: sendId },
+                            { name: 'leadId', value: lead.id },
+                            { name: 'projectId', value: campaign.projectId },
+                            { name: 'sendId', value: sendId },
                         ],
                     };
 

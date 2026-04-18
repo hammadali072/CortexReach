@@ -48,6 +48,17 @@
   .btn-brand {
     @apply bg-primary text-white-tint hover:bg-primary-hover shadow-primary duration-300 px-6 py-2.5 rounded-lg font-bold;
   }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
 }
 
 /* Custom Keyframe Animations */

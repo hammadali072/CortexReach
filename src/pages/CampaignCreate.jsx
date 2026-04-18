@@ -60,8 +60,15 @@ const CampaignCreate = () => {
     })
 
     const [showPreviewModal, setShowPreviewModal] = useState(false)
+    const [aiPrefs, setAiPrefs] = useState(null)
 
     // Load initial data
+    useEffect(() => {
+        const savedAi = localStorage.getItem('cortex_ai_prefs')
+        if (savedAi) {
+            setAiPrefs(JSON.parse(savedAi))
+        }
+    }, [])
     useEffect(() => {
         if (!currentUser) return
 
@@ -152,9 +159,14 @@ const CampaignCreate = () => {
             const subject = replaceProjectPlaceholders('Quick question for {{firstName}} at {{companyName}}', selectedProject)
 
             // Render the email template with project info, lead placeholders, style + accent
+            // We pass AI preferences as well If they exist
             const html = await renderCampaignEmail(
                 formData.campaignType,
-                selectedProject,
+                {
+                    ...selectedProject,
+                    description: aiPrefs?.companyDescription || selectedProject.description,
+                    name: aiPrefs?.companyName || selectedProject.name
+                },
                 leadPlaceholder,
                 null,
                 formData.templateStyle,
@@ -188,7 +200,11 @@ const CampaignCreate = () => {
             }
             const html = await renderCampaignEmail(
                 formData.campaignType,
-                selectedProject,
+                {
+                    ...selectedProject,
+                    description: aiPrefs?.companyDescription || selectedProject.description,
+                    name: aiPrefs?.companyName || selectedProject.name
+                },
                 leadPlaceholder,
                 null,
                 formData.templateStyle,
