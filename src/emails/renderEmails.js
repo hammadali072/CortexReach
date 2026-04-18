@@ -437,11 +437,7 @@ export const renderCampaignEmail = async (
       intro: `I'd love to show you how ${projName} can help your team — would a 15-min call work?`,
       cta: 'Book a Demo',
     },
-    follow_up: {
-      heading: `Following up, ${firstName}`,
-      intro: `I wanted to follow up on my previous email about ${projName}. Did you get a chance to take a look?`,
-      cta: 'Take Another Look',
-    },
+
     partnership: {
       heading: `Partnership opportunity`,
       intro: `I believe there's a strong synergy between ${company} and ${projName}. Would love to explore a partnership.`,

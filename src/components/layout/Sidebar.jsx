@@ -14,7 +14,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         { path: '/dashboard/leads', icon: 'fa-users', label: 'Leads' },
         { path: '/dashboard/campaigns', icon: 'fa-envelope', label: 'Campaigns' },
         { path: '/dashboard/templates', icon: 'fa-file-invoice', label: 'Templates' },
-        { path: '/dashboard/sequences', icon: 'fa-reply-all', label: 'Follow-Ups' },
         { path: '/dashboard/settings', icon: 'fa-cog', label: 'Settings' }
     ]
 
@@ -30,17 +29,17 @@ const Sidebar = ({ isOpen, onClose }) => {
 
             {/* Sidebar */}
             <aside className={clsx(
-                'fixed lg:sticky top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 transition-transform duration-300',
+                'fixed lg:sticky top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 duration-300',
                 'w-64 flex flex-col',
                 isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
             )}>
                 {/* Logo Section */}
                 <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
                     <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <i className="fas fa-brain text-white text-lg"></i>
+                        <div className="size-8 bg-gradient-brand rounded-lg flex items-center justify-center shadow-primary">
+                            <i className="fas fa-brain text-white-tint text-lg"></i>
                         </div>
-                        <span className="text-xl font-bold text-gray-800">CortexReach</span>
+                        <span className="text-xl font-bold bg-gradient-brand bg-clip-text text-transparent">CortexReach</span>
                     </div>
                     {/* Close button for mobile */}
                     <button
@@ -61,9 +60,9 @@ const Sidebar = ({ isOpen, onClose }) => {
                                     end={item.path === '/dashboard'}
                                     onClick={onClose}
                                     className={({ isActive }) => clsx(
-                                        'flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200',
+                                        'flex items-center space-x-3 px-4 py-3 rounded-lg duration-200',
                                         isActive
-                                            ? 'bg-blue-50 text-blue-600'
+                                            ? 'bg-white-tint text-primary'
                                             : 'text-gray-700 hover:bg-gray-100'
                                     )}
                                 >
@@ -89,17 +88,17 @@ const Sidebar = ({ isOpen, onClose }) => {
                                             await logout();
                                             navigate('/');
                                         }}
-                                        className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all duration-200 group/btn"
+                                        className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 duration-200 group/btn"
                                     >
-                                        <div className="w-8 h-8 rounded-lg bg-red-50 group-hover/btn:bg-red-100 flex items-center justify-center transition-colors">
+                                        <div className="size-8 rounded-lg bg-red-50 group-hover/btn:bg-red-100 flex items-center justify-center duration-200">
                                             <i className="fas fa-sign-out-alt text-sm"></i>
                                         </div>
                                         <span className="font-bold text-xs tracking-wider">SIGN OUT</span>
                                     </button>
                                 </div>
                                 <div className="p-2 border-t border-gray-50 bg-gray-50/50">
-                                    <button className="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-white hover:shadow-sm transition-all duration-200">
-                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+                                    <button className="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-white hover:shadow-sm duration-200">
+                                        <div className="size-8 rounded-lg flex items-center justify-center">
                                             <i className="fas fa-user-gear text-sm"></i>
                                         </div>
                                         <span className="font-bold text-[10px] tracking-widest uppercase">Settings</span>
@@ -111,14 +110,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                         {/* Profile Trigger */}
                         <div
                             onClick={() => setShowAccountDropdown(!showAccountDropdown)}
-                            className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-all duration-300 ${showAccountDropdown ? 'bg-white shadow-md ring-1 ring-black/5 scale-[1.02]' : 'hover:bg-white hover:shadow-sm'}`}
+                            className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer duration-300 ${showAccountDropdown ? 'bg-white shadow-md ring-1 ring-black/5 scale-[1.02]' : 'hover:bg-white hover:shadow-sm'}`}
                         >
-                            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm group-hover:ring-indigo-500 transition-all bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                            <div className="size-8 sm:size-10 rounded-lg overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm group-hover:ring-primary duration-300 bg-primary flex items-center justify-center text-white-tint font-bold text-xs sm:text-sm">
                                 {userProfile?.photoURL ? (
                                     <img
                                         src={userProfile.photoURL}
                                         alt="Avatar"
-                                        className="w-full h-full object-cover"
+                                        className="size-full object-cover"
                                     />
                                 ) : (
                                     <span>{userProfile?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'CR'}</span>
@@ -128,7 +127,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                                 <p className="text-sm font-bold text-gray-900 truncate">{userProfile?.name || 'User'}</p>
                                 <p className="text-[9px] text-gray-500 font-bold uppercase truncate tracking-tighter">{userProfile?.role || 'Member'}</p>
                             </div>
-                            <i className={`fas fa-chevron-up text-[10px] text-gray-300 transition-transform duration-300 ${showAccountDropdown ? 'rotate-180 text-indigo-500' : ''}`} />
+                            <i className={`fas fa-chevron-up text-[10px] text-gray-300 duration-300 ${showAccountDropdown ? 'rotate-180 text-primary' : ''}`} />
                         </div>
                     </div>
                 </div>

@@ -25,7 +25,6 @@ const CAMPAIGN_TYPES = [
     { id: 'product_pitch', name: 'Product Pitch', icon: 'fa-box-open', color: 'bg-emerald-50 text-emerald-600' },
     { id: 'problem_solution', name: 'Problem → Solution', icon: 'fa-lightbulb', color: 'bg-amber-50 text-amber-600' },
     { id: 'demo_request', name: 'Demo Request', icon: 'fa-calendar-check', color: 'bg-indigo-50 text-indigo-600' },
-    { id: 'follow_up', name: 'Follow-up', icon: 'fa-reply-all', color: 'bg-slate-50 text-slate-600' },
     { id: 'partnership', name: 'Partnership', icon: 'fa-handshake', color: 'bg-purple-50 text-purple-600' }
 ]
 

@@ -18,7 +18,6 @@ import {
     getProjectLeads
 } from '../services/db';
 import { useAuth } from '../context/AuthContext';
-import { useFollowUp } from '../hooks/useFollowUp';
 import CampaignProgressCard from '../components/ui/CampaignProgressCard';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
@@ -75,10 +74,9 @@ const CampaignDetail = () => {
         delivered: 0,
         opened: 0,
         replied: 0,
-        bounced: 0,
-        followUpSent: 0
+        bounced: 0
     });
-    
+
     // Audience data state
     const [audienceSends, setAudienceSends] = useState([]);
     const [projectLeadsMap, setProjectLeadsMap] = useState({});
@@ -92,19 +90,7 @@ const CampaignDetail = () => {
     // Confirmation Modal
     const [showConfirm, setShowConfirm] = useState(false);
 
-    // FollowUp Hook
-    const {
-        isFollowUpModalOpen,
-        isSending,
-        subject,
-        setSubject,
-        body,
-        setBody,
-        eligibleCount,
-        openFollowUpModal,
-        closeFollowUpModal,
-        handleSendFollowUp
-    } = useFollowUp();
+
 
     // ── Load campaign data + live stats from Firebase ──────────────────────────
     const loadData = useCallback(async () => {
@@ -269,17 +255,7 @@ const CampaignDetail = () => {
             );
         } else if (activeTab === 'replied') {
             cols.push(
-                { name: 'Replied At', selector: row => row.repliedAt, cell: row => formatTimeAgo(row.repliedAt), sortable: true },
-                { 
-                    name: 'Action',
-                    cell: () => (
-                        <Button variant="outline" size="sm" className="h-8 shadow-none" onClick={() => openFollowUpModal(campaign.id, 1)}>
-                            Follow-up
-                        </Button>
-                    ),
-                    button: true,
-                    width: '120px'
-                }
+                { name: 'Replied At', selector: row => row.repliedAt, cell: row => formatTimeAgo(row.repliedAt), sortable: true }
             );
         } else if (activeTab === 'bounced') {
             cols.push(
@@ -287,7 +263,7 @@ const CampaignDetail = () => {
             );
         }
         return cols;
-    }, [activeTab, projectLeadsMap, campaign?.id, openFollowUpModal]);
+    }, [activeTab, projectLeadsMap, campaign?.id]);
 
     const ExpandedComponent = ({ data }) => {
         const [realEmail, setRealEmail] = useState(null);
@@ -317,7 +293,7 @@ const CampaignDetail = () => {
                         <p className="text-xs font-medium tracking-wide text-muted uppercase">Provider details</p>
                         <Badge variant="default">Resend API</Badge>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                         <div className="space-y-1">
                             <p className="text-xs font-medium tracking-wide text-muted uppercase">Email ID</p>
@@ -341,10 +317,10 @@ const CampaignDetail = () => {
                     </div>
 
                     <div className="flex justify-end pt-5 mt-5 border-t border-border">
-                        <a 
-                            href={`https://resend.com/emails/${data.id}`} 
-                            target="_blank" 
-                            rel="noreferrer" 
+                        <a
+                            href={`https://resend.com/emails/${data.id}`}
+                            target="_blank"
+                            rel="noreferrer"
                             className="inline-flex items-center gap-1.5 px-4 py-2 border border-border rounded-lg text-xs font-medium text-primary hover:bg-white-tint transition-colors"
                         >
                             View in Resend <ExternalLink size={12} />
@@ -406,7 +382,7 @@ const CampaignDetail = () => {
                         </div>
                     </div>
                 </div>
-                
+
                 <div className="mt-6 space-y-4">
                     <p className="text-xs font-medium tracking-wide text-muted uppercase">Email content</p>
                     <div className="bg-surface rounded-xl border border-border overflow-hidden">
@@ -424,8 +400,8 @@ const CampaignDetail = () => {
                                     </div>
                                 </div>
                             )}
-                            <div className="prose prose-sm max-w-none text-muted" dangerouslySetInnerHTML={{ 
-                                __html: realEmail?.html ? realEmail.html : (data.body || '<p class="text-center text-subtle">No content available</p>') 
+                            <div className="prose prose-sm max-w-none text-muted" dangerouslySetInnerHTML={{
+                                __html: realEmail?.html ? realEmail.html : (data.body || '<p class="text-center text-subtle">No content available</p>')
                             }} />
                         </div>
                     </div>
@@ -500,46 +476,6 @@ const CampaignDetail = () => {
                 </div>
             )}
 
-            {/* ── Follow-Up Modal ─────────────────────────────────── */}
-            <Modal
-                isOpen={isFollowUpModalOpen}
-                onClose={closeFollowUpModal}
-                title={`Send Follow-up to ${eligibleCount} Replied Leads`}
-                size="xl"
-            >
-                <div className="px-6 py-5 space-y-5">
-                    <div>
-                        <label className="block text-xs font-medium tracking-wide text-muted uppercase mb-2">Subject Line</label>
-                        <Input
-                            placeholder="Following up: {{firstName}}"
-                            value={subject}
-                            onChange={(e) => setSubject(e.target.value)}
-                        />
-                        <p className="text-xs text-subtle mt-2">Use {'{{firstName}}'}, {'{{lastName}}'}, {'{{companyName}}'}</p>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium tracking-wide text-muted uppercase mb-2">Email Body</label>
-                        <RichTextEditor
-                            value={body}
-                            onChange={setBody}
-                            placeholder="Write your follow-up message..."
-                        />
-                    </div>
-                </div>
-                <div className="px-6 py-4 border-t border-border bg-background/50 flex justify-end gap-3 rounded-b-xl">
-                    <Button variant="outline" onClick={closeFollowUpModal} disabled={isSending}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="primary"
-                        className="bg-primary hover:bg-primary-hover shadow-primary"
-                        onClick={() => handleSendFollowUp(loadData)}
-                        disabled={isSending || !subject || !body}
-                    >
-                        {isSending ? <><Loader2 size={14} className="animate-spin mr-2" /> Sending...</> : <><Send size={14} className="mr-2" /> Send Follow-up</>}
-                    </Button>
-                </div>
-            </Modal>
 
             {/* ── Header ──────────────────────────────────────── */}
             <div className="space-y-5">
@@ -582,8 +518,8 @@ const CampaignDetail = () => {
                             </>
                         ) : campaign.status === 'sent' ? (
                             <>
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     className="border-border text-primary hover:bg-white-tint"
                                     onClick={handleSyncStats}
                                     disabled={actionLoading}
@@ -594,15 +530,7 @@ const CampaignDetail = () => {
                                         <><RefreshCw size={14} className="mr-2" />Sync Stats</>
                                     )}
                                 </Button>
-                                {stats.replied > 0 && (
-                                    <Button 
-                                        variant="primary" 
-                                        className="bg-primary hover:bg-primary-hover shadow-primary"
-                                        onClick={() => openFollowUpModal(id, stats.replied)}
-                                    >
-                                        <Reply size={14} className="mr-2" />Send Follow-up
-                                    </Button>
-                                )}
+
                             </>
                         ) : null}
                     </div>
@@ -656,19 +584,18 @@ const CampaignDetail = () => {
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-2 whitespace-nowrap rounded-lg text-xs font-medium transition-colors ${
-                                    activeTab === tab 
-                                    ? 'bg-white-tint text-primary' 
-                                    : 'text-muted hover:bg-background hover:text-dark'
-                                }`}
+                                className={`px-4 py-2 whitespace-nowrap rounded-lg text-xs font-medium transition-colors ${activeTab === tab
+                                        ? 'bg-white-tint text-primary'
+                                        : 'text-muted hover:bg-background hover:text-dark'
+                                    }`}
                             >
                                 {tab.replace('_', ' ')}
                                 <span className={`ml-1.5 px-1.5 py-0.5 rounded text-[10px] ${activeTab === tab ? 'bg-primary/10 text-primary' : 'bg-border text-subtle'}`}>
                                     {tab === 'resend_logs' ? (fetchingLogs ? '…' : resendEmails.length) :
-                                     tab === 'sent' ? stats.total :
-                                     tab === 'opened' ? stats.opened : 
-                                     tab === 'replied' ? stats.replied : 
-                                     stats.bounced}
+                                        tab === 'sent' ? stats.total :
+                                            tab === 'opened' ? stats.opened :
+                                                tab === 'replied' ? stats.replied :
+                                                    stats.bounced}
                                 </span>
                             </button>
                         ))}

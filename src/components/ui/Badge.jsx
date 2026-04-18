@@ -3,14 +3,15 @@ import clsx from 'clsx'
 
 const Badge = ({ children, variant = 'default', className = '' }) => {
     const variantClasses = {
-        default: 'bg-gray-100 text-gray-800',
-        primary: 'bg-blue-100 text-blue-800',
-        success: 'bg-green-100 text-green-800',
-        warning: 'bg-yellow-100 text-yellow-800',
-        danger: 'bg-red-100 text-red-800',
+        default: 'bg-slate-100 text-slate-800',
+        primary: 'bg-gradient-brand text-white-tint shadow-sm',
+        accent: 'bg-purple-tint text-primary',
+        success: 'bg-emerald-100 text-emerald-800',
+        warning: 'bg-amber-100 text-amber-800',
+        danger: 'bg-rose-100 text-rose-800',
         info: 'bg-cyan-100 text-cyan-800',
-        secondary: 'bg-slate-100 text-slate-600',
-        outline: 'border border-slate-200 text-slate-600 bg-transparent'
+        secondary: 'bg-white-tint text-primary border border-purple-tint/20',
+        outline: 'border border-primary/20 text-primary bg-transparent'
     }
 
     return (

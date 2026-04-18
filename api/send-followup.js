@@ -61,7 +61,7 @@ export default async function handler(req, res) {
         // 4. Filter and prepare eligible leads
         const eligibleSends = sends.filter(s => s.replied === true && s.type !== 'follow_up');
         const hasFollowUp = new Set(sends.filter(s => s.type === 'follow_up').map(s => s.leadId));
-        
+
         const validLeadIds = eligibleSends
             .filter(s => !hasFollowUp.has(s.leadId))
             .map(s => s.leadId);
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
         // Fetch lead details
         const leadsSnap = await db.ref('leads').get();
         if (!leadsSnap.exists()) {
-             return res.status(500).json({ error: 'Could not fetch leads data' });
+            return res.status(500).json({ error: 'Could not fetch leads data' });
         }
         const allLeads = leadsSnap.val();
         const validLeads = validLeadIds.map(id => allLeads[id]).filter(Boolean);

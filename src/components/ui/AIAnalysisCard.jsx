@@ -44,12 +44,12 @@ const AIAnalysisCard = () => {
     };
 
     return (
-        <div className="mt-12 space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+        <div className="mt-8 md:mt-12 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 md:pb-6 gap-4">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <div className="w-5 h-5 bg-indigo-600 rounded flex items-center justify-center">
-                            <i className="fas fa-sparkles text-[10px] text-white"></i>
+                        <div className="size-5 bg-gradient-brand rounded flex items-center justify-center">
+                            <i className="fas fa-sparkles text-[10px] text-white-tint"></i>
                         </div>
                         <h3 className="text-xl font-bold text-slate-900">AI Product Intelligence</h3>
                     </div>
@@ -57,7 +57,7 @@ const AIAnalysisCard = () => {
                 </div>
 
                 {status === 'idle' && (
-                    <Button variant="primary" onClick={handleRunAnalysis} className="bg-indigo-600 hover:bg-indigo-700">
+                    <Button variant="primary" onClick={handleRunAnalysis}>
                         <i className="fas fa-microchip mr-2"></i>
                         Run AI Analysis
                     </Button>
@@ -93,7 +93,7 @@ const AIAnalysisCard = () => {
                         </TitleComponent>
                         <div className="flex overflow-x-auto pb-4 gap-3 no-scrollbar">
                             {suggestedSegments.map((segment, index) => (
-                                <div key={index} className="flex-shrink-0 bg-indigo-50/50 border border-indigo-100 px-4 py-2 rounded-lg text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors cursor-default whitespace-nowrap">
+                                <div key={index} className="flex-shrink-0 bg-white-tint/50 border border-purple-tint/20 px-4 py-2 rounded-lg text-xs font-bold text-primary hover:bg-white-tint duration-200 cursor-default whitespace-nowrap">
                                     {segment}
                                 </div>
                             ))}

@@ -30,12 +30,7 @@ export const EMAIL_TEMPLATE_REGISTRY = {
         icon: 'fa-calendar-check',
         color: 'bg-indigo-50 text-indigo-600'
     },
-    follow_up: {
-        name: 'Follow-up',
-        description: 'A gentle nudge to stay top-of-mind with leads who haven\'t responded to your initial message.',
-        icon: 'fa-reply-all',
-        color: 'bg-slate-50 text-slate-600'
-    },
+
     partnership: {
         name: 'Partnership',
         description: 'Focused on long-term collaboration and mutual benefit rather than a standard sales pitch.',

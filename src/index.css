@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-background text-gray-900 antialiased;
+  }
+}
+
 @layer utilities {
   /* Custom Animation Delays */
   .delay-75 {
@@ -25,17 +31,22 @@
 
   /* Custom Gradient Text */
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600;
+    @apply bg-clip-text text-transparent bg-gradient-brand;
   }
 
-  /* Glassmorphism Effect */
+  /* Glassmorphism Effect - Premium */
   .glass {
-    @apply backdrop-blur-md bg-white/30 border border-white/20;
+    @apply backdrop-blur-xl bg-white/70 border border-white-tint/20;
   }
 
-  /* Smooth Transitions */
-  * {
-    @apply transition-colors;
+  /* Smooth Interaction - Duration Only */
+  .hover-scale {
+    @apply hover:scale-105 duration-300;
+  }
+
+  /* Brand Interactive Utility */
+  .btn-brand {
+    @apply bg-primary text-white-tint hover:bg-primary-hover shadow-primary duration-300 px-6 py-2.5 rounded-lg font-bold;
   }
 }
 

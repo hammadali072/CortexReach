@@ -15,7 +15,6 @@ import Campaigns from './pages/Campaigns'
 import CampaignCreate from './pages/CampaignCreate'
 import CampaignDetail from './pages/CampaignDetail'
 import CampaignEdit from './pages/CampaignEdit'
-import FollowUps from './pages/Sequences'
 import Templates from './pages/Templates'
 import Settings from './pages/Settings'
 import SignIn from './pages/SignIn'
@@ -86,7 +85,6 @@ function App() {
               <Route path="campaigns/:id" element={<CampaignDetail />} />
               <Route path="campaigns/:id/edit" element={<CampaignEdit />} />
               <Route path="campaigns/create" element={<CampaignCreate />} />
-              <Route path="sequences" element={<FollowUps />} />
               <Route path="templates" element={<Templates />} />
               <Route path="settings" element={<Settings />} />
             </Route>
