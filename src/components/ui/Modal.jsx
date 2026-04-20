@@ -28,7 +28,15 @@ const Modal = ({ isOpen, onClose, title, children, footer, size = 'md' }) => {
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+                role="button"
+                tabIndex={0}
                 onClick={onClose}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        onClose();
+                    }
+                }}
+                aria-label="Close modal backdrop"
             />
 
             {/* Modal Content */}

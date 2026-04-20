@@ -7,7 +7,7 @@ const ToggleSwitch = ({ checked, onChange, disabled = false }) => {
             onClick={() => !disabled && onChange(!checked)}
             disabled={disabled}
             className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                checked ? 'bg-indigo-600' : 'bg-slate-200'
+                checked ? 'bg-primary' : 'bg-slate-200'
             } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
         >
             <span

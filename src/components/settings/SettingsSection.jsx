@@ -35,10 +35,10 @@ const SettingsSection = ({
                         <button
                             onClick={onSave}
                             disabled={saving || saved}
-                            className={`px-8 py-3 rounded-[8px] font-bold text-sm transition-all shadow-lg flex items-center gap-2 ${
+                            className={`px-8 py-3 rounded-[8px] font-bold text-sm transition-all flex items-center gap-2 active:scale-95 ${
                                 saved 
-                                    ? 'bg-emerald-500 text-white shadow-emerald-100' 
-                                    : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100'
+                                    ? 'bg-emerald-500 text-white shadow-sm' 
+                                    : 'bg-primary text-white hover:bg-primary-hover shadow-brand'
                             }`}
                         >
                             {saving ? (

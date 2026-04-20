@@ -1,32 +1,48 @@
-// src/pages/SignIn.jsx
-// Handles both Login and Sign-Up with Firebase Auth + Realtime DB write (Phase 1).
-
-import { useState } from 'react';
+import { useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
+const initialState = {
+    mode: 'login', // 'login' | 'signup'
+    name: '',
+    email: '',
+    password: '',
+    showPassword: false,
+    isLoading: false,
+    error: ''
+};
+
+function reducer(state, action) {
+    switch (action.type) {
+        case 'SET_FIELD':
+            return { ...state, [action.field]: action.value };
+        case 'TOGGLE_MODE':
+            return { 
+                ...initialState, 
+                mode: state.mode === 'login' ? 'signup' : 'login' 
+            };
+        case 'SET_LOADING':
+            return { ...state, isLoading: action.value, error: action.value ? '' : state.error };
+        case 'SET_ERROR':
+            return { ...state, error: action.value, isLoading: false };
+        case 'TOGGLE_PASSWORD':
+            return { ...state, showPassword: !state.showPassword };
+        default:
+            return state;
+    }
+}
 
 const SignIn = () => {
     const navigate = useNavigate();
     const { signIn, signUp } = useAuth();
+    const [state, dispatch] = useReducer(reducer, initialState);
 
-    // ── Mode toggle ──────────────────────────────────────────────────────
-    const [mode, setMode] = useState('login'); // 'login' | 'signup'
-
-    // ── Form state ───────────────────────────────────────────────────────
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-
-    // ── UI state ─────────────────────────────────────────────────────────
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const { mode, name, email, password, showPassword, isLoading, error } = state;
 
     // ── Submit handler ───────────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        setIsLoading(true);
+        dispatch({ type: 'SET_LOADING', value: true });
 
         try {
             if (mode === 'signup') {
@@ -37,7 +53,6 @@ const SignIn = () => {
             }
             navigate('/dashboard');
         } catch (err) {
-            // Map Firebase error codes to human-readable messages
             const messages = {
                 'auth/email-already-in-use': 'An account with this email already exists.',
                 'auth/invalid-email': 'Please enter a valid email address.',
@@ -47,16 +62,14 @@ const SignIn = () => {
                 'auth/invalid-credential': 'Invalid email or password.',
                 'auth/too-many-requests': 'Too many attempts. Please try again later.',
             };
-            setError(messages[err.code] || err.message || 'Something went wrong.');
+            dispatch({ type: 'SET_ERROR', value: messages[err.code] || err.message || 'Something went wrong.' });
         } finally {
-            setIsLoading(false);
+            dispatch({ type: 'SET_LOADING', value: false });
         }
     };
 
     const toggleMode = () => {
-        setMode(m => m === 'login' ? 'signup' : 'login');
-        setError('');
-        setName(''); setEmail(''); setPassword('');
+        dispatch({ type: 'TOGGLE_MODE' });
     };
 
     // ── Render ───────────────────────────────────────────────────────────
@@ -103,15 +116,15 @@ const SignIn = () => {
                                         <i className="fas fa-id-card text-sm" />
                                     </span>
                                     <input
-                                        id="name"
-                                        type="text"
-                                        placeholder="John Doe"
-                                        value={name}
-                                        onChange={e => setName(e.target.value)}
-                                        className="w-full bg-[#1e293b]/50 border border-white/10 text-white pl-11 pr-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
-                                        required
-                                    />
-                                </div>
+                                         id="name"
+                                         type="text"
+                                         placeholder="John Doe"
+                                         value={name}
+                                         onChange={e => dispatch({ type: 'SET_FIELD', field: 'name', value: e.target.value })}
+                                         className="w-full bg-[#1e293b]/50 border border-white/10 text-white pl-11 pr-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
+                                         required
+                                     />
+                                 </div>
                             </div>
                         )}
 
@@ -129,7 +142,7 @@ const SignIn = () => {
                                     type="email"
                                     placeholder="you@company.com"
                                     value={email}
-                                    onChange={e => setEmail(e.target.value)}
+                                    onChange={e => dispatch({ type: 'SET_FIELD', field: 'email', value: e.target.value })}
                                     className="w-full bg-[#1e293b]/50 border border-white/10 text-white pl-11 pr-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
                                     required
                                 />
@@ -150,13 +163,13 @@ const SignIn = () => {
                                     type={showPassword ? 'text' : 'password'}
                                     placeholder={mode === 'signup' ? 'Min 6 characters' : 'Enter your password'}
                                     value={password}
-                                    onChange={e => setPassword(e.target.value)}
+                                    onChange={e => dispatch({ type: 'SET_FIELD', field: 'password', value: e.target.value })}
                                     className="w-full bg-[#1e293b]/50 border border-white/10 text-white pl-11 pr-12 py-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-gray-600"
                                     required
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => setShowPassword(p => !p)}
+                                    onClick={() => dispatch({ type: 'TOGGLE_PASSWORD' })}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors focus:outline-none"
                                 >
                                     <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`} />

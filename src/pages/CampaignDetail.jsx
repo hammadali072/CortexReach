@@ -24,6 +24,7 @@ import Input from '../components/ui/Input';
 import RichTextEditor from '../components/ui/RichTextEditor';
 import DataTable from 'react-data-table-component';
 import toast from 'react-hot-toast';
+import DOMPurify from 'dompurify';
 
 const customStyles = {
     headRow: {
@@ -63,6 +64,155 @@ const customStyles = {
     },
 };
 
+/**
+ * Component for expanded row details in the campaign audience table.
+ * Defined outside the main component to prevent re-instantiation on every render.
+ */
+const ExpandedComponent = ({ data, activeTab, projectLeadsMap }) => {
+    const [realEmail, setRealEmail] = useState(null);
+    const [loadingEmail, setLoadingEmail] = useState(false);
+
+    useEffect(() => {
+        if (activeTab !== 'resend_logs' && data.resendEmailId) {
+            const getEmail = async () => {
+                setLoadingEmail(true);
+                try {
+                    const email = await fetchResendEmail(data.resendEmailId);
+                    setRealEmail(email);
+                } catch (err) {
+                    console.error('Failed to fetch resend email', err);
+                } finally {
+                    setLoadingEmail(false);
+                }
+            };
+            getEmail();
+        }
+    }, [data.resendEmailId, activeTab]);
+
+    if (activeTab === 'resend_logs') {
+        return (
+            <div className="p-6 bg-background border-y border-border">
+                <div className="flex items-center justify-between mb-5">
+                    <p className="text-xs font-medium tracking-wide text-muted uppercase">Provider details</p>
+                    <Badge variant="default">Resend API</Badge>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div className="space-y-1">
+                        <p className="text-xs font-medium tracking-wide text-muted uppercase">Email ID</p>
+                        <p className="font-mono text-xs text-dark bg-surface p-2 rounded-lg border border-border">{data.id}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-xs font-medium tracking-wide text-muted uppercase">Subject</p>
+                        <p className="text-sm font-medium text-dark truncate">{data.subject}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-xs font-medium tracking-wide text-muted uppercase">To</p>
+                        <p className="text-sm text-muted truncate">{Array.isArray(data.to) ? data.to.join(', ') : data.to}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-xs font-medium tracking-wide text-muted uppercase">Last Event</p>
+                        <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${data.last_event === 'delivered' ? 'bg-emerald-500' : data.last_event === 'bounced' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                            <span className="text-sm font-medium text-dark">{data.last_event || 'Processing'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex justify-end pt-5 mt-5 border-t border-border">
+                    <a
+                        href={`https://resend.com/emails/${data.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 border border-border rounded-lg text-xs font-medium text-primary hover:bg-white-tint transition-colors"
+                    >
+                        View in Resend <ExternalLink size={12} />
+                    </a>
+                </div>
+            </div>
+        );
+    }
+    const leadData = projectLeadsMap[data.leadId];
+    return (
+        <div className="p-6 bg-background border-y border-border text-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <p className="text-xs font-medium tracking-wide text-muted uppercase mb-3">Send details</p>
+                    <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted">Send ID</span>
+                            <span className="font-mono text-xs text-dark bg-background px-2 py-0.5 rounded border border-border">{data.id}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted">Lead ID</span>
+                            <span className="font-mono text-xs text-dark bg-background px-2 py-0.5 rounded border border-border">{data.leadId}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted">Status</span>
+                            <Badge variant={data.deliveryStatus === 'delivered' ? 'success' : 'default'}>{data.deliveryStatus}</Badge>
+                        </div>
+                        {data.resendEmailId && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs text-muted">Resend ID</span>
+                                <span className="font-mono text-xs text-primary bg-white-tint px-2 py-0.5 rounded border border-gray-tint">{data.resendEmailId}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div>
+                    <p className="text-xs font-medium tracking-wide text-muted uppercase mb-3">Recipient</p>
+                    <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-gradient-brand flex items-center justify-center">
+                                <User size={16} className="text-white" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-dark">{leadData?.email || 'Unknown'}</p>
+                                <p className="text-xs text-subtle">{leadData ? `${leadData.firstName || ''} ${leadData.lastName || ''}`.trim() || leadData.name : 'Unknown'}</p>
+                            </div>
+                        </div>
+                        <div className="pt-3 border-t border-border grid grid-cols-2 gap-3">
+                            <div>
+                                <p className="text-xs text-subtle">Company</p>
+                                <p className="text-sm text-dark mt-0.5">{leadData?.companyName || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-subtle">Sent at</p>
+                                <p className="text-sm text-dark mt-0.5">{data.sentAt ? new Date(data.sentAt).toLocaleString() : 'Unknown'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-6 space-y-4">
+                <p className="text-xs font-medium tracking-wide text-muted uppercase">Email content</p>
+                <div className="bg-surface rounded-xl border border-border overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border bg-background">
+                        <p className="text-sm font-medium text-dark">
+                            {realEmail ? realEmail.subject : (loadingEmail ? 'Loading subject...' : (data.subject || 'No subject'))}
+                        </p>
+                    </div>
+                    <div className="p-6 relative min-h-[200px]">
+                        {loadingEmail && (
+                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-b-xl">
+                                <div className="flex items-center gap-2 text-primary">
+                                    <Loader2 size={16} className="animate-spin" />
+                                    <span className="text-sm font-medium">Loading content...</span>
+                                </div>
+                            </div>
+                        )}
+                        <div className="prose prose-sm max-w-none text-muted" dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(realEmail?.html ? realEmail.html : (data.body || '<p class="text-center text-subtle">No content available</p>'))
+                        }} />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const CampaignDetail = () => {
     const { id } = useParams();
     const { currentUser } = useAuth();
@@ -92,7 +242,6 @@ const CampaignDetail = () => {
 
 
 
-    // ── Load campaign data + live stats from Firebase ──────────────────────────
     const loadData = useCallback(async () => {
         if (!currentUser || !id) return;
         try {
@@ -265,150 +414,6 @@ const CampaignDetail = () => {
         return cols;
     }, [activeTab, projectLeadsMap, campaign?.id]);
 
-    const ExpandedComponent = ({ data }) => {
-        const [realEmail, setRealEmail] = useState(null);
-        const [loadingEmail, setLoadingEmail] = useState(false);
-
-        useEffect(() => {
-            if (activeTab !== 'resend_logs' && data.resendEmailId) {
-                const getEmail = async () => {
-                    setLoadingEmail(true);
-                    try {
-                        const email = await fetchResendEmail(data.resendEmailId);
-                        setRealEmail(email);
-                    } catch (err) {
-                        console.error('Failed to fetch resend email', err);
-                    } finally {
-                        setLoadingEmail(false);
-                    }
-                };
-                getEmail();
-            }
-        }, [data.resendEmailId]);
-
-        if (activeTab === 'resend_logs') {
-            return (
-                <div className="p-6 bg-background border-y border-border">
-                    <div className="flex items-center justify-between mb-5">
-                        <p className="text-xs font-medium tracking-wide text-muted uppercase">Provider details</p>
-                        <Badge variant="default">Resend API</Badge>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                        <div className="space-y-1">
-                            <p className="text-xs font-medium tracking-wide text-muted uppercase">Email ID</p>
-                            <p className="font-mono text-xs text-dark bg-surface p-2 rounded-lg border border-border">{data.id}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-xs font-medium tracking-wide text-muted uppercase">Subject</p>
-                            <p className="text-sm font-medium text-dark truncate">{data.subject}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-xs font-medium tracking-wide text-muted uppercase">To</p>
-                            <p className="text-sm text-muted truncate">{Array.isArray(data.to) ? data.to.join(', ') : data.to}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-xs font-medium tracking-wide text-muted uppercase">Last Event</p>
-                            <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${data.last_event === 'delivered' ? 'bg-emerald-500' : data.last_event === 'bounced' ? 'bg-red-500' : 'bg-amber-500'}`} />
-                                <span className="text-sm font-medium text-dark">{data.last_event || 'Processing'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end pt-5 mt-5 border-t border-border">
-                        <a
-                            href={`https://resend.com/emails/${data.id}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 px-4 py-2 border border-border rounded-lg text-xs font-medium text-primary hover:bg-white-tint transition-colors"
-                        >
-                            View in Resend <ExternalLink size={12} />
-                        </a>
-                    </div>
-                </div>
-            );
-        }
-        const leadData = projectLeadsMap[data.leadId];
-        return (
-            <div className="p-6 bg-background border-y border-border text-sm">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                        <p className="text-xs font-medium tracking-wide text-muted uppercase mb-3">Send details</p>
-                        <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs text-muted">Send ID</span>
-                                <span className="font-mono text-xs text-dark bg-background px-2 py-0.5 rounded border border-border">{data.id}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs text-muted">Lead ID</span>
-                                <span className="font-mono text-xs text-dark bg-background px-2 py-0.5 rounded border border-border">{data.leadId}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs text-muted">Status</span>
-                                <Badge variant={data.deliveryStatus === 'delivered' ? 'success' : 'default'}>{data.deliveryStatus}</Badge>
-                            </div>
-                            {data.resendEmailId && (
-                                <div className="flex justify-between items-center">
-                                    <span className="text-xs text-muted">Resend ID</span>
-                                    <span className="font-mono text-xs text-primary bg-white-tint px-2 py-0.5 rounded border border-gray-tint">{data.resendEmailId}</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div>
-                        <p className="text-xs font-medium tracking-wide text-muted uppercase mb-3">Recipient</p>
-                        <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-gradient-brand flex items-center justify-center">
-                                    <User size={16} className="text-white" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-dark">{leadData?.email || 'Unknown'}</p>
-                                    <p className="text-xs text-subtle">{leadData ? `${leadData.firstName || ''} ${leadData.lastName || ''}`.trim() || leadData.name : 'Unknown'}</p>
-                                </div>
-                            </div>
-                            <div className="pt-3 border-t border-border grid grid-cols-2 gap-3">
-                                <div>
-                                    <p className="text-xs text-subtle">Company</p>
-                                    <p className="text-sm text-dark mt-0.5">{leadData?.companyName || 'N/A'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-subtle">Sent at</p>
-                                    <p className="text-sm text-dark mt-0.5">{data.sentAt ? new Date(data.sentAt).toLocaleString() : 'Unknown'}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-6 space-y-4">
-                    <p className="text-xs font-medium tracking-wide text-muted uppercase">Email content</p>
-                    <div className="bg-surface rounded-xl border border-border overflow-hidden">
-                        <div className="px-4 py-3 border-b border-border bg-background">
-                            <p className="text-sm font-medium text-dark">
-                                {realEmail ? realEmail.subject : (loadingEmail ? 'Loading subject...' : (data.subject || 'No subject'))}
-                            </p>
-                        </div>
-                        <div className="p-6 relative min-h-[200px]">
-                            {loadingEmail && (
-                                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-b-xl">
-                                    <div className="flex items-center gap-2 text-primary">
-                                        <Loader2 size={16} className="animate-spin" />
-                                        <span className="text-sm font-medium">Loading content...</span>
-                                    </div>
-                                </div>
-                            )}
-                            <div className="prose prose-sm max-w-none text-muted" dangerouslySetInnerHTML={{
-                                __html: realEmail?.html ? realEmail.html : (data.body || '<p class="text-center text-subtle">No content available</p>')
-                            }} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    };
 
     if (loading) {
         return (
@@ -432,10 +437,22 @@ const CampaignDetail = () => {
 
     return (
         <div className="space-y-8 pb-12">
-            {/* ── Launch Confirmation Modal ─────────────────────────────────── */}
             {showConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                    <div className="bg-surface rounded-xl shadow-xl border border-border max-w-md w-full mx-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setShowConfirm(false)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                setShowConfirm(false);
+                            }
+                        }}
+                        aria-label="Close confirmation modal"
+                    />
+                    <div className="relative bg-surface rounded-xl shadow-xl border border-border max-w-md w-full animate-in zoom-in-95 duration-200">
                         <div className="px-6 py-4 border-b border-border flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-gradient-brand flex items-center justify-center">
                                 <Send size={18} className="text-white" />
@@ -477,7 +494,6 @@ const CampaignDetail = () => {
             )}
 
 
-            {/* ── Header ──────────────────────────────────────── */}
             <div className="space-y-5">
                 <div className="flex items-center gap-2 text-sm">
                     <Link to="/dashboard/campaigns" className="text-muted hover:text-primary transition-colors flex items-center gap-1.5">
@@ -537,7 +553,6 @@ const CampaignDetail = () => {
                 </div>
             </div>
 
-            {/* ── Stats Overview ────────────────────────────────────────────── */}
             {campaign.status === 'sent' ? (
                 <CampaignProgressCard stats={stats} />
             ) : (
@@ -547,8 +562,8 @@ const CampaignDetail = () => {
                         { label: 'Projected Reach', value: '100%', Icon: Target },
                         { label: 'Lead Sources', value: '1', Icon: Database },
                         { label: 'Status', value: 'Ready', Icon: Terminal },
-                    ].map((stat, i) => (
-                        <div key={i} className="bg-surface p-6 rounded-xl border border-border shadow-sm">
+                    ].map((stat) => (
+                        <div key={stat.label} className="bg-surface p-6 rounded-xl border border-border shadow-sm">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="w-10 h-10 rounded-lg bg-gradient-brand flex items-center justify-center">
                                     <stat.Icon size={18} className="text-white" />
@@ -576,7 +591,6 @@ const CampaignDetail = () => {
                 </div>
             )}
 
-            {/* ── Audience Tabs ────────────────────────────────────────────── */}
             {campaign.status === 'sent' && (
                 <div className="bg-surface rounded-xl shadow-sm border border-border overflow-hidden">
                     <div className="flex border-b border-border bg-background p-1.5 gap-1 overflow-x-auto">
@@ -585,8 +599,8 @@ const CampaignDetail = () => {
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-4 py-2 whitespace-nowrap rounded-lg text-xs font-medium transition-colors ${activeTab === tab
-                                        ? 'bg-white-tint text-primary'
-                                        : 'text-muted hover:bg-background hover:text-dark'
+                                    ? 'bg-white-tint text-primary'
+                                    : 'text-muted hover:bg-background hover:text-dark'
                                     }`}
                             >
                                 {tab.replace('_', ' ')}
@@ -609,7 +623,13 @@ const CampaignDetail = () => {
                             highlightOnHover
                             persistTableHead
                             expandableRows
-                            expandableRowsComponent={ExpandedComponent}
+                            expandableRowsComponent={({ data }) => (
+                                <ExpandedComponent
+                                    data={data}
+                                    activeTab={activeTab}
+                                    projectLeadsMap={projectLeadsMap}
+                                />
+                            )}
                             noDataComponent={(
                                 <div className="py-16 text-center space-y-3">
                                     <div className="w-12 h-12 rounded-xl bg-white-tint mx-auto flex items-center justify-center">
@@ -623,7 +643,6 @@ const CampaignDetail = () => {
                 </div>
             )}
 
-            {/* ── Content Preview ─────────────────────────────────── */}
             <div className="bg-surface rounded-xl shadow-sm border border-border p-6 space-y-5">
                 <div className="flex items-center justify-between">
                     <div>
@@ -634,20 +653,22 @@ const CampaignDetail = () => {
 
                 <div className="space-y-5">
                     <div className="space-y-2">
-                        <label className="text-xs font-medium tracking-wide text-muted uppercase flex items-center gap-1.5">
-                            <FileText size={12} /> Subject Line
-                        </label>
-                        <div className="p-4 bg-background rounded-lg border border-border text-sm font-medium text-dark">
+                        <p className="text-[10px] font-black tracking-widest text-muted uppercase flex items-center gap-1.5 px-1">
+                            <FileText size={10} /> Subject Line
+                        </p>
+                        <div className="p-4 bg-background rounded-lg border border-border text-sm font-medium text-dark shadow-inner">
                             {campaign.subjectLine || campaign.subject || 'No subject set'}
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs font-medium tracking-wide text-muted uppercase flex items-center gap-1.5">
-                            <Code size={12} /> Email Body
-                        </label>
-                        <div className="p-6 bg-surface rounded-lg border border-border prose prose-sm max-w-none text-muted">
-                            <div dangerouslySetInnerHTML={{ __html: campaign.emailBodyHTML || campaign.emailContent || campaign.body || '<p class="text-subtle">No content set.</p>' }} />
+                        <p className="text-[10px] font-black tracking-widest text-muted uppercase flex items-center gap-1.5 px-1">
+                            <Code size={10} /> Email Body
+                        </p>
+                        <div className="p-8 bg-surface rounded-lg border border-border prose prose-sm max-w-none text-muted shadow-inner overflow-hidden relative">
+                            <div className="prose-slate" dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(campaign.emailBodyHTML || campaign.emailContent || campaign.body || '<p class="text-subtle">No content set.</p>')
+                            }} />
                         </div>
                     </div>
                 </div>

@@ -6,7 +6,6 @@ function darkenHex(hex, amount = 0.25) {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-// ─── Layout Renderers ────────────────────────────────────────────────────────
 
 /**
  * modern_dark — Dark slate header, white body, accent CTA, subtle footer.
@@ -367,7 +366,6 @@ function renderProfessionalBlue({ projName, firstName, company, cfg, feat1, feat
 </html>`;
 }
 
-// ─── Template config ─────────────────────────────────────────────────────────
 
 const TEMPLATE_RENDERERS = {
   modern_dark: renderModernDark,
@@ -376,7 +374,6 @@ const TEMPLATE_RENDERERS = {
   professional_blue: renderProfessionalBlue,
 };
 
-// ─── Main export ─────────────────────────────────────────────────────────────
 
 /**
  * Builds the email HTML string for a given campaign type.

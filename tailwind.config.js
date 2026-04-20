@@ -32,8 +32,9 @@ export default {
         'gradient-glass': 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%)',
       },
       boxShadow: {
-        'primary': '0 4px 6px -1px rgba(54, 59, 108, 0.1), 0 2px 4px -1px rgba(54, 59, 108, 0.06)',
-        'premium': '0 10px 15px -3px rgba(54, 59, 108, 0.08), 0 4px 6px -2px rgba(54, 59, 108, 0.04)',
+        'brand': '0 10px 15px -3px rgba(54, 59, 108, 0.1), 0 4px 6px -2px rgba(54, 59, 108, 0.05)',
+        'premium': '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02)',
+        'button': '0 10px 20px -5px rgba(54, 59, 108, 0.2), 0 4px 6px -2px rgba(54, 59, 108, 0.1)',
       },
     },
   },

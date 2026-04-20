@@ -1,522 +1,188 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import DataTable from 'react-data-table-component'
-import TitleComponent from '../components/titleComponent/titleComponent'
-import Badge from '../components/ui/Badge'
-import Button from '../components/ui/Button'
-import AIAnalysisCard from '../components/ui/AIAnalysisCard'
-import LeadSourcingModal from '../components/ui/LeadSourcingModal'
+import { useReducer, useMemo, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
+import Badge from '../components/ui/Badge';
+import LeadSourcingModal from '../components/ui/LeadSourcingModal';
+import ImportSuccessToast from '../components/ui/ImportSuccessToast';
+import { useAuth } from '../context/AuthContext';
 
-import ImportSuccessToast from '../components/ui/ImportSuccessToast'
-import { useAuth } from '../context/AuthContext'
-import {
-    getProject,
-    getProjectLeads,
-    getProjectCampaigns,
-} from '../services/db'
+import OverviewTab from '../components/projects/detail/OverviewTab';
+import LeadsTab from '../components/projects/detail/LeadsTab';
+import CampaignsTab from '../components/projects/detail/CampaignsTab';
+import ProjectHeader from '../components/projects/detail/ProjectHeader';
+import ProjectNavigation from '../components/projects/detail/ProjectNavigation';
+import SourceBadge from '../components/projects/detail/SourceBadge';
+
+import { ACTIONS, INITIAL_STATE, projectReducer, MOCK_GENERATED_LEADS } from '../components/projects/detail/state';
+import { getProject, getProjectLeads, getProjectCampaigns } from '../services/db';
 
 const ProjectDetail = () => {
-    const { id } = useParams()
-    const { currentUser } = useAuth()
+    const { id } = useParams();
+    const { currentUser } = useAuth();
+    const [state, dispatch] = useReducer(projectReducer, INITIAL_STATE);
 
-    // ── DB state ────────────────────────────────────────────────────────────
-    const [project, setProject] = useState(null)
-    const [projectLeads, setProjectLeads] = useState([])
-    const [projectCampaigns, setProjectCampaigns] = useState([])
-    const [dbLoading, setDbLoading] = useState(true)
-    const [dbError, setDbError] = useState('')
+    const { 
+        project, projectLeads, projectCampaigns, dbLoading, dbError, 
+        activeTab, isSourcingModalOpen, importToast, aiLeads, 
+        relevanceFilter, personaFilter 
+    } = state;
 
-    // ── UI state ────────────────────────────────────────────────────────────
-    const [activeTab, setActiveTab] = useState('overview')
-    const [isSourcingModalOpen, setIsSourcingModalOpen] = useState(false)
-
-    const [importToast, setImportToast] = useState(null)
-    const [aiLeads, setAiLeads] = useState([])
-    const [relevanceFilter, setRelevanceFilter] = useState(0)
-    const [personaFilter, setPersonaFilter] = useState('')
-
-    // ── Mock AI leads (unchanged from original) ─────────────────────────────
-    const mockGeneratedLeads = [
-        { id: 'ai-1', name: 'James Wilson', company: 'Nexus Systems', role: 'CTO', industry: 'Enterprise SaaS', relevance: 98, status: 'New', persona: 'The Visionary CTO' },
-        { id: 'ai-2', name: 'Sarah Chen', company: 'Global Stream', role: 'VP Growth', industry: 'E-commerce', relevance: 92, status: 'New', persona: 'The Growth VP' },
-        { id: 'ai-3', name: 'Marcus Thorne', company: 'Scale Logic', role: 'VP Engineering', industry: 'FinTech', relevance: 89, status: 'New', persona: 'The Visionary CTO' },
-        { id: 'ai-4', name: 'Elena Rodriguez', company: 'Product Mint', role: 'Head of Product', industry: 'Product-Led Growth', relevance: 85, status: 'New', persona: 'The Product Lead' },
-        { id: 'ai-5', name: 'David Kim', company: 'Innova Cloud', role: 'Chief Architect', industry: 'Enterprise SaaS', relevance: 82, status: 'New', persona: 'The Visionary CTO' },
-        { id: 'ai-6', name: 'Sophie Laurent', company: 'Market Flow', role: 'Growth Lead', industry: 'FinTech', relevance: 78, status: 'New', persona: 'The Growth VP' },
-    ]
-
-    // ── Load data ───────────────────────────────────────────────────────────
     const loadAll = useCallback(async () => {
-        if (!currentUser) return
+        if (!currentUser) return;
         try {
-            setDbLoading(true)
-            setDbError('')
+            dispatch({ type: ACTIONS.SET_LOADING, payload: true });
             const [proj, leads, campaigns] = await Promise.all([
-                getProject(id),
-                getProjectLeads(id),
-                getProjectCampaigns(id),
-            ])
-            setProject(proj)
-            setProjectLeads(leads.sort((a, b) => b.createdAt - a.createdAt))
-            setProjectCampaigns(campaigns.sort((a, b) => b.createdAt - a.createdAt))
+                getProject(id), getProjectLeads(id), getProjectCampaigns(id)
+            ]);
+            dispatch({ 
+                type: ACTIONS.SET_PROJECT_DATA, 
+                payload: {
+                    project: proj,
+                    leads: leads.sort((a, b) => b.createdAt - a.createdAt),
+                    campaigns: campaigns.sort((a, b) => b.createdAt - a.createdAt)
+                } 
+            });
         } catch (err) {
-            console.error('[ProjectDetail] load error:', err)
-            setDbError('Failed to load project data.')
-        } finally {
-            setDbLoading(false)
+            console.error('[ProjectDetail] load error:', err);
+            dispatch({ type: ACTIONS.SET_ERROR, payload: 'Failed to load project data.' });
         }
-    }, [id, currentUser])
+    }, [id, currentUser]);
 
-    useEffect(() => { loadAll() }, [loadAll])
+    useEffect(() => { loadAll(); }, [loadAll]);
 
-    // Auto-dismiss toast
     useEffect(() => {
-        if (!importToast) return
-        const t = setTimeout(() => setImportToast(null), 4000)
-        return () => clearTimeout(t)
-    }, [importToast])
+        if (!importToast) return;
+        const t = setTimeout(() => dispatch({ type: ACTIONS.SET_IMPORT_TOAST, payload: null }), 4000);
+        return () => clearTimeout(t);
+    }, [importToast]);
 
     const handleGenerateLeads = (config) => {
-        const filtered = mockGeneratedLeads.filter(l => l.persona === config.persona)
-        setAiLeads(filtered.length > 0 ? filtered : mockGeneratedLeads)
-    }
+        const filtered = MOCK_GENERATED_LEADS.filter(l => l.persona === config.persona);
+        dispatch({ type: ACTIONS.SET_AI_LEADS, payload: filtered.length > 0 ? filtered : MOCK_GENERATED_LEADS });
+    };
 
-    const filteredAiLeads = useMemo(() =>
-        aiLeads.filter(lead =>
-            lead.relevance >= relevanceFilter &&
-            (personaFilter === '' || lead.persona === personaFilter)
-        ),
-        [aiLeads, relevanceFilter, personaFilter]
-    )
-
-    // ── Source label helper ─────────────────────────────────────────────────
-    const SourceBadge = ({ source }) => {
-        if (source === 'csv_import') return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-100">
-                <i className="fas fa-file-csv text-[9px]" /> CSV Import
-            </span>
-        )
-        if (source === 'ai') return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-[11px] font-black border border-indigo-100">
-                <i className="fas fa-brain text-[9px]" /> AI
-            </span>
-        )
-        return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-black">
-                <i className="fas fa-user text-[9px]" /> Manual
-            </span>
-        )
-    }
-
-    // ── Columns ─────────────────────────────────────────────────────────────
     const leadColumns = useMemo(() => [
         {
-            name: 'Lead Name',
-            selector: row => row.name,
-            sortable: true,
-            minWidth: '160px',
+            name: 'Lead Name', selector: row => row.name, sortable: true, minWidth: '160px',
             cell: row => (
-                <div>
+                <div className="py-3">
                     <div className="font-bold text-slate-900 text-sm">{row.name}</div>
-                    {row.phone && <div className="text-[11px] text-slate-400 font-medium">{row.phone}</div>}
+                    {row.phone && <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{row.phone}</div>}
                 </div>
             )
         },
         {
-            name: 'Email',
-            selector: row => row.email,
-            sortable: true,
-            minWidth: '180px',
-            cell: row => row.email
-                ? <span className="text-slate-500 text-xs">{row.email}</span>
-                : <span className="text-slate-300 italic text-xs">—</span>
+            name: 'Email', selector: row => row.email, sortable: true, minWidth: '180px',
+            cell: row => row.email ? <span className="text-slate-500 text-xs font-medium">{row.email}</span> : <span className="text-slate-300 italic text-xs">—</span>
         },
         {
-            name: 'Source',
-            selector: row => row.source,
-            sortable: true,
-            minWidth: '130px',
+            name: 'Source', selector: row => row.source, sortable: true, minWidth: '130px',
             cell: row => <SourceBadge source={row.source} />
         },
         {
-            name: 'Website',
-            selector: row => row.website,
-            minWidth: '160px',
+            name: 'Website', selector: row => row.website, minWidth: '160px',
             cell: row => row.website ? (
-                <a
-                    href={row.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-[12px] font-bold hover:underline"
-                    onClick={e => e.stopPropagation()}
-                >
+                <a href={row.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 text-[11px] font-black hover:underline uppercase tracking-tighter" onClick={e => e.stopPropagation()}>
                     <i className="fas fa-external-link-alt text-[9px]" />
                     {row.website.replace(/^https?:\/\//, '').replace(/\/$/, '').slice(0, 22)}
                 </a>
             ) : <span className="text-slate-300 italic text-xs">—</span>
         },
         {
-            name: 'Status',
-            selector: row => row.status,
-            sortable: true,
+            name: 'Status', selector: row => row.status, sortable: true,
             cell: row => {
-                const map = { opened: 'success', email_sent: 'primary', new: 'info', replied: 'success' }
-                const label = { opened: 'Opened', email_sent: 'Sent', new: 'New', replied: 'Replied' }
-                return <Badge variant={map[row.status] || 'default'}>{label[row.status] || row.status}</Badge>
+                const map = { opened: 'success', email_sent: 'primary', new: 'info', replied: 'success' };
+                const label = { opened: 'Opened', email_sent: 'Sent', new: 'New', replied: 'Replied' };
+                return <Badge variant={map[row.status] || 'default'}>{label[row.status] || row.status}</Badge>;
             }
         }
-    ], [])
+    ], []);
 
     const campaignColumns = useMemo(() => [
         { name: 'Campaign Name', selector: row => row.name, sortable: true, cell: row => <span className="font-bold text-slate-900">{row.name}</span> },
-        {
-            name: 'Type',
-            selector: row => row.type,
-            cell: row => <Badge variant={row.type === 'initial' ? 'primary' : 'info'}>{row.type}</Badge>
-        },
-        {
-            name: 'Status',
-            selector: row => row.status,
-            sortable: true,
-            cell: row => <Badge variant={row.status === 'active' ? 'success' : 'default'}>{row.status}</Badge>
-        },
-        {
-            name: 'Created',
-            selector: row => row.createdAt,
-            sortable: true,
-            cell: row => <span className="text-slate-500 text-sm">{new Date(row.createdAt).toLocaleDateString()}</span>
-        }
-    ], [])
+        { name: 'Type', selector: row => row.type, cell: row => <Badge variant={row.type === 'initial' ? 'primary' : 'info'}>{row.type}</Badge> },
+        { name: 'Status', selector: row => row.status, sortable: true, cell: row => <Badge variant={row.status === 'active' ? 'success' : 'default'}>{row.status}</Badge> },
+        { name: 'Created', selector: row => row.createdAt, sortable: true, cell: row => <span className="text-slate-500 text-sm font-medium">{new Date(row.createdAt).toLocaleDateString()}</span> }
+    ], []);
 
     const aiColumns = useMemo(() => [
         { name: 'Lead Name', selector: row => row.name, sortable: true, cell: row => <span className="font-bold text-slate-900">{row.name}</span> },
         { name: 'Company', selector: row => row.company, sortable: true, cell: row => <span className="text-slate-600 font-medium">{row.company}</span> },
-        { name: 'Role', selector: row => row.role, sortable: true, cell: row => <span className="text-slate-500">{row.role}</span> },
-        { name: 'Industry', selector: row => row.industry, sortable: true, cell: row => <span className="text-slate-500">{row.industry}</span> },
-        {
-            name: 'Relevance',
-            selector: row => row.relevance,
-            sortable: true,
-            cell: row => (
-                <div className="w-full max-w-[100px]">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] font-bold text-indigo-600">{row.relevance}%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-100 rounded-lg overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg" style={{ width: `${row.relevance}%` }} />
-                    </div>
+        { name: 'Relevance', selector: row => row.relevance, sortable: true, cell: row => (
+            <div className="w-full max-w-[100px] py-2">
+                <div className="flex justify-between items-center mb-1.5 px-0.5">
+                    <span className="text-[10px] font-black text-primary uppercase tracking-tighter">{row.relevance}% Match</span>
                 </div>
-            )
-        },
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                    <div className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500" style={{ width: `${row.relevance}%` }} />
+                </div>
+            </div>
+        )},
         { name: 'Status', selector: row => row.status, cell: row => <Badge variant="info">{row.status}</Badge> }
-    ], [])
+    ], []);
 
-    const customStyles = {
+    const tableStyles = {
         table: { style: { backgroundColor: 'transparent' } },
-        headRow: { style: { backgroundColor: '#f8fafc', borderBottomWidth: '1px', borderBottomColor: '#f1f5f9', minHeight: '52px' } },
-        headCells: { style: { color: '#64748b', fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase' } },
+        headRow: { style: { backgroundColor: '#fcfdfe', borderBottomWidth: '1px', borderBottomColor: '#f1f5f9', minHeight: '52px' } },
+        headCells: { style: { color: '#64748b', fontSize: '0.65rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' } },
         rows: { style: { minHeight: '64px', '&:not(:last-child)': { borderBottomWidth: '1px', borderBottomColor: '#f8fafc' } } },
-    }
+    };
 
-    // ── Loading / error / not found ─────────────────────────────────────────
-    if (dbLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center py-32 gap-4">
-                <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-lg animate-spin" />
-                <p className="text-slate-400 font-medium">Loading project...</p>
-            </div>
-        )
-    }
-    if (dbError) {
-        return (
-            <div className="py-20 text-center">
-                <p className="text-red-500 font-medium">{dbError}</p>
-                <button onClick={loadAll} className="mt-4 text-indigo-600 font-bold text-sm underline">Retry</button>
-            </div>
-        )
-    }
-    if (!project) {
-        return (
-            <div className="py-20 text-center">
-                <p className="text-slate-500 font-medium">Project not found.</p>
-                <Link to="/dashboard/projects" className="mt-4 inline-block text-indigo-600 font-bold text-sm underline">Back to Projects</Link>
-            </div>
-        )
-    }
+    if (dbLoading) return (
+        <div className="flex flex-col items-center justify-center py-40 gap-6">
+            <div className="w-12 h-12 border-4 border-slate-100 border-t-primary rounded-xl animate-spin" />
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Synchronizing workspace...</p>
+        </div>
+    );
 
-    // ── Main render ─────────────────────────────────────────────────────────
+    if (dbError) return (
+        <div className="py-20 text-center space-y-6">
+            <div className="w-20 h-20 bg-red-50 rounded-[32px] flex items-center justify-center mx-auto text-red-500 shadow-xl shadow-red-100/50">
+                <i className="fas fa-exclamation-triangle text-3xl" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900">Connection Failed</h3>
+            <p className="text-slate-500 mt-2 font-medium italic">{dbError}</p>
+            <button onClick={loadAll} className="px-8 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 transition-colors">Retry Connection</button>
+        </div>
+    );
+
+    if (!project) return (
+        <div className="py-20 text-center space-y-6">
+            <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center mx-auto text-slate-200"><i className="fas fa-search text-3xl" /></div>
+            <h3 className="text-xl font-bold text-slate-900">Project Not Found</h3>
+            <p className="text-slate-500 mt-2">The workspace you are looking for does not exist or has been moved.</p>
+        </div>
+    );
+
     return (
         <div className="min-h-screen space-y-8 pb-12">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <Badge variant="primary">PROJECT WORKSPACE</Badge>
-                        <span className="text-slate-300">/</span>
-                        <span className="text-slate-500 text-sm font-bold uppercase tracking-widest">{project.type}</span>
-                    </div>
-                    <TitleComponent type="h1" className="text-slate-900 text-4xl font-black font-idGrotesk">
-                        {project.name}
-                    </TitleComponent>
-                </div>
-                <Link to={`/dashboard/campaigns/create?projectId=${id}`}>
-                    <Button variant="primary" className="bg-indigo-600 shadow-xl shadow-indigo-100 h-auto py-4 px-8">
-                        Launch Campaign for this Project
-                    </Button>
-                </Link>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
-                {['overview', 'leads', 'campaigns'].map(tab => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-8 py-3 rounded-lg font-bold text-sm transition-all ${activeTab === tab
-                            ? 'bg-white text-indigo-600 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700'
-                            }`}
-                    >
-                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                        {tab === 'leads' && !dbLoading && (
-                            <span className={`ml-2 text-xs px-2 py-0.5 rounded-lg ${activeTab === 'leads' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-500'}`}>
-                                {projectLeads.length}
-                            </span>
-                        )}
-                    </button>
-                ))}
-            </div>
-
-            {/* Tab Content */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-10">
-
-                {/* OVERVIEW TAB */}
-                {activeTab === 'overview' && (
-                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                            <div className="space-y-6">
-                                <div>
-                                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Project Scope</h4>
-                                    <p className="text-slate-700 leading-relaxed font-medium text-lg">
-                                        {project.description || 'No description provided.'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Project Features</h4>
-                                    <p className="text-slate-600 leading-relaxed font-medium whitespace-pre-wrap">
-                                        {project.features || 'No features listed.'}
-                                    </p>
-                                </div>
-                                <div className="pt-4">
-                                    <div className="p-8 bg-slate-50 rounded-lg border border-slate-100">
-                                        <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Targeted Audience Segments</h5>
-                                        <div className="flex flex-wrap gap-3">
-                                            {project.targetAudience ? project.targetAudience.split(', ').map((aud, i) => (
-                                                <Badge key={i} variant="outline" className="bg-white border-indigo-100 text-indigo-600">
-                                                    <i className="fas fa-user-tag mr-2 text-[8px]" />
-                                                    {aud}
-                                                </Badge>
-                                            )) : <span className="text-slate-400 font-medium italic">No specific audience segments defined.</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-lg flex flex-col justify-between">
-                                <div>
-                                    <h4 className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-4">Strategic Enforcement</h4>
-                                    <p className="text-slate-300 leading-relaxed font-medium">
-                                        All outreach tied to this project is filtered to ensure deep relevance. Leads are generated specifically for the{' '}
-                                        <span className="text-white underline decoration-indigo-500 decoration-2 underline-offset-4">{project.targetAudience}</span> segment.
-                                    </p>
-                                </div>
-                                <div className="flex gap-4 mt-8">
-                                    <div className="flex-1">
-                                        <p className="text-3xl font-black">{project.stats?.totalLeads || projectLeads.length}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Linked Leads</p>
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-3xl font-black">{projectCampaigns.length}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Campaigns</p>
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-3xl font-black">{project.stats?.totalSent || 0}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Emails Sent</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <AIAnalysisCard />
-                    </div>
-                )}
-
-                {/* LEADS TAB */}
-                {activeTab === 'leads' && (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-900">Project-Specific Leads</h3>
-                                <p className="text-sm text-slate-500 font-medium">Leads shown here are relevant to this project only — stored in database.</p>
-                            </div>
-                            <div className="flex gap-3 flex-wrap">
-                                <Button onClick={() => setIsSourcingModalOpen(true)} variant="primary" className="bg-indigo-600 shadow-xl shadow-indigo-100">
-                                    <i className="fas fa-magic mr-2" /> Source Leads via AI
-                                </Button>
-                                <Link to={`/dashboard/leads/search?projectId=${id}`}>
-                                    <Button
-                                        variant="primary"
-                                        className="bg-emerald-600 shadow-xl shadow-emerald-100"
-                                    >
-                                        <i className="fas fa-file-import mr-2" />Import CSV/XLSX
-                                    </Button>
-                                </Link>
-                            </div>
-                        </div>
-
-                        {/* Stats row */}
-                        <div className="grid grid-cols-3 gap-4">
-                            {[
-                                { label: 'Total Leads', value: projectLeads.length, icon: 'fa-users', bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-700', subtext: 'text-indigo-500' },
-                                { label: 'CSV/XLSX', value: projectLeads.filter(l => l.source === 'csv_import').length, icon: 'fa-file-import', bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-700', subtext: 'text-emerald-500' },
-                                { label: 'Emails Sent', value: project.stats?.totalSent || 0, icon: 'fa-paper-plane', bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-700', subtext: 'text-purple-500' },
-                            ].map(stat => (
-                                <div key={stat.label} className={`p-4 ${stat.bg} border ${stat.border} rounded-lg`}>
-                                    <p className={`text-2xl font-black ${stat.text}`}>{stat.value}</p>
-                                    <p className={`text-[10px] font-bold ${stat.subtext} uppercase tracking-widest`}>{stat.label}</p>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Leads Table */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between px-1">
-                                <TitleComponent type="p" size="small" className="text-slate-400 font-black uppercase tracking-widest">
-                                    All Project Leads
-                                </TitleComponent>
-                                <span className="text-[11px] font-bold text-slate-400">{projectLeads.length} total</span>
-                            </div>
-                            <div className="border border-slate-100 rounded-lg overflow-hidden shadow-sm">
-                                <DataTable
-                                    columns={leadColumns}
-                                    data={projectLeads}
-                                    customStyles={customStyles}
-                                    highlightOnHover
-                                    responsive
-                                    noHeader
-                                    pagination
-                                    paginationPerPage={10}
-                                    noDataComponent={
-                                        <div className="py-12 text-center">
-                                            <i className="fas fa-user-slash text-slate-200 text-3xl mb-3 block" />
-                                            <p className="text-slate-400 font-medium text-sm">No leads added yet.</p>
-                                            <p className="text-slate-300 text-xs mt-1">Use the buttons above to import leads.</p>
-                                        </div>
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        {/* Google Maps flash notice */}
-                        {projectLeads.some(l => l.source === 'csv_import') && (
-                            <div className="flex items-center gap-3 px-5 py-3.5 bg-emerald-50 border border-emerald-100 rounded-lg animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <i className="fas fa-file-csv text-white text-sm" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-bold text-emerald-900">
-                                        {projectLeads.filter(l => l.source === 'csv_import').length} lead{projectLeads.filter(l => l.source === 'csv_import').length !== 1 ? 's' : ''} imported from files
-                                    </p>
-                                    <p className="text-xs text-emerald-700 font-medium">Permanently saved to Firebase Realtime Database. Duplicates automatically skipped.</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* AI Sourced Leads */}
-                        {aiLeads.length > 0 && (
-                            <div className="pt-10 space-y-6 animate-in fade-in zoom-in-95 duration-500">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-t border-slate-100 pt-10">
-                                    <div>
-                                        <h3 className="text-xl font-bold text-slate-900">AI Intelligence Sourcing</h3>
-                                        <p className="text-sm text-slate-500 font-medium">Qualified leads surfaced through cross-platform signal analysis.</p>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-4">
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Relevance {relevanceFilter}%+</label>
-                                            <input type="range" min="0" max="90" value={relevanceFilter}
-                                                onChange={e => setRelevanceFilter(parseInt(e.target.value))}
-                                                className="w-32 accent-indigo-600"
-                                            />
-                                        </div>
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Persona Filter</label>
-                                            <select value={personaFilter} onChange={e => setPersonaFilter(e.target.value)}
-                                                className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-xs font-bold text-slate-600 outline-none"
-                                            >
-                                                <option value="">All Personas</option>
-                                                <option value="The Visionary CTO">The Visionary CTO</option>
-                                                <option value="The Growth VP">The Growth VP</option>
-                                                <option value="The Product Lead">The Product Lead</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="border border-indigo-100 rounded-lg overflow-hidden shadow-2xl shadow-indigo-50/50 bg-white">
-                                    <DataTable
-                                        columns={aiColumns}
-                                        data={filteredAiLeads}
-                                        customStyles={{ ...customStyles, headRow: { style: { ...customStyles.headRow.style, backgroundColor: '#f5f7ff' } } }}
-                                        highlightOnHover responsive noHeader
-                                        noDataComponent={
-                                            <div className="py-10 text-center text-slate-400 font-medium">No leads match your active filters.</div>
-                                        }
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* CAMPAIGNS TAB */}
-                {activeTab === 'campaigns' && (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-900">Related Campaigns</h3>
-                                <p className="text-sm text-slate-500 font-medium">Outreach sequences established for this project scope.</p>
-                            </div>
-                        </div>
-                        <div className="border border-slate-100 rounded-lg overflow-hidden shadow-sm">
-                            <DataTable
-                                columns={campaignColumns}
-                                data={projectCampaigns}
-                                customStyles={customStyles}
-                                highlightOnHover responsive noHeader
-                                noDataComponent={
-                                    <div className="py-12 text-center">
-                                        <i className="fas fa-bullhorn text-slate-200 text-3xl mb-3 block" />
-                                        <p className="text-slate-400 font-medium text-sm">No campaigns yet.</p>
-                                    </div>
-                                }
-                            />
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Modals */}
-            <LeadSourcingModal
-                isOpen={isSourcingModalOpen}
-                onClose={() => setIsSourcingModalOpen(false)}
-                onGenerate={handleGenerateLeads}
+            <ProjectHeader project={project} id={id} />
+            
+            <ProjectNavigation 
+                activeTab={activeTab} 
+                onTabChange={(tab) => dispatch({ type: ACTIONS.SET_ACTIVE_TAB, payload: tab })} 
+                leadsCount={projectLeads.length} 
             />
 
+            <div className="bg-white rounded-[32px] shadow-2xl shadow-slate-200/50 border border-slate-100 p-12 min-h-[500px]">
+                {activeTab === 'overview' && <OverviewTab project={project} leadsCount={projectLeads.length} campaignsCount={projectCampaigns.length} />}
+                {activeTab === 'leads' && (
+                    <LeadsTab 
+                        leads={projectLeads} id={id} onOpenSourcing={() => dispatch({ type: ACTIONS.SET_SOURCING_MODAL, payload: true })}
+                        projectStats={project.stats} leadColumns={leadColumns} aiLeads={aiLeads} aiColumns={aiColumns}
+                        relevanceFilter={relevanceFilter} personaFilter={personaFilter} tableStyles={tableStyles}
+                        onFilterChange={(filters) => dispatch({ type: ACTIONS.SET_FILTERS, payload: filters })}
+                    />
+                )}
+                {activeTab === 'campaigns' && <CampaignsTab campaigns={projectCampaigns} columns={campaignColumns} tableStyles={tableStyles} />}
+            </div>
+
+            <LeadSourcingModal isOpen={isSourcingModalOpen} onClose={() => dispatch({ type: ACTIONS.SET_SOURCING_MODAL, payload: false })} onGenerate={handleGenerateLeads} />
+
             {importToast && (
-                <ImportSuccessToast
-                    count={importToast.count}
-                    onClose={() => setImportToast(null)}
-                />
+                <ImportSuccessToast count={importToast.count} onClose={() => dispatch({ type: ACTIONS.SET_IMPORT_TOAST, payload: null })} />
             )}
         </div>
-    )
-}
+    );
+};
 
-export default ProjectDetail
+export default ProjectDetail;
