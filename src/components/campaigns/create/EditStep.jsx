@@ -1,8 +1,8 @@
 import React from 'react';
-import Button from '../../ui/Button';
-import Input from '../../ui/Input';
-import RichTextEditor from '../../ui/RichTextEditor';
-import TemplateStylePicker from '../../ui/TemplateStylePicker';
+import Button from '../../ui/button/button';
+import Input from '../../ui/input/input';
+import RichTextEditor from '../../ui/richTextEditor/richTextEditor';
+import TemplateStylePicker from '../../ui/templateStylePicker/templateStylePicker';
 
 const EditStep = ({ 
     formData, 
@@ -64,3 +64,6 @@ const EditStep = ({
 };
 
 export default EditStep;
+
+
+

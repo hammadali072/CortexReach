@@ -1,23 +1,23 @@
 // src/App.jsx
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { useAuth } from './context/AuthContext'
 import { Toaster } from 'react-hot-toast'
 
-import AppLayout from './components/layout/AppLayout'
-import Dashboard from './pages/Dashboard'
-import Projects from './pages/Projects'
-import ProjectDetail from './pages/ProjectDetail'
-import ProjectCreate from './pages/ProjectCreate'
-import Leads from './pages/Leads'
-import LeadsImport from './pages/LeadsImport'
-import Campaigns from './pages/Campaigns'
-import CampaignCreate from './pages/CampaignCreate'
-import CampaignDetail from './pages/CampaignDetail'
-import CampaignEdit from './pages/CampaignEdit'
-import Templates from './pages/Templates'
-import Settings from './pages/Settings'
-import SignIn from './pages/SignIn'
+import AppLayout from './components/layout/appLayout/appLayout'
+import DashboardPage from './pages/dashboard-page'
+import ProjectsPage from './pages/projects-page'
+import ProjectDetailPage from './pages/project-detail-page'
+import ProjectCreatePage from './pages/project-create-page'
+import LeadsPage from './pages/leads-page'
+import LeadsImportPage from './pages/leads-import-page'
+import CampaignsPage from './pages/campaigns-page'
+import CampaignCreatePage from './pages/campaign-create-page'
+import CampaignDetailPage from './pages/campaign-detail-page'
+import CampaignEditPage from './pages/campaign-edit-page'
+import TemplatesPage from './pages/templates-page'
+import SettingsPage from './pages/settings-page'
+import SignInPage from './pages/sign-in-page'
 
 // ─── Guards & Utilities ──────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ const AuthGate = ({ children }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0f172a]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="size-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
           <p className="text-slate-500 text-sm font-medium">Loading CortexReach...</p>
         </div>
       </div>
@@ -64,36 +64,34 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <AuthProvider>
-        <AuthGate>
-          <Toaster position="top-right" toastOptions={{ duration: 4000, style: { background: '#1e293b', color: '#fff', borderRadius: '16px' } }} />
-          <Routes>
-            <Route path="/" element={
-              <PublicRoute><SignIn /></PublicRoute>
-            } />
+      <AuthGate>
+        <Toaster position="top-right" toastOptions={{ duration: 4000, style: { background: '#1e293b', color: '#fff', borderRadius: '16px' } }} />
+        <Routes>
+          <Route path="/" element={
+            <PublicRoute><SignInPage /></PublicRoute>
+          } />
 
-            <Route path="/dashboard" element={
-              <ProtectedRoute><AppLayout /></ProtectedRoute>
-            }>
-              <Route index element={<Dashboard />} />
-              <Route path="projects" element={<Projects />} />
-              <Route path="projects/:id" element={<ProjectDetail />} />
-              <Route path="projects/create" element={<ProjectCreate />} />
-              <Route path="leads" element={<Leads />} />
-              <Route path="leads/import" element={<LeadsImport />} />
-              <Route path="campaigns" element={<Campaigns />} />
-              <Route path="campaigns/:id" element={<CampaignDetail />} />
-              <Route path="campaigns/:id/edit" element={<CampaignEdit />} />
-              <Route path="campaigns/create" element={<CampaignCreate />} />
-              <Route path="templates" element={<Templates />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
+          <Route path="/dashboard" element={
+            <ProtectedRoute><AppLayout /></ProtectedRoute>
+          }>
+            <Route index element={<DashboardPage />} />
+            <Route path="projects" element={<ProjectsPage />} />
+            <Route path="projects/:id" element={<ProjectDetailPage />} />
+            <Route path="projects/create" element={<ProjectCreatePage />} />
+            <Route path="leads" element={<LeadsPage />} />
+            <Route path="leads/import" element={<LeadsImportPage />} />
+            <Route path="campaigns" element={<CampaignsPage />} />
+            <Route path="campaigns/:id" element={<CampaignDetailPage />} />
+            <Route path="campaigns/:id/edit" element={<CampaignEditPage />} />
+            <Route path="campaigns/create" element={<CampaignCreatePage />} />
+            <Route path="templates" element={<TemplatesPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AuthGate>
-      </AuthProvider>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthGate>
     </BrowserRouter>
   )
 }

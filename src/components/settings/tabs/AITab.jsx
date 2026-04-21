@@ -128,7 +128,7 @@ const AITab = ({
                 {/* Live Preview Box */}
                 <div className="mt-8 p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[16px] animate-in fade-in zoom-in-95">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-lg bg-slate-950 flex items-center justify-center text-white">
+                        <div className="size-8 rounded-lg bg-slate-950 flex items-center justify-center text-white">
                             <Wand2 size={14} />
                         </div>
                         <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">AI Context Preview</h4>
@@ -154,3 +154,5 @@ const AITab = ({
 };
 
 export default AITab;
+
+

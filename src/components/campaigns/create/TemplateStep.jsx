@@ -23,7 +23,7 @@ const TemplateStep = ({ campaignType }) => {
                         <div className="absolute top-0 right-0 p-4 opacity-10">
                             <i className={`fas ${activeType?.icon} text-6xl`} />
                         </div>
-                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm text-primary">
+                        <div className="size-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm text-primary">
                             <i className="fas fa-magic text-2xl" />
                         </div>
                         <h4 className="font-black text-slate-900 text-xl uppercase tracking-tight">
@@ -44,3 +44,6 @@ const TemplateStep = ({ campaignType }) => {
 };
 
 export default TemplateStep;
+
+
+

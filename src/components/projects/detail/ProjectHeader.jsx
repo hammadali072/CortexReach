@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Badge from '../../ui/Badge';
+import Badge from '../../ui/badge/badge';
 import TitleComponent from '../../titleComponent/titleComponent';
-import Button from '../../ui/Button';
+import Button from '../../ui/button/button';
 
 const ProjectHeader = ({ project, id }) => {
     return (
@@ -28,3 +28,6 @@ const ProjectHeader = ({ project, id }) => {
 };
 
 export default ProjectHeader;
+
+
+

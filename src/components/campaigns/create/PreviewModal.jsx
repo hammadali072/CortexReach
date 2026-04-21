@@ -1,6 +1,6 @@
 import React from 'react';
 import DOMPurify from 'dompurify';
-import Button from '../../ui/Button';
+import Button from '../../ui/button/button';
 
 const PreviewModal = ({ isOpen, onClose, formData }) => {
     if (!isOpen) return null;
@@ -59,3 +59,6 @@ const PreviewModal = ({ isOpen, onClose, formData }) => {
 };
 
 export default PreviewModal;
+
+
+

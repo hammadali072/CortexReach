@@ -35,10 +35,17 @@ const ConfirmModal = ({
         <div 
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
             onClick={onClose}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClose()}
+            role="button"
+            tabIndex={0}
+            aria-label="Close modal backdrop"
         >
             <div 
                 className="relative bg-white w-full max-w-md rounded-[20px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                role="document"
+                tabIndex={-1}
             >
                 <div className="p-6 sm:p-8">
                     <button 
@@ -49,7 +56,7 @@ const ConfirmModal = ({
                     </button>
 
                     <div className="flex flex-col items-center text-center">
-                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 animate-in slide-in-from-top-4 ${
+                        <div className={`size-16 rounded-2xl flex items-center justify-center mb-6 animate-in slide-in-from-top-4 ${
                             variant === 'danger' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
                         }`}>
                             <TriangleAlert size={32} />
@@ -66,10 +73,14 @@ const ConfirmModal = ({
                     <div className="mt-8 space-y-4">
                         {requireTyping && (
                             <div className="space-y-2">
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                                <label 
+                                    htmlFor="confirm-typing-input"
+                                    className="block text-[10px] font-black text-slate-400 uppercase tracking-widest text-center cursor-pointer"
+                                >
                                     Type <span className="text-red-600 font-bold">{requireTyping}</span> to confirm
                                 </label>
                                 <input
+                                    id="confirm-typing-input"
                                     type="text"
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
@@ -81,10 +92,14 @@ const ConfirmModal = ({
 
                         {requirePassword && (
                             <div className="space-y-2">
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <label 
+                                    htmlFor="confirm-password-input"
+                                    className="block text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer"
+                                >
                                     Confirm with your Password
                                 </label>
                                 <input
+                                    id="confirm-password-input"
                                     type="password"
                                     value={passwordValue}
                                     onChange={(e) => setPasswordValue(e.target.value)}

@@ -12,17 +12,17 @@ const steps = [
 
 const StepIndicator = ({ currentStep }) => {
     return (
-        <div className="bg-white rounded-[16px] shadow-sm border border-slate-100 p-6 overflow-x-auto">
-            <div className="flex justify-between gap-4 min-w-[600px]">
+        <div className="bg-white rounded-2xl shadow-premium border border-slate-100 p-4 lg:p-6 overflow-x-auto">
+            <div className="flex justify-between gap-4 min-w-[500px]">
                 {steps.map((st, i) => (
                     <div key={`step-${st.number}`} className="flex flex-col items-center flex-1 relative">
                         <div 
-                            className={`z-10 w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-all ${
+                            className={`z-10 size-9 lg:size-10 rounded-xl flex items-center justify-center font-bold transition-all duration-300 ${
                                 currentStep === st.number 
-                                    ? 'bg-primary text-white scale-110 shadow-brand' 
+                                    ? 'bg-gradient-brand text-white scale-110 shadow-brand ring-4 ring-primary/10' 
                                     : currentStep > st.number 
-                                        ? 'bg-emerald-500 text-white' 
-                                        : 'bg-slate-100 text-slate-400'
+                                        ? 'bg-emerald-500 text-white shadow-sm' 
+                                        : 'bg-slate-50 text-slate-400 border border-slate-100'
                             }`}
                         >
                             {currentStep > st.number ? <i className="fas fa-check text-xs" /> : st.number}
@@ -45,3 +45,6 @@ const StepIndicator = ({ currentStep }) => {
 };
 
 export default StepIndicator;
+
+
+

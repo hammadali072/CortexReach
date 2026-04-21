@@ -85,7 +85,7 @@ const SendingTab = ({
                         className="flex items-center justify-between p-5 bg-slate-50 border border-slate-100 rounded-[12px] cursor-pointer hover:border-primary/20 transition-all group outline-none focus:ring-2 focus:ring-primary/20"
                     >
                         <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-accent group-hover:scale-110 transition-transform">
+                            <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-sm text-accent group-hover:scale-110 transition-transform">
                                 <Eye size={20} />
                             </div>
                             <div>
@@ -98,7 +98,7 @@ const SendingTab = ({
 
                     <div className="flex items-center justify-between p-5 bg-slate-50/50 border border-slate-100 rounded-[12px] opacity-60 cursor-not-allowed">
                         <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-400">
+                            <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-400">
                                 <ExternalLink size={20} />
                             </div>
                             <div>
@@ -114,7 +114,7 @@ const SendingTab = ({
 
                     <div className="flex items-center justify-between p-5 bg-slate-50/50 border border-slate-100 rounded-[12px] opacity-60 cursor-not-allowed">
                         <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-400">
+                            <div className="size-10 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-400">
                                 <Trash2 size={20} />
                             </div>
                             <div>
@@ -135,3 +135,5 @@ const SendingTab = ({
 };
 
 export default SendingTab;
+
+

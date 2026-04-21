@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import DataTable from 'react-data-table-component';
-import Button from '../../ui/Button';
+import Button from '../../ui/button/button';
 import TitleComponent from '../../titleComponent/titleComponent';
 import ProjectStats from './ProjectStats';
-import Badge from '../../ui/Badge';
+import Badge from '../../ui/badge/badge';
 
 const LeadsTab = ({ 
     leads, 
@@ -68,7 +68,7 @@ const LeadsTab = ({
                         paginationPerPage={10}
                         noDataComponent={
                             <div className="py-20 text-center">
-                                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-200">
+                                <div className="size-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-200">
                                     <i className="fas fa-user-slash text-2xl" />
                                 </div>
                                 <p className="text-slate-400 font-bold text-sm uppercase tracking-wider">No leads added yet</p>
@@ -81,7 +81,7 @@ const LeadsTab = ({
 
             {csvCount > 0 && (
                 <div className="flex items-center gap-3 px-5 py-4 bg-emerald-50 border border-emerald-100 rounded-xl animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-200">
+                    <div className="size-10 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-200">
                         <i className="fas fa-file-csv text-white text-sm" />
                     </div>
                     <div className="flex-1">
@@ -149,3 +149,6 @@ const LeadsTab = ({
 };
 
 export default LeadsTab;
+
+
+

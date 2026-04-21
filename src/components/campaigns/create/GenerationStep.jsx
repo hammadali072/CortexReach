@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from '../../ui/Button';
+import Button from '../../ui/button/button';
 
 const GenerationStep = ({ onGenerate }) => {
     return (
@@ -23,3 +23,6 @@ const GenerationStep = ({ onGenerate }) => {
 };
 
 export default GenerationStep;
+
+
+

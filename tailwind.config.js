@@ -36,6 +36,14 @@ export default {
         'premium': '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02)',
         'button': '0 10px 20px -5px rgba(54, 59, 108, 0.2), 0 4px 6px -2px rgba(54, 59, 108, 0.1)',
       },
+      width: {
+        'mobile-sidebar': 'var(--width-mobile-sidebar, 400px)',
+      },
+      borderRadius: {
+        '4xl': '2rem',
+        '5xl': '2.5rem',
+        '6xl': '3rem',
+      },
     },
   },
   plugins: [

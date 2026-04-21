@@ -1,5 +1,5 @@
 import React from 'react';
-import Input from '../../ui/Input';
+import Input from '../../ui/input/input';
 
 const CAMPAIGN_TYPES = [
     { id: 'brand_introduction', name: 'Brand Introduction', icon: 'fa-bullhorn', color: 'bg-blue-50 text-blue-600' },
@@ -25,14 +25,15 @@ const CampaignTypeStep = ({
                     onChange={e => onUpdate({ name: e.target.value })} 
                     required 
                 />
-                <div className="space-y-4">
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest px-1">
+                <fieldset className="space-y-4">
+                    <legend className="block text-xs font-black text-slate-400 uppercase tracking-widest px-1">
                         Campaign Category
-                    </label>
+                    </legend>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {CAMPAIGN_TYPES.map(type => (
                             <button
                                 key={`type-btn-${type.id}`}
+                                type="button"
                                 onClick={() => onUpdate({ campaignType: type.id })}
                                 className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
                                     campaignType === type.id 
@@ -40,7 +41,7 @@ const CampaignTypeStep = ({
                                         : 'border-slate-50 bg-white hover:border-slate-100'
                                 }`}
                             >
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${type.color}`}>
+                                <div className={`size-10 rounded-lg flex items-center justify-center ${type.color}`}>
                                     <i className={`fas ${type.icon}`} />
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-tighter text-center">
@@ -49,7 +50,7 @@ const CampaignTypeStep = ({
                             </button>
                         ))}
                     </div>
-                </div>
+                </fieldset>
             </div>
         </div>
     );

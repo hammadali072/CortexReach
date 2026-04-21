@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from '../../ui/Button';
+import Button from '../../ui/button/button';
 
 const ProjectStep = ({ 
     dbProjects, 
@@ -11,7 +11,7 @@ const ProjectStep = ({
     if (loading) {
         return (
             <div className="py-20 flex flex-col items-center gap-4">
-                <div className="w-10 h-10 border-4 border-slate-100 border-t-primary rounded-lg animate-spin" />
+                <div className="size-10 border-4 border-slate-100 border-t-primary rounded-lg animate-spin" />
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Fetching your projects...</p>
             </div>
         );
@@ -20,7 +20,7 @@ const ProjectStep = ({
     if (error) {
         return (
             <div className="py-20 text-center space-y-4">
-                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto text-red-500">
+                <div className="size-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto text-red-500">
                     <i className="fas fa-exclamation-triangle text-3xl" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Connection Error</h3>
@@ -33,7 +33,7 @@ const ProjectStep = ({
     if (dbProjects.length === 0) {
         return (
             <div className="py-20 text-center space-y-4">
-                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-200">
+                <div className="size-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-200">
                     <i className="fas fa-folder-open text-3xl" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">No Projects Found</h3>
@@ -81,3 +81,6 @@ const ProjectStep = ({
 };
 
 export default ProjectStep;
+
+
+

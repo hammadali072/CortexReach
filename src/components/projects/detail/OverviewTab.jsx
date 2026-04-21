@@ -1,6 +1,6 @@
 import React from 'react';
-import Badge from '../../ui/Badge';
-import AIAnalysisCard from '../../ui/AIAnalysisCard';
+import Badge from '../../ui/badge/badge';
+import AIAnalysisCard from '../../ui/aIAnalysisCard/aIAnalysisCard';
 
 const OverviewTab = ({ project, leadsCount, campaignsCount }) => {
     return (
@@ -63,3 +63,6 @@ const OverviewTab = ({ project, leadsCount, campaignsCount }) => {
 };
 
 export default OverviewTab;
+
+
+

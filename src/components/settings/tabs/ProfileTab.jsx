@@ -21,7 +21,7 @@ const ProfileTab = ({
         <div className="space-y-8 animate-in fade-in slide-in-from-right-4">
             {/* Profile Header Card */}
             <div className="bg-white p-6 md:p-8 rounded-[12px] border border-slate-200 shadow-sm flex flex-col md:flex-row items-center gap-6 md:gap-8">
-                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-primary flex items-center justify-center text-white text-2xl md:text-3xl font-black shadow-brand uppercase shrink-0">
+                <div className="size-20 md:w-24 md:h-24 rounded-full bg-primary flex items-center justify-center text-white text-2xl md:text-3xl font-black shadow-brand uppercase shrink-0">
                     {settings.displayName?.charAt(0) || currentUser.email?.charAt(0)}
                 </div>
                 <div className="flex-1 text-center md:text-left min-w-0">
@@ -157,3 +157,5 @@ const ProfileTab = ({
 };
 
 export default ProfileTab;
+
+

@@ -49,7 +49,7 @@ const DangerTab = ({ setModal }) => {
                         className={`p-6 md:p-8 border rounded-[16px] flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-md transition-all group ${action.containerClass}`}
                     >
                         <div className="flex items-start gap-5">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors shrink-0 ${action.iconClass}`}>
+                            <div className={`size-12 rounded-xl flex items-center justify-center transition-colors shrink-0 ${action.iconClass}`}>
                                 <action.icon size={24} />
                             </div>
                             <div>
@@ -73,3 +73,5 @@ const DangerTab = ({ setModal }) => {
 };
 
 export default DangerTab;
+
+

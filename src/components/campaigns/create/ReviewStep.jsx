@@ -1,5 +1,5 @@
 import React from 'react';
-import DOMPurify from 'dompurify';
+import SanitizedHTML from '../../ui/sanitizedHTML/sanitizedHTML';
 
 const ReviewStep = ({ 
     formData, 
@@ -28,7 +28,7 @@ const ReviewStep = ({
                     <span className="text-xs font-bold text-primary max-w-[60%] truncate">{formData.subject}</span>
                 </div>
                 <div className="p-10 prose prose-slate max-w-none bg-white">
-                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formData.emailContent) }} />
+                    <SanitizedHTML html={formData.emailContent} />
                 </div>
             </div>
         </div>
@@ -36,3 +36,6 @@ const ReviewStep = ({
 };
 
 export default ReviewStep;
+
+
+

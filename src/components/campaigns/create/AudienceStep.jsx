@@ -1,6 +1,6 @@
 import React from 'react';
 import DataTable from 'react-data-table-component';
-import Badge from '../../ui/Badge';
+import Badge from '../../ui/badge/badge';
 
 const AudienceStep = ({ 
     projectName, 
@@ -44,3 +44,6 @@ const AudienceStep = ({
 };
 
 export default AudienceStep;
+
+
+
